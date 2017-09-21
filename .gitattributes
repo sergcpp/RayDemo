@@ -1,0 +1,2 @@
+src/libs/** linguist-vendored
+assets/** filter=lfs diff=lfs merge=lfs -text

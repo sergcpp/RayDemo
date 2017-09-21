@@ -1,0 +1,127 @@
+cmake_minimum_required(VERSION 3.1)
+
+set(CMAKE_CXX_STANDARD 11)
+
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "" FORCE)
+
+set(SDL_STATIC ON)
+
+set(RENDERER SW)
+
+if(${RENDERER} STREQUAL "GL")
+  add_definitions(-DUSE_GL_RENDER)
+elseif(${RENDERER} STREQUAL "SW")
+  add_definitions(-DUSE_SW_RENDER)
+elseif(${RENDERER} STREQUAL "VK")
+  add_definitions(-DUSE_VK_RENDER)
+endif()
+
+if(WIN32)
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			set(SDL2_INCLUDE_DIRS libs/SDL2/x86_64-w64-mingw32/include)
+			set(SDL2_LIBRARIES "libs/SDL2/x86_64-w64-mingw32/lib")
+		else(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			set(SDL2_INCLUDE_DIRS libs/SDL2/i686-w64-mingw32/include)
+			set(SDL2_LIBRARIES "libs/SDL2/i686-w64-mingw32/lib")
+		endif()
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "ARM64")
+            set(SDL2_LIBRARIES "libs/SDL2/lib/arm64")
+            set(JPEG_LIBRARIES "libs/jpeg/win/arm64")
+        elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            set(SDL2_LIBRARIES "libs/SDL2/lib/x64")
+            set(ITT_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/libs/vtune/win/x64)
+            set(JPEG_LIBRARIES "libs/jpeg/win/x64")
+        else(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            set(SDL2_LIBRARIES "libs/SDL2/lib/x86")
+            set(ITT_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/libs/vtune/win/x86)
+        endif()
+        set(SDL2_INCLUDE_DIRS libs/SDL2/include)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs")
+    endif()
+    
+    if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "ARM64")
+        add_definitions(-DINTEL_NO_ITTNOTIFY_API)
+    endif()
+else(WIN32)
+    include(FindPkgConfig)
+    pkg_search_module (SDL2 REQUIRED sdl2)
+
+    if(APPLE)
+        set(ITT_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/libs/vtune/osx/x64)
+        if(CMAKE_APPLE_SILICON_PROCESSOR MATCHES "arm64")
+            set(SDL2_INCLUDE_DIRS /opt/homebrew/include)
+            set(SDL2_LIBRARIES /opt/homebrew/lib)
+            set(JPEG_LIBRARIES "libs/jpeg/osx/arm64")
+        else()
+            set(SDL2_INCLUDE_DIRS /usr/local/include)
+            set(SDL2_LIBRARIES /usr/local/lib)
+            set(JPEG_LIBRARIES "libs/jpeg/osx/x64")
+        endif()
+    else(APPLE)
+        set(ITT_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/libs/vtune/linux/x64)
+        set(JPEG_LIBRARIES "libs/jpeg/linux/x64")
+    endif(APPLE)
+
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64")
+        add_definitions(-DINTEL_NO_ITTNOTIFY_API)
+    endif()
+endif(WIN32)
+
+set(JPEG_INCLUDE_DIRS libs/jpeg/include)
+
+include_directories(libs)
+include_directories(${SDL2_INCLUDE_DIRS})
+include_directories(${JPEG_INCLUDE_DIRS})
+include_directories(.)
+
+link_directories(${SDL2_LIBRARIES})
+link_directories(${JPEG_LIBRARIES})
+link_directories(${ITT_LIBRARIES})
+
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+#set(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+enable_testing()
+
+add_subdirectory(Ray)
+add_subdirectory(Ren)
+add_subdirectory(Sys)
+add_subdirectory(Gui)
+add_subdirectory(Eng)
+add_subdirectory(DemoLib)
+add_subdirectory(DemoApp)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+set_target_properties(DemoApp
+                      DemoLib PROPERTIES FOLDER App)
+
+set_target_properties(Eng
+                      Ray
+                      Ren
+                      SW
+                      Sys 
+                      Gui PROPERTIES FOLDER Libs)
+
+set_target_properties(test_Eng
+                      test_Ray
+                      test_Ren
+                      test_SW
+                      test_Sys
+                      test_Gui PROPERTIES FOLDER Tests)
+
+add_test(EngTest     	Eng/tests/test_Eng)
+add_test(RayTest        ray/tests/test_Ray)
+add_test(RenTest        Ren/tests/test_Ren)
+add_test(SWTest         Ren/SW/tests/test_SW)
+add_test(SysTest        Sys/tests/test_Sys)
+add_test(GuiTest        Gui/tests/test_Gui)
+
+add_custom_target(Check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS test_Eng
+                                                               test_Ray
+                                                               test_Ren
+                                                               test_SW
+                                                               test_Sys
+                                                               test_Gui)
+set_target_properties(Check PROPERTIES FOLDER Tests)

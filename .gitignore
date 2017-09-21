@@ -1,0 +1,12 @@
+.dumps
+build-*
+check*
+DemoApp.exe
+DemoApp
+DemoLib.dll
+DemoLib_.dll
+DemoLib.dylib
+cmake-build-*
+scenes.blend1
+.DS_Store
+errors.txt

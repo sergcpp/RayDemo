@@ -1,0 +1,701 @@
+stages:
+  - build
+  - test
+  - test-img
+  - deploy
+
+.windows-x86_64-build-job:
+  stage: build
+  tags:
+    - windows
+  script:
+    - echo "Compiling the code..."
+    - mkdir build
+    - cd build
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - cmake --build build --target ALL_BUILD --config Release --parallel 8
+    - cmake --build build --target ALL_BUILD --config Debug --parallel 8
+    - cmake --build build --target ALL_BUILD --config RelWithDebInfo --parallel 8
+    - echo "Compile complete."
+    - mkdir windows-x86_64
+    - copy build/src/Eng/tests/Release/test_Eng.exe windows-x86_64
+    - copy build/src/Ray/tests/Release/test_Ray.exe windows-x86_64
+    - copy build/src/Ren/tests/Release/test_Ren.exe windows-x86_64
+    - copy build/src/Ren/SW/tests/Release/test_SW.exe windows-x86_64
+    - copy build/src/Sys/tests/Release/test_Sys.exe windows-x86_64
+    - copy DemoApp.exe windows-x86_64
+  artifacts:
+    name: windows-x86_64
+    paths:
+      - windows-x86_64/
+    expire_in: 1 week
+
+.windows-arm64-build-job:
+  stage: build
+  tags:
+    - windows
+  script:
+    - echo "Compiling the code..."
+    - mkdir build
+    - cd build
+    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config Release --parallel 8
+    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config Debug --parallel 8
+    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config RelWithDebInfo --parallel 8
+    - echo "Compile complete."
+    - mkdir windows-arm64
+    - copy build/src/Eng/tests/Release/test_Eng.exe windows-arm64
+    - copy build/src/Ray/tests/Release/test_Ray.exe windows-arm64
+    #- copy build/src/Ren/tests/Release/test_Ren.exe windows-arm64
+    - copy build/src/Ren/SW/tests/Release/test_SW.exe windows-arm64
+    - copy build/src/Sys/tests/Release/test_Sys.exe windows-arm64
+    - copy DemoApp.exe windows-arm64
+  artifacts:
+    name: windows-arm64
+    paths:
+      - windows-arm64/
+    expire_in: 1 week
+
+.linux-build-job:
+  stage: build
+  tags:
+    - linux
+  script:
+    - echo "Compiling the code..."
+    - mkdir build
+    - cd build
+    - cmake .. -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - mkdir build_dbg
+    - cd build_dbg
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - mkdir build_dev
+    - cd build_dev
+    - cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - cmake --build build --target all --parallel 8
+    - cmake --build build_dbg --target all --parallel 8
+    - cmake --build build_dev --target all --parallel 8
+    - echo "Compile complete."
+    - mkdir linux-x86_64
+    - cp build/src/Eng/tests/test_Eng linux-x86_64
+    - cp build/src/Ray/tests/test_Ray linux-x86_64
+    - cp build/src/Ren/tests/test_Ren linux-x86_64
+    - cp build/src/Ren/SW/tests/test_SW linux-x86_64
+    - cp build/src/Sys/tests/test_Sys linux-x86_64
+    - cp DemoApp linux-x86_64
+  artifacts:
+    paths:
+      - linux-x86_64/
+    expire_in: 1 week
+
+.macos-x86_64-build-job:
+  stage: build
+  tags:
+    - macos
+  script:
+    - echo "Compiling the code..."
+    - mkdir build
+    - cd build
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - mkdir build_dbg
+    - cd build_dbg
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - mkdir build_dev
+    - cd build_dev
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 8
+    - cmake --build build_dbg --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 8
+    - cmake --build build_dev --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 8
+    - echo "Compile complete."
+    - mkdir macos-x86_64
+    - cp build/src/Eng/tests/test_Eng macos-x86_64
+    - cp build/src/Ray/tests/test_Ray macos-x86_64
+#    - cp build/src/Ren/tests/test_Ren macos-x86_64
+    - cp build/src/Ren/SW/tests/test_SW macos-x86_64
+    - cp build/src/Sys/tests/test_Sys macos-x86_64
+    - cp DemoApp macos-x86_64
+  artifacts:
+    paths:
+      - macos-x86_64/
+    expire_in: 1 week
+
+.macos-arm64-build-job:
+  stage: build
+  tags:
+    - macos
+  script:
+    - echo "Compiling the code..."
+    - mkdir build
+    - cd build
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - mkdir build_dbg
+    - cd build_dbg
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - mkdir build_dev
+    - cd build_dev
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 8
+    - cmake --build build_dbg --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 8
+    - cmake --build build_dev --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 8
+    - echo "Compile complete."
+    - mkdir macos-arm64
+    - cp build/src/Eng/tests/test_Eng macos-arm64
+    - cp build/src/Ray/tests/test_Ray macos-arm64
+#    - cp build/src/Ren/tests/test_Ren macos-arm64
+    - cp build/src/Ren/SW/tests/test_SW macos-arm64
+    - cp build/src/Sys/tests/test_Sys macos-arm64
+    - cp DemoApp macos-arm64
+  artifacts:
+    paths:
+      - macos-arm64/
+    expire_in: 1 week
+
+.windows-test-job:
+  stage: test
+  script:
+    - echo "Running tests..."
+    - '& "$BIN_DIR/test_Eng"'
+    - cd src/Ray/tests
+    - '& "../../../$BIN_DIR/test_Ray" $TEST_ARGS.split(" ") $AUX_TEST_ARGS.split(" ")'
+    - cd ../../../
+#    - '& "$BIN_DIR/test_Ren"'
+    - '& "$BIN_DIR/test_SW"'
+    - '& "$BIN_DIR/test_Sys"'
+  after_script:
+    - cp src/Ray/tests/test_data/material_*.tga ./
+    - cp src/Ray/tests/test_data/errors.txt ./
+  artifacts:
+    when: always
+    name: "$env:CI_JOB_NAME"
+    paths:
+      - material_*.tga
+      - errors.txt
+    expire_in: 1 week
+
+.windows-test-img-job:
+  stage: test-img
+  script:
+    - echo "Running image tests..."
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") --ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") --ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406'
+  artifacts:
+    when: always
+    name: "$env:CI_JOB_NAME"
+    paths:
+      - ai043_01.tga
+      - sponza.tga
+    expire_in: 1 week
+
+.windows-gpu-test-img-job:
+  stage: test-img
+  script:
+    - echo "Running image tests..."
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") --ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317'
+    #- '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") --ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406'
+  artifacts:
+    when: always
+    name: "$env:CI_JOB_NAME"
+    paths:
+      - ai043_01.tga
+      #- sponza.tga
+    expire_in: 1 week
+
+.test-job:
+  stage: test
+  script:
+    - echo "Running tests..."
+    - $BIN_DIR/test_Eng
+    - cd src/Ray/tests
+    - ../../../$BIN_DIR/test_Ray $TEST_ARGS $AUX_TEST_ARGS
+    - cd ../../../
+#    - $BIN_DIR/test_Ren
+    - $BIN_DIR/test_SW
+    - $BIN_DIR/test_Sys
+  after_script:
+    - cp src/Ray/tests/test_data/material_*.tga ./
+    - cp src/Ray/tests/test_data/errors.txt ./
+  artifacts:
+    when: always
+    name: "$CI_JOB_NAME"
+    paths:
+      - material_*.tga
+      - errors.txt
+    expire_in: 1 week
+
+.test-img-job:
+  stage: test-img
+  script:
+    - echo "Running image tests..."
+    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS --ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317
+    - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS --ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406
+  artifacts:
+    when: always
+    name: "$CI_JOB_NAME"
+    paths:
+      - ai043_01.tga
+      - sponza.tga
+    expire_in: 1 week
+
+.gpu-test-img-job:
+  stage: test-img
+  script:
+    - echo "Running image tests..."
+    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS --ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317
+    - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS --ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406
+  artifacts:
+    when: always
+    name: "$CI_JOB_NAME"
+    paths:
+      - ai043_01.tga
+      - sponza.tga
+    expire_in: 1 week
+
+windows-x86_64-build-job:
+  extends:
+    - .windows-x86_64-build-job
+  tags:
+    - windows,builder
+
+windows-arm64-build-job:
+  extends:
+    - .windows-arm64-build-job
+  tags:
+    - windows,builder
+
+linux-x86_64-build-job:
+  extends:
+    - .linux-build-job
+  tags:
+    - linux,builder
+
+macos-x86_64-build-job:
+  extends:
+    - .macos-x86_64-build-job
+  tags:
+    - macos,x86_64,builder
+
+macos-arm64-build-job:
+  extends:
+    - .macos-arm64-build-job
+  tags:
+    - macos,arm64,builder
+
+windows-x86_64-cpu-test-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .windows-test-job
+  needs:
+    - windows-x86_64-build-job
+  tags:
+    - windows,x86_64,fastcpu
+
+windows-x86_64-gpu-amd-test-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '-d AMD --nocpu'
+  extends:
+    - .windows-test-job
+  needs:
+    - windows-x86_64-build-job
+  tags:
+    - windows,x86_64,amd
+
+windows-x86_64-gpu-nv-test-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '-d NV --nocpu'
+  extends:
+    - .windows-test-job
+  needs:
+    - windows-x86_64-build-job
+  tags:
+    - windows,x86_64,nv
+
+windows-x86_64-gpu-xe-test-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '-d Xe --nocpu'
+  extends:
+    - .windows-test-job
+  needs:
+    - windows-x86_64-build-job
+  tags:
+    - windows,x86_64,xe
+
+windows-x86_64-gpu-arc-test-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '-d Arc --nocpu'
+  extends:
+    - .windows-test-job
+  needs:
+    - windows-x86_64-build-job
+  tags:
+    - windows,x86_64,arc
+
+windows-x86_64-cpu-test-img-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .windows-test-img-job
+  needs:
+    - windows-x86_64-build-job
+  tags:
+    - windows,x86_64,fastcpu
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+windows-x86_64-gpu-nv-test-img-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '-d NV --nocpu'
+  extends:
+    - .windows-gpu-test-img-job
+  needs:
+    - windows-x86_64-build-job
+  tags:
+    - windows,x86_64,nv
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+windows-x86_64-gpu-amd-test-img-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '-d AMD --nocpu'
+  extends:
+    - .windows-gpu-test-img-job
+  needs:
+    - windows-x86_64-build-job
+  tags:
+    - windows,x86_64,amd
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+#windows-x86_64-gpu-xe-test-img-job:
+#  variables:
+#    BIN_DIR: windows-x86_64
+#    AUX_TEST_ARGS: '-d Xe --nocpu'
+#  extends:
+#    - .windows-gpu-test-img-job
+#  needs:
+#    - windows-x86_64-build-job
+#  tags:
+#    - windows,x86_64,xe
+#  rules:
+#    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+windows-x86_64-gpu-arc-test-img-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '-d Arc --nocpu'
+  extends:
+    - .windows-gpu-test-img-job
+  needs:
+    - windows-x86_64-build-job
+  tags:
+    - windows,x86_64,arc
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+windows-arm64-cpu-test-job:
+  variables:
+    BIN_DIR: windows-arm64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .windows-test-job
+  needs:
+    - windows-arm64-build-job
+  tags:
+    - windows,arm64,fastcpu
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+windows-arm64-cpu-test-img-job:
+  variables:
+    BIN_DIR: windows-arm64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .windows-test-img-job
+  needs:
+    - windows-arm64-build-job
+  tags:
+    - windows,arm64,fastcpu
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+linux-x86_64-cpu-test-job:
+  variables:
+    BIN_DIR: linux-x86_64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .test-job
+  needs:
+    - linux-x86_64-build-job
+  tags:
+    - linux,x86_64,fastcpu
+
+linux-x86_64-gpu-nv-test-job:
+  variables:
+    BIN_DIR: linux-x86_64
+    AUX_TEST_ARGS: '-d NV --nocpu'
+  extends:
+    - .test-job
+  needs:
+    - linux-x86_64-build-job
+  tags:
+    - linux,x86_64,nv
+
+linux-x86_64-gpu-amd-test-job:
+  variables:
+    BIN_DIR: linux-x86_64
+    AUX_TEST_ARGS: '-d AMD --nocpu'
+  extends:
+    - .test-job
+  needs:
+    - linux-x86_64-build-job
+  tags:
+    - linux,x86_64,amd
+
+linux-x86_64-cpu-test-img-job:
+  variables:
+    BIN_DIR: linux-x86_64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .test-img-job
+  needs:
+    - linux-x86_64-build-job
+  tags:
+    - linux,x86_64,fastcpu
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+linux-x86_64-gpu-nv-test-img-job:
+  variables:
+    BIN_DIR: linux-x86_64
+    AUX_TEST_ARGS: '-d NV --nocpu'
+  extends:
+    - .test-img-job
+  needs:
+    - linux-x86_64-build-job
+  tags:
+    - linux,x86_64,nv
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+linux-x86_64-gpu-amd-test-img-job:
+  variables:
+    BIN_DIR: linux-x86_64
+    AUX_TEST_ARGS: '-d AMD --nocpu'
+  extends:
+    - .test-img-job
+  needs:
+    - linux-x86_64-build-job
+  tags:
+    - linux,x86_64,amd
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+macos-x86_64-cpu-test-job:
+  variables:
+    BIN_DIR: macos-x86_64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .test-job
+  needs:
+    - macos-x86_64-build-job
+  tags:
+    - macos,x86_64
+
+macos-x86_64-cpu-test-img-job:
+  variables:
+    BIN_DIR: macos-x86_64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .test-img-job
+  needs:
+    - macos-x86_64-build-job
+  tags:
+    - macos,x86_64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+macos-arm64-cpu-test-job:
+  variables:
+    BIN_DIR: macos-arm64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .test-job
+  needs:
+    - macos-arm64-build-job
+  tags:
+    - macos,arm64
+
+macos-arm64-gpu-m1-test-job:
+  variables:
+    BIN_DIR: macos-arm64
+    AUX_TEST_ARGS: '--nocpu'
+  extends:
+    - .test-job
+  needs:
+    - macos-arm64-build-job
+  tags:
+    - macos,arm64,m1
+
+macos-arm64-cpu-test-img-job:
+  variables:
+    BIN_DIR: macos-arm64
+    AUX_TEST_ARGS: '--nogpu'
+  extends:
+    - .test-img-job
+  needs:
+    - macos-arm64-build-job
+  tags:
+    - macos,arm64
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+macos-arm64-gpu-m1-test-img-job:
+  variables:
+    BIN_DIR: macos-arm64
+    AUX_TEST_ARGS: '--nocpu'
+  extends:
+    - .gpu-test-img-job
+  needs:
+    - macos-arm64-build-job
+  tags:
+    - macos,arm64,m1
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+deploy-job:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "Deploying application..."
+    - echo "Application successfully deployed."
+  needs:
+    - windows-x86_64-cpu-test-job
+    - windows-x86_64-gpu-amd-test-job
+    - windows-x86_64-gpu-nv-test-job
+    - windows-x86_64-gpu-xe-test-job
+    - windows-x86_64-gpu-arc-test-job
+    - job: windows-x86_64-cpu-test-img-job
+      optional: true
+    - job: windows-x86_64-gpu-nv-test-img-job
+      optional: true
+    - job: windows-x86_64-gpu-amd-test-img-job
+      optional: true
+    #- job: windows-x86_64-gpu-xe-test-img-job
+    #  optional: true
+    - job: windows-x86_64-gpu-arc-test-img-job
+      optional: true
+    - job: windows-arm64-cpu-test-job
+      optional: true
+    - job: windows-arm64-cpu-test-img-job
+      optional: true
+    - linux-x86_64-cpu-test-job
+    - linux-x86_64-gpu-nv-test-job
+    - linux-x86_64-gpu-amd-test-job
+    - job: linux-x86_64-cpu-test-img-job
+      optional: true
+    - job: linux-x86_64-gpu-nv-test-img-job
+      optional: true
+    - job: linux-x86_64-gpu-amd-test-img-job
+      optional: true
+    - macos-x86_64-cpu-test-job
+    - job: macos-x86_64-cpu-test-img-job
+      optional: true
+    - macos-arm64-cpu-test-job
+    - macos-arm64-gpu-m1-test-job
+    - job: macos-arm64-cpu-test-img-job
+      optional: true
+    - job: macos-arm64-gpu-m1-test-img-job
+      optional: true
+  artifacts:
+    paths:
+      - windows-x86_64/
+      - windows-arm64/
+      - linux-x86_64/
+      - macos-x86_64/
+      - macos-arm64/
+    expire_in: 1 week
+  tags:
+    - windows
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+deploy-job-full:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "Deploying application..."
+    - echo "Application successfully deployed."
+  needs:
+    - windows-x86_64-cpu-test-job
+    - windows-x86_64-gpu-amd-test-job
+    - windows-x86_64-gpu-nv-test-job
+    - windows-x86_64-gpu-xe-test-job
+    - windows-x86_64-gpu-arc-test-job
+    - job: windows-x86_64-cpu-test-img-job
+      optional: true
+    - job: windows-x86_64-gpu-nv-test-img-job
+      optional: true
+    - job: windows-x86_64-gpu-amd-test-img-job
+      optional: true
+    #- job: windows-x86_64-gpu-xe-test-img-job
+    #  optional: true
+    - job: windows-x86_64-gpu-arc-test-img-job
+      optional: true
+    - job: windows-arm64-cpu-test-job
+      optional: true
+    - job: windows-arm64-cpu-test-img-job
+      optional: true
+    - linux-x86_64-cpu-test-job
+    - linux-x86_64-gpu-nv-test-job
+    - linux-x86_64-gpu-amd-test-job
+    - job: linux-x86_64-cpu-test-img-job
+      optional: true
+    - job: linux-x86_64-gpu-nv-test-img-job
+      optional: true
+    - macos-x86_64-cpu-test-job
+    - job: macos-x86_64-cpu-test-img-job
+      optional: true
+    - macos-arm64-cpu-test-job
+    - macos-arm64-gpu-m1-test-job
+    - job: macos-arm64-cpu-test-img-job
+      optional: true
+    - job: macos-arm64-gpu-m1-test-img-job
+      optional: true
+  artifacts:
+    paths:
+      - assets/fonts/
+      - assets/meshes/
+      - assets/references/
+      - assets/scenes/
+      - assets/textures/
+      - assets/config.json
+      - windows-x86_64/
+      - windows-arm64/
+      - linux-x86_64/
+      - macos-x86_64/
+      - macos-arm64/
+    expire_in: 1 week
+  tags:
+    - windows
+  rules:
+    - if: $CI_COMMIT_TAG

@@ -1,0 +1,1 @@
+DemoApp.exe -w 800 -h 1000 -s assets/scenes/coffee.json
