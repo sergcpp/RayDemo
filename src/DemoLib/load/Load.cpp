@@ -46,7 +46,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
     };
 
-    auto get_texture = [&](const std::string &name, bool srgb, bool gen_mipmaps) {
+    auto get_texture = [&](const std::string &name, const bool srgb, const bool gen_mipmaps) {
         auto it = textures.find(name);
         if (it == textures.end()) {
             int w, h, channels;
