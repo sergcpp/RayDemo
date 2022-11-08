@@ -12,8 +12,7 @@
 #include "states/GSCreate.h"
 #include "ui/FontStorage.h"
 
-Viewer::Viewer(const int w, const int h, const char *local_dir, const char *scene_name, const char *ref_name,
-               const char *device_name, const int samples, const double psnr, const int threshold, const int gpu_mode)
+Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams &_app_params, const int gpu_mode)
     : GameBase(w, h, local_dir) {
     auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
     auto log = GetComponent<Ray::ILog>(LOG_KEY);
@@ -57,12 +56,7 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const char *scen
     }
 
     {
-        auto app_params = std::make_shared<AppParams>();
-        app_params->scene_name = scene_name;
-        app_params->ref_name = ref_name;
-        app_params->samples = samples;
-        app_params->psnr = psnr;
-        app_params->threshold = threshold;
+        auto app_params = std::make_shared<AppParams>(_app_params);
         AddComponent(APP_PARAMS_KEY, app_params);
     }
 
@@ -71,7 +65,9 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const char *scen
         Ray::settings_t s;
         s.w = w;
         s.h = h;
-        s.preferred_device = device_name;
+        if (!_app_params.device_name.empty()) {
+            s.preferred_device = _app_params.device_name.c_str();
+        }
 
         std::shared_ptr<Ray::RendererBase> ray_renderer;
 
@@ -85,9 +81,9 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const char *scen
             ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get()));
         }
 
-        if (device_name && ref_name) {
+        if (!_app_params.device_name.empty() && !_app_params.ref_name.empty()) {
             // make sure we use requested device during reference tests
-            std::regex match_name(device_name);
+            std::regex match_name(_app_params.device_name);
             if (!std::regex_search(ray_renderer->device_name(), match_name)) {
                 throw std::runtime_error("Requested device not found!");
             }

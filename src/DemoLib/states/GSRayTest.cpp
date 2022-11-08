@@ -124,6 +124,10 @@ void GSRayTest::Enter() {
     Ray::camera_desc_t cam_desc;
     ray_scene_->GetCamera(0, cam_desc);
 
+    cam_desc.max_diff_depth = app_params->diff_depth;
+
+    ray_scene_->SetCamera(0, cam_desc);
+
     memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
     memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
     memcpy(&view_up_[0], &cam_desc.up[0], 3 * sizeof(float));
@@ -159,7 +163,10 @@ void GSRayTest::Enter() {
 void GSRayTest::Exit() {}
 
 void GSRayTest::Draw(const uint64_t dt_us) {
-    { // update camera
+    const uint64_t t1 = Sys::GetTimeMs();
+    auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
+
+    if (app_params->ref_name.empty()) { // make sure camera doesn't change during reference tests
         Ray::camera_desc_t cam_desc;
         ray_scene_->GetCamera(0, cam_desc);
 
@@ -181,19 +188,13 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             }
         }
 
-        // test test test
-        cam_desc.max_diff_depth = 2;
-        // cam_desc.max_total_depth = 0;
-
         ray_scene_->SetCamera(0, cam_desc);
-    }
 
-    const uint64_t t1 = Sys::GetTimeMs();
-
-    if (invalidate_preview_ || last_invalidate_) {
-        ray_renderer_->Clear();
-        UpdateRegionContexts();
-        invalidate_preview_ = false;
+        if (invalidate_preview_ || last_invalidate_) {
+            ray_renderer_->Clear();
+            UpdateRegionContexts();
+            invalidate_preview_ = false;
+        }
     }
 
     const auto rt = ray_renderer_->type();
@@ -258,8 +259,6 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
 #if defined(USE_SW_RENDER)
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
-
-    auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
 
     bool write_output = region_contexts_[0].iteration > 0;
     // write output image periodically
@@ -660,8 +659,8 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
                 view_dir_ = Normalize(-dir);
             }
 
-            LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
-            LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
+            //LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
+            //LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
 
             invalidate_preview_ = true;
             invalidate_timeout_ = 100;

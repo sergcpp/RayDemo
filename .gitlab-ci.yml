@@ -186,8 +186,8 @@ stages:
   stage: test-img
   script:
     - echo "Running image tests..."
-    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317'
-    - '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317 --diff_depth 2'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406 --diff_depth 2'
   artifacts:
     when: always
     name: "$env:CI_JOB_NAME"
@@ -200,8 +200,8 @@ stages:
   stage: test-img
   script:
     - echo "Running image tests..."
-    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317'
-    #- '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317 --diff_depth 2'
+    #- '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406 --diff_depth 2'
   artifacts:
     when: always
     name: "$env:CI_JOB_NAME"
@@ -236,8 +236,8 @@ stages:
   stage: test-img
   script:
     - echo "Running image tests..."
-    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317
-    - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406
+    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317 --diff_depth 2
+    - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406 --diff_depth 2
   artifacts:
     when: always
     name: "$CI_JOB_NAME"
@@ -250,8 +250,8 @@ stages:
   stage: test-img
   script:
     - echo "Running image tests..."
-    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317
-    - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406
+    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.tga --samples 1024 --psnr 33.51 --threshold 317 --diff_depth 2
+    - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.tga --samples 1024 --psnr 34.76 --threshold 406 --diff_depth 2
   artifacts:
     when: always
     name: "$CI_JOB_NAME"
