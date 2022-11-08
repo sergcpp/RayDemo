@@ -14,13 +14,14 @@ const char APP_PARAMS_KEY[] = "app_params";
 struct AppParams {
     std::string scene_name;
     std::string ref_name;
+    std::string device_name;
     int samples = -1;
     double psnr = 0.0;
     int threshold = -1;
+    int diff_depth = 4;
 };
 
 class Viewer : public GameBase {
   public:
-    Viewer(int w, int h, const char *local_dir, const char *scene_name, const char *ref_name, const char *device_name,
-           int samples, double psnr, int threshold, int gpu_mode);
+    Viewer(int w, int h, const char *local_dir, const AppParams &app_params, int gpu_mode);
 };

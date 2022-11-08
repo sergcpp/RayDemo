@@ -25,6 +25,7 @@ class DemoApp {
     std::string scene_name_, ref_name_;
     int samples_ = -1, threshold_ = -1;
     double min_psnr_ = 0.0;
+    int diff_depth_ = 4;
     bool nogpu_, nohwrt_;
 
     std::shared_ptr<InputManager> p_input_manager_;
@@ -39,14 +40,14 @@ class DemoApp {
     std::unique_ptr<GameBase> viewer_;
 
     void CreateViewer(int w, int h, const char *scene_name, const char *ref_name, const char *device_name, bool nogpu,
-                      bool nohwrt, int samples, double psnr, int threshold);
+                      bool nohwrt, int samples, double psnr, int threshold, int diff_depth);
 
   public:
     DemoApp();
     ~DemoApp();
 
     int Init(int w, int h, const char *scene_name, const char *ref_name, const char *device_name, bool nogpu,
-             bool nohwrt, int samples, double psnr, int threshold);
+             bool nohwrt, int samples, double psnr, int threshold, int diff_depth);
     void Destroy();
 
     void Frame();
