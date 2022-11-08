@@ -160,7 +160,7 @@ int DemoApp::Run(int argc, char *argv[]) {
             h = atoi(argv[i]);
         } else if ((strcmp(argv[i], "--scene") == 0 || strcmp(argv[i], "-s") == 0) && (++i != argc)) {
             scene_name_ = argv[i];
-        } else if (strcmp(argv[i], "--ref") == 0 && (++i != argc)) {
+        } else if ((strcmp(argv[i], "--reference") == 0 || strcmp(argv[i], "-ref") == 0) && (++i != argc)) {
             ref_name_ = argv[i];
         } else if (strcmp(argv[i], "--nogpu") == 0) {
             nogpu_ = true;
