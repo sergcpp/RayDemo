@@ -41,7 +41,7 @@ if(WIN32)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs")
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /fsanitize=address")
     endif()
-    
+
     if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "ARM64")
         add_definitions(-DINTEL_NO_ITTNOTIFY_API)
     endif()
