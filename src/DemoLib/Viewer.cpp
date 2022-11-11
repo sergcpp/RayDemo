@@ -65,9 +65,11 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
         Ray::settings_t s;
         s.w = w;
         s.h = h;
+#ifdef ENABLE_GPU_IMPL
         if (!_app_params.device_name.empty()) {
             s.preferred_device = _app_params.device_name.c_str();
         }
+#endif
 
         std::shared_ptr<Ray::RendererBase> ray_renderer;
 
@@ -77,7 +79,9 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
                                     Ray::RendererRef | Ray::RendererSSE2 | Ray::RendererSSE41 | Ray::RendererAVX |
                                         Ray::RendererAVX2 | Ray::RendererNEON));
         } else {
+#ifdef ENABLE_GPU_IMPL
             s.use_hwrt = (gpu_mode == 2);
+#endif
             ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get()));
         }
 
