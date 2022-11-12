@@ -537,7 +537,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
         //
         const float xx = -1.0f + 2.0f * (180.0f + 152.0f) / ui_root_->size_px()[0];
-        const auto &cur = ui_renderer_->GetParams();
+        const auto cur = ui_renderer_->GetParams();
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 0.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
