@@ -39,6 +39,7 @@ if(WIN32)
         endif()
         set(SDL2_INCLUDE_DIRS libs/SDL2/include)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /fsanitize=address")
     endif()
     
     if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "ARM64")
