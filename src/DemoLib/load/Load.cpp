@@ -19,6 +19,9 @@
 #define STBI_NO_PKM
 #include <Ren/SOIL2/stb_image.h>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <Ren/SOIL2/stb_image_write.h>
+
 #include <turbojpeg.h>
 
 #define _abs(x) ((x) > 0.0f ? (x) : -(x))
@@ -1336,6 +1339,23 @@ void WriteTGA(const Ray::pixel_color_t *data, int w, int h, int bpp, bool flip_v
                                    "TRUEVISION-XFILE" // yep, this is a TGA file
                                    ".";
     file.write(footer, sizeof(footer));
+}
+
+void WritePNG(const Ray::pixel_color_t *data, int w, int h, int bpp, bool flip_vertical, const char *name) {
+    auto out_data = std::unique_ptr<uint8_t[]>{new uint8_t[size_t(w) * h * bpp]};
+    for (int j = 0; j < h; ++j) {
+        const int _j = flip_vertical ? (h - j - 1) : j;
+        for (int i = 0; i < w; ++i) {
+            out_data[(j * w + i) * bpp + 2] = float_to_byte(data[_j * w + i].b);
+            out_data[(j * w + i) * bpp + 1] = float_to_byte(data[_j * w + i].g);
+            out_data[(j * w + i) * bpp + 0] = float_to_byte(data[_j * w + i].r);
+            if (bpp == 4) {
+                out_data[i * 4 + 3] = float_to_byte(data[_j * w + i].a);
+            }
+        }
+    }
+
+    stbi_write_png(name, w, h, bpp, out_data.get(), bpp * w);
 }
 
 #undef float_to_byte

@@ -19,3 +19,4 @@ std::vector<Ray::color_rgba8_t> LoadHDR(const std::string &name, int &w, int &h)
 std::vector<Ray::color_rgba8_t> Load_stb_image(const std::string &name, int &w, int &h);
 
 void WriteTGA(const Ray::pixel_color_t *data, int w, int h, int bpp, bool flip_vertical, const char *name);
+void WritePNG(const Ray::pixel_color_t *data, int w, int h, int bpp, bool flip_vertical, const char *name);

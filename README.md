@@ -1,6 +1,11 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/qbejapmgytnx7xu0/branch/master?svg=true)](https://ci.appveyor.com/project/SerhiiY/raydemo-pmomm/branch/master)
+[![pipeline status](https://gitlab.com/sergcpp/raydemo/badges/master/pipeline.svg)](https://gitlab.com/sergcpp/raydemo/commits/master)
 
 Test application for a Ray library.
 Library part is here: https://github.com/sergcpp/Ray
 
-![](ai043_01.tga)
+<div>
+<div float="left" >
+  <img src="ai043_01.png" width="40.45%" />
+  <img src="sponza.png" width="49%" />
+</div>
+</div>
