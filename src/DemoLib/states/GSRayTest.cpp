@@ -8,6 +8,8 @@
 #include <Ren/SW/SWframebuffer.h>
 #endif
 
+#include <Ren/SOIL2/stb_image_write.h>
+
 #include <Eng/GameStateManager.h>
 #include <Gui/Renderer.h>
 #include <Sys/Json.h>
@@ -281,7 +283,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             base_name = base_name.substr(0, n2);
         }
 
-        WriteTGA(pixel_data, w, h, 3, true /* flip */, (base_name + ".tga").c_str());
+        WritePNG(pixel_data, w, h, 3, false /* flip */, (base_name + ".png").c_str());
     }
 
     const bool should_compare_result = write_output && !app_params->ref_name.empty();
@@ -289,7 +291,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         const int DiffThres = 32;
 
         int ref_w, ref_h;
-        auto ref_data = LoadTGA(app_params->ref_name, ref_w, ref_h);
+        auto ref_data = Load_stb_image(app_params->ref_name, ref_w, ref_h);
         if (!ref_data.empty() && ref_w == w && ref_h == h) {
             int error_pixels = 0;
             double mse = 0.0f;
