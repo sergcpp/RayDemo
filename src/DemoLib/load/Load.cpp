@@ -49,7 +49,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
     };
 
-    auto get_texture = [&](const std::string &name, const bool srgb, const bool gen_mipmaps) {
+    auto get_texture = [&](const std::string &name, const bool srgb, const bool normalmap, const bool gen_mipmaps) {
         auto it = textures.find(name);
         if (it == textures.end()) {
             int w, h, channels;
@@ -150,6 +150,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             tex_desc.w = w;
             tex_desc.h = h;
             tex_desc.is_srgb = srgb;
+            tex_desc.is_normalmap = normalmap;
             tex_desc.generate_mipmaps = gen_mipmaps;
 
             const uint32_t tex_id = new_scene->AddTexture(tex_desc);
@@ -336,7 +337,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_env.Has("env_map")) {
                     const JsString &js_env_map = js_env.at("env_map").as_str();
-                    env_desc.env_map = get_texture(js_env_map.val, false, false);
+                    env_desc.env_map = get_texture(js_env_map.val, false /* srgb */, false /* normalmap */, false);
                 }
 
                 new_scene->SetEnvironment(env_desc);
@@ -404,7 +405,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_mat_obj.Has("base_texture")) {
                     const JsString &js_base_tex = js_mat_obj.at("base_texture").as_str();
-                    mat_desc.base_texture = get_texture(js_base_tex.val, true /* srgb */, true /* mips */);
+                    mat_desc.base_texture =
+                        get_texture(js_base_tex.val, true /* srgb */, false /* normalmap */, true /* mips */);
                 }
 
                 if (js_mat_obj.Has("specular")) {
@@ -424,12 +426,14 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_mat_obj.Has("metallic_texture")) {
                     const JsString &js_metallic_tex = js_mat_obj.at("metallic_texture").as_str();
-                    mat_desc.metallic_texture = get_texture(js_metallic_tex.val, false /* srgb */, true /* mips */);
+                    mat_desc.metallic_texture =
+                        get_texture(js_metallic_tex.val, false /* srgb */, false /* normalmap */, true /* mips */);
                 }
 
                 if (js_mat_obj.Has("normal_map")) {
                     const JsString &js_normal_map = js_mat_obj.at("normal_map").as_str();
-                    mat_desc.normal_map = get_texture(js_normal_map.val, false /* srgb */, false /* mips */);
+                    mat_desc.normal_map =
+                        get_texture(js_normal_map.val, false /* srgb */, true /* normalmap */, false /* mips */);
                 }
 
                 if (js_mat_obj.Has("roughness")) {
@@ -441,7 +445,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     const JsString &js_roughness_tex = js_mat_obj.at("roughness_texture").as_str();
                     const bool is_srgb = js_mat_obj.Has("roughness_texture_srgb") &&
                                          js_mat_obj.at("roughness_texture_srgb").as_lit().val == JsLiteralType::True;
-                    mat_desc.roughness_texture = get_texture(js_roughness_tex.val, is_srgb, true /* mips */);
+                    mat_desc.roughness_texture =
+                        get_texture(js_roughness_tex.val, is_srgb, false /* normalmap */, true /* mips */);
                 }
 
                 if (js_mat_obj.Has("anisotropic")) {
@@ -511,7 +516,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_mat_obj.Has("alpha_texture")) {
                     const JsString &js_alpha_tex = js_mat_obj.at("alpha_texture").as_str();
-                    mat_desc.alpha_texture = get_texture(js_alpha_tex.val, false /* srgb */, false /* mips */);
+                    mat_desc.alpha_texture =
+                        get_texture(js_alpha_tex.val, false /* srgb */, false /* normalmap */, false /* mips */);
                 }
 
                 materials[js_mat_name] = new_scene->AddMaterial(mat_desc);
@@ -520,7 +526,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_mat_obj.Has("base_texture")) {
                     const JsString &js_base_tex = js_mat_obj.at("base_texture").as_str();
-                    node_desc.base_texture = get_texture(js_base_tex.val, js_type.val != "mix", js_type.val != "mix");
+                    node_desc.base_texture =
+                        get_texture(js_base_tex.val, js_type.val != "mix", false /* normalmap */, js_type.val != "mix");
                 }
 
                 if (js_mat_obj.Has("base_color")) {
@@ -532,7 +539,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_mat_obj.Has("normal_map")) {
                     const JsString &js_normal_map = js_mat_obj.at("normal_map").as_str();
-                    node_desc.normal_map = get_texture(js_normal_map.val, false, false);
+                    node_desc.normal_map = get_texture(js_normal_map.val, false /* srgb */, true /* normalmap */, false);
                 }
 
                 if (js_mat_obj.Has("roughness")) {
