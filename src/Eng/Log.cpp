@@ -19,11 +19,8 @@ void TimedOutput(FILE *dst, const char *fmt, va_list args) {
     strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M:%S", localtime(&now));
 
     fputs(buff, dst);
-    fprintf(
-        dst, ".%03d | ",
-        (int)(std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch())
-                  .count() %
-              1000));
+    fprintf(dst, ".%03d | ",
+            int(std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch()).count() % 1000));
     vfprintf(dst, fmt, args);
     putc('\n', dst);
 }
