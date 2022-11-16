@@ -459,16 +459,17 @@ linux-x86_64-gpu-nv-test-job:
   tags:
     - linux,x86_64,nv
 
-#linux-x86_64-gpu-amd-test-job:
-#  variables:
-#    BIN_DIR: linux-x86_64
-#    AUX_TEST_ARGS: '-d AMD --nocpu'
-#  extends:
-#    - .test-job
-#  needs:
-#    - linux-x86_64-build-job
-#  tags:
-#    - linux,x86_64,amd
+linux-x86_64-gpu-amd-test-job:
+  variables:
+    BIN_DIR: linux-x86_64
+    AUX_TEST_ARGS: '-d AMD --nocpu'
+  extends:
+    - .test-job
+  allow_failure: true
+  needs:
+    - linux-x86_64-build-job
+  tags:
+    - linux,x86_64,amd
 
 linux-x86_64-cpu-test-img-job:
   variables:
@@ -496,18 +497,19 @@ linux-x86_64-gpu-nv-test-img-job:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
-#linux-x86_64-gpu-amd-test-img-job:
-#  variables:
-#    BIN_DIR: linux-x86_64
-#    AUX_TEST_ARGS: '-d AMD --nocpu'
-#  extends:
-#    - .test-img-job
-#  needs:
-#    - linux-x86_64-build-job
-#  tags:
-#    - linux,x86_64,amd
-#  rules:
-#    - if: $CI_PIPELINE_SOURCE == "schedule"
+linux-x86_64-gpu-amd-test-img-job:
+  variables:
+    BIN_DIR: linux-x86_64
+    AUX_TEST_ARGS: '-d AMD --nocpu'
+  extends:
+    - .test-img-job
+  allow_failure: true
+  needs:
+    - linux-x86_64-build-job
+  tags:
+    - linux,x86_64,amd
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
 
 macos-x86_64-cpu-test-job:
   variables:
@@ -615,8 +617,8 @@ deploy-job:
       optional: true
     - job: linux-x86_64-gpu-nv-test-img-job
       optional: true
-    #- job: linux-x86_64-gpu-amd-test-img-job
-    #  optional: true
+    - job: linux-x86_64-gpu-amd-test-img-job
+      optional: true
     - macos-x86_64-cpu-test-job
     - job: macos-x86_64-cpu-test-img-job
       optional: true
@@ -668,7 +670,7 @@ deploy-job-full:
       optional: true
     - linux-x86_64-cpu-test-job
     - linux-x86_64-gpu-nv-test-job
-    #- linux-x86_64-gpu-amd-test-job
+    - linux-x86_64-gpu-amd-test-job
     - job: linux-x86_64-cpu-test-img-job
       optional: true
     - job: linux-x86_64-gpu-nv-test-img-job
