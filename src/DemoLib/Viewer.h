@@ -23,5 +23,5 @@ struct AppParams {
 
 class Viewer : public GameBase {
   public:
-    Viewer(int w, int h, const char *local_dir, const AppParams &app_params, int gpu_mode);
+    Viewer(int w, int h, const char *local_dir, const AppParams &app_params, int gpu_mode, bool nobindless);
 };
