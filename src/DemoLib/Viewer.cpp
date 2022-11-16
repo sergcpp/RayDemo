@@ -12,7 +12,8 @@
 #include "states/GSCreate.h"
 #include "ui/FontStorage.h"
 
-Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams &_app_params, const int gpu_mode)
+Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams &_app_params, const int gpu_mode,
+               const bool nobindless)
     : GameBase(w, h, local_dir) {
     auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
     auto log = GetComponent<Ray::ILog>(LOG_KEY);
@@ -79,9 +80,8 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
                                     Ray::RendererRef | Ray::RendererSSE2 | Ray::RendererSSE41 | Ray::RendererAVX |
                                         Ray::RendererAVX2 | Ray::RendererNEON));
         } else {
-#ifdef ENABLE_GPU_IMPL
             s.use_hwrt = (gpu_mode == 2);
-#endif
+            s.use_bindless = !nobindless;
             ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get()));
         }
 

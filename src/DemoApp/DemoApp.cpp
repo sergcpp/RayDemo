@@ -60,7 +60,7 @@ DemoApp::DemoApp() : quit_(false) { g_app = this; }
 DemoApp::~DemoApp() {}
 
 int DemoApp::Init(int w, int h, const char *scene_name, const char *ref_name, const char *device_name, bool nogpu,
-                  bool nohwrt, int samples, double min_psnr, int threshold, int diff_depth) {
+                  bool nohwrt, bool nobindless, int samples, double min_psnr, int threshold, int diff_depth) {
 #if !defined(__ANDROID__)
 #ifdef _WIN32
     int dpi_result = SetProcessDPIAware();
@@ -102,7 +102,8 @@ int DemoApp::Init(int w, int h, const char *scene_name, const char *ref_name, co
     putenv("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE=1");
 
     try {
-        CreateViewer(w, h, scene_name, ref_name, device_name, nogpu, nohwrt, samples, min_psnr, threshold, diff_depth);
+        CreateViewer(w, h, scene_name, ref_name, device_name, nogpu, nohwrt, nobindless, samples, min_psnr, threshold,
+                     diff_depth);
     } catch (std::exception &e) {
         fprintf(stderr, "%s", e.what());
         return -1;
@@ -148,6 +149,7 @@ int DemoApp::Run(int argc, char *argv[]) {
     scene_name_ = "assets/scenes/sponza_simple.json";
     nogpu_ = false;
     nohwrt_ = false;
+    nobindless_ = false;
     samples_ = -1;
     min_psnr_ = 0.0;
     threshold_ = -1;
@@ -167,6 +169,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             nogpu_ = true;
         } else if (strcmp(argv[i], "--nohwrt") == 0) {
             nohwrt_ = true;
+        } else if (strcmp(argv[i], "--nobindless") == 0) {
+            nobindless_ = true;
         } else if (strcmp(argv[i], "--samples") == 0 && (++i != argc)) {
             samples_ = atoi(argv[i]);
         } else if (strcmp(argv[i], "--psnr") == 0 && (++i != argc)) {
@@ -180,8 +184,8 @@ int DemoApp::Run(int argc, char *argv[]) {
         }
     }
 
-    if (Init(w, h, scene_name_.c_str(), ref_name_.c_str(), device_name, nogpu_, nohwrt_, samples_, min_psnr_,
-             threshold_, diff_depth_) < 0) {
+    if (Init(w, h, scene_name_.c_str(), ref_name_.c_str(), device_name, nogpu_, nohwrt_, nobindless_, samples_,
+             min_psnr_, threshold_, diff_depth_) < 0) {
         return -1;
     }
 
@@ -357,7 +361,8 @@ void DemoApp::PollEvents() {
 }
 
 void DemoApp::CreateViewer(int w, int h, const char *scene_name, const char *ref_name, const char *device_name,
-                           bool nogpu, bool nohwrt, int samples, double psnr, int threshold, int diff_depth) {
+                           bool nogpu, bool nohwrt, bool nobindless, int samples, double psnr, int threshold,
+                           int diff_depth) {
     if (viewer_) {
         w = viewer_->width;
         h = viewer_->height;
@@ -378,6 +383,6 @@ void DemoApp::CreateViewer(int w, int h, const char *scene_name, const char *ref
     app_params.threshold = threshold;
     app_params.diff_depth = diff_depth;
 
-    viewer_.reset(new Viewer(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2)));
+    viewer_.reset(new Viewer(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2), nobindless));
     p_input_manager_ = viewer_->GetComponent<InputManager>(INPUT_MANAGER_KEY);
 }
