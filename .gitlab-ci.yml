@@ -441,8 +441,6 @@ windows-arm64-cpu-test-job:
     - windows-arm64-build-job
   tags:
     - windows,arm64,fastcpu
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
 
 windows-arm64-cpu-test-img-job:
   variables:
@@ -626,8 +624,7 @@ deploy-job:
     #  optional: true
     - job: windows-x86_64-gpu-arc-test-img-job
       optional: true
-    - job: windows-arm64-cpu-test-job
-      optional: true
+    - windows-arm64-cpu-test-job
     - job: windows-arm64-cpu-test-img-job
       optional: true
     - linux-x86_64-cpu-test-job
@@ -684,8 +681,7 @@ deploy-job-full:
     #  optional: true
     - job: windows-x86_64-gpu-arc-test-img-job
       optional: true
-    - job: windows-arm64-cpu-test-job
-      optional: true
+    - windows-arm64-cpu-test-job
     - job: windows-arm64-cpu-test-img-job
       optional: true
     - linux-x86_64-cpu-test-job
