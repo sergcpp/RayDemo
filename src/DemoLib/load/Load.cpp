@@ -14,6 +14,7 @@
 #include <Ren/Utils.h>
 #include <Sys/AssetFile.h>
 #include <Sys/Log.h>
+#include <Sys/Time_.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_PKM
@@ -539,7 +540,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_mat_obj.Has("normal_map")) {
                     const JsString &js_normal_map = js_mat_obj.at("normal_map").as_str();
-                    node_desc.normal_map = get_texture(js_normal_map.val, false /* srgb */, true /* normalmap */, false);
+                    node_desc.normal_map =
+                        get_texture(js_normal_map.val, false /* srgb */, true /* normalmap */, false);
                 }
 
                 if (js_mat_obj.Has("roughness")) {
@@ -617,7 +619,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             const JsString &js_vtx_data = js_mesh_obj.at("vertex_data").as_str();
             if (js_vtx_data.val.find(".obj") != std::string::npos) {
+                const uint64_t t1 = Sys::GetTimeUs();
                 std::tie(attrs, indices, groups) = LoadOBJ(js_vtx_data.val);
+                const uint64_t t2 = Sys::GetTimeUs();
+
+                LOGI("OBJ loaded in %.2fms", double(t2 - t1) / 1000.0);
             } else if (js_vtx_data.val.find(".bin") != std::string::npos) {
                 std::tie(attrs, indices, groups) = LoadBIN(js_vtx_data.val);
             } else {
@@ -933,43 +939,48 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 
     std::string line;
     while (std::getline(in_file, line)) {
-        std::stringstream ss(line);
-        std::string tok;
-        ss >> tok;
-        if (tok == "v") {
-            float val;
-            ss >> val;
-            v.push_back(val);
-            ss >> val;
-            v.push_back(val);
-            ss >> val;
-            v.push_back(val);
-        } else if (tok == "vn") {
-            float val;
-            ss >> val;
-            vn.push_back(val);
-            ss >> val;
-            vn.push_back(val);
-            ss >> val;
-            vn.push_back(val);
-        } else if (tok == "vt") {
-            float val;
-            ss >> val;
-            vt.push_back(val);
-            ss >> val;
-            vt.push_back(val);
-        } else if (tok == "f") {
+        const char *delims = " /\r\n";
+        const char *p = line.c_str();
+        const char *q = strpbrk(p + 1, delims);
+
+        if ((q - p) == 1 && p[0] == 'v') {
+            p = q + 1;
+            q = strpbrk(p, delims);
+            v.push_back(strtof(p, nullptr));
+            p = q + 1;
+            q = strpbrk(p, delims);
+            v.push_back(strtof(p, nullptr));
+            p = q + 1;
+            q = strpbrk(p, delims);
+            v.push_back(strtof(p, nullptr));
+        } else if ((q - p) == 2 && p[0] == 'v' && p[1] == 'n') {
+            p = q + 1;
+            q = strpbrk(p, delims);
+            vn.push_back(strtof(p, nullptr));
+            p = q + 1;
+            q = strpbrk(p, delims);
+            vn.push_back(strtof(p, nullptr));
+            p = q + 1;
+            q = strpbrk(p, delims);
+            vn.push_back(strtof(p, nullptr));
+        } else if ((q - p) == 2 && p[0] == 'v' && p[1] == 't') {
+            p = q + 1;
+            q = strpbrk(p, delims);
+            vt.push_back(strtof(p, nullptr));
+            p = q + 1;
+            q = strpbrk(p, delims);
+            vt.push_back(strtof(p, nullptr));
+        } else if ((q - p) == 1 && p[0] == 'f') {
             for (int j = 0; j < 3; j++) {
-                ss >> tok;
-
-                std::stringstream sss(tok);
-
-                std::getline(sss, tok, '/');
-                unsigned i1 = atoi(tok.c_str()) - 1;
-                std::getline(sss, tok, '/');
-                unsigned i2 = atoi(tok.c_str()) - 1;
-                std::getline(sss, tok, '/');
-                unsigned i3 = atoi(tok.c_str()) - 1;
+                p = q + 1;
+                q = strpbrk(p, delims);
+                const long i1 = strtol(p, nullptr, 10) - 1;
+                p = q + 1;
+                q = strpbrk(p, delims);
+                const long i2 = strtol(p, nullptr, 10) - 1;
+                p = q + 1;
+                q = strpbrk(p, delims);
+                const long i3 = strtol(p, nullptr, 10) - 1;
 
                 bool found = false;
 #if 1
@@ -1011,11 +1022,11 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
                     attrs.push_back(vt[i2 * 2 + 1]);
                 }
             }
-        } else if (tok == "g") {
+        } else if ((q - p) == 1 && p[0] == 'g') {
             if (!groups.empty()) {
-                groups.push_back((uint32_t)(indices.size() - groups.back()));
+                groups.push_back(uint32_t(indices.size() - groups.back()));
             }
-            groups.push_back((uint32_t)indices.size());
+            groups.push_back(uint32_t(indices.size()));
         }
     }
 
