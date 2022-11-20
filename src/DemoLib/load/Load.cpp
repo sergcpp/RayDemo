@@ -6,10 +6,12 @@
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <map>
 #include <sstream>
 
 #include <Ren/MMat.h>
+#include <Ren/SmallVector.h>
 #include <Ren/Texture.h>
 #include <Ren/Utils.h>
 #include <Sys/AssetFile.h>
@@ -930,12 +932,34 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
     std::vector<unsigned> indices;
     std::vector<unsigned> groups;
 
-    std::vector<float> v, vn, vt;
+    std::vector<Ren::Vec3f> v;
+    std::vector<float> vn, vt;
 
     std::ifstream in_file(file_name, std::ios::binary);
     if (!in_file) {
         throw std::runtime_error("File can not be opened!");
     }
+
+    const int SearchGridRes = 32;
+    std::vector<Ren::SmallVector<uint32_t, 16>> search_grid(SearchGridRes * SearchGridRes * SearchGridRes);
+    auto bbox_min = Ren::Vec3f{std::numeric_limits<float>::max()},
+         bbox_max = Ren::Vec3f{std::numeric_limits<float>::lowest()};
+
+    auto grid_index = [&](Ren::Vec3f p) -> int {
+        p = (p - bbox_min) / (bbox_max - bbox_min);
+        p *= float(SearchGridRes);
+
+        const int ix = int(p[0]);
+        const int iy = int(p[1]);
+        const int iz = int(p[2]);
+
+        return std::min(std::max(iz * SearchGridRes * SearchGridRes + iy * SearchGridRes + ix, 0),
+                        SearchGridRes * SearchGridRes * SearchGridRes - 1);
+    };
+
+    auto indices_at = [&](Ren::Vec3f p) -> const Ren::SmallVectorImpl<uint32_t> & {
+        return search_grid[grid_index(p)];
+    };
 
     std::string line;
     while (std::getline(in_file, line)) {
@@ -946,13 +970,17 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
         if ((q - p) == 1 && p[0] == 'v') {
             p = q + 1;
             q = strpbrk(p, delims);
-            v.push_back(strtof(p, nullptr));
+            const float x = strtof(p, nullptr);
             p = q + 1;
             q = strpbrk(p, delims);
-            v.push_back(strtof(p, nullptr));
+            const float y = strtof(p, nullptr);
             p = q + 1;
             q = strpbrk(p, delims);
-            v.push_back(strtof(p, nullptr));
+            const float z = strtof(p, nullptr);
+            v.emplace_back(x, y, z);
+
+            bbox_min = Min(bbox_min, v.back());
+            bbox_max = Max(bbox_max, v.back());
         } else if ((q - p) == 2 && p[0] == 'v' && p[1] == 'n') {
             p = q + 1;
             q = strpbrk(p, delims);
@@ -983,36 +1011,29 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
                 const long i3 = strtol(p, nullptr, 10) - 1;
 
                 bool found = false;
-#if 1
-                if (!attrs.empty()) {
-                    // avoid bound checks in debug
-                    const float *_attrs = &attrs[0];
-                    const float *_v = &v[0];
-                    const float *_vn = &vn[0];
-                    const float *_vt = &vt[0];
-                    int last_index = std::max(0, int(attrs.size()) / 8 - 1000);
-                    for (int i = (int)attrs.size() / 8 - 1; i >= last_index; i--) {
-                        if (_abs(_attrs[i * 8 + 0] - _v[i1 * 3]) < 0.0000001f &&
-                            _abs(_attrs[i * 8 + 1] - _v[i1 * 3 + 1]) < 0.0000001f &&
-                            _abs(_attrs[i * 8 + 2] - _v[i1 * 3 + 2]) < 0.0000001f &&
-                            _abs(_attrs[i * 8 + 3] - _vn[i3 * 3]) < 0.0000001f &&
-                            _abs(_attrs[i * 8 + 4] - _vn[i3 * 3 + 1]) < 0.0000001f &&
-                            _abs(_attrs[i * 8 + 5] - _vn[i3 * 3 + 2]) < 0.0000001f &&
-                            _abs(_attrs[i * 8 + 6] - _vt[i2 * 2]) < 0.0000001f &&
-                            _abs(_attrs[i * 8 + 7] - _vt[i2 * 2 + 1]) < 0.0000001f) {
-                            indices.push_back(i);
-                            found = true;
-                            break;
-                        }
+                for (const uint32_t i : indices_at(v[i1])) {
+                    if (_abs(attrs[i * 8 + 0] - v[i1][0]) < 0.0000001f &&
+                        _abs(attrs[i * 8 + 1] - v[i1][1]) < 0.0000001f &&
+                        _abs(attrs[i * 8 + 2] - v[i1][2]) < 0.0000001f &&
+                        _abs(attrs[i * 8 + 3] - vn[i3 * 3]) < 0.0000001f &&
+                        _abs(attrs[i * 8 + 4] - vn[i3 * 3 + 1]) < 0.0000001f &&
+                        _abs(attrs[i * 8 + 5] - vn[i3 * 3 + 2]) < 0.0000001f &&
+                        _abs(attrs[i * 8 + 6] - vt[i2 * 2]) < 0.0000001f &&
+                        _abs(attrs[i * 8 + 7] - vt[i2 * 2 + 1]) < 0.0000001f) {
+                        indices.push_back(i);
+                        found = true;
+                        break;
                     }
                 }
-#endif
 
                 if (!found) {
-                    indices.push_back(uint32_t(attrs.size() / 8));
-                    attrs.push_back(v[i1 * 3]);
-                    attrs.push_back(v[i1 * 3 + 1]);
-                    attrs.push_back(v[i1 * 3 + 2]);
+                    const uint32_t index = uint32_t(attrs.size() / 8);
+                    search_grid[grid_index(v[i1])].push_back(index);
+
+                    indices.push_back(index);
+                    attrs.push_back(v[i1][0]);
+                    attrs.push_back(v[i1][1]);
+                    attrs.push_back(v[i1][2]);
 
                     attrs.push_back(vn[i3 * 3]);
                     attrs.push_back(vn[i3 * 3 + 1]);
