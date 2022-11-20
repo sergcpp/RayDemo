@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
 
-set(CMAKE_CXX_STANDARD 11)
+OPTION(ENABLE_ASAN "Enable Address Sanitizer Build" OFF)
 
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "" FORCE)
 
 set(SDL_STATIC ON)
@@ -39,7 +40,9 @@ if(WIN32)
         endif()
         set(SDL2_INCLUDE_DIRS libs/SDL2/include)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /fsanitize=address")
+        if (ENABLE_ASAN)
+            set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /fsanitize=address")
+        endif()
     endif()
 
     if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "ARM64")
