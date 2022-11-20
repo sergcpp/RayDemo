@@ -38,6 +38,7 @@ set(SOURCE_FILES Anim.h
                  RenderThread.h
                  RenderThread.cpp
                  RingBuffer.h
+                 SmallVector.h
                  SparseArray.h
                  Storage.h
                  Texture.h
