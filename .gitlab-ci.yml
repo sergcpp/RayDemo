@@ -17,7 +17,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON -DENABLE_ASAN=ON
     - cd ..
     - cmake --build build --target ALL_BUILD --config Release --parallel 8
     - cmake --build build --target ALL_BUILD --config Debug --parallel 8
@@ -49,7 +49,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON -DENABLE_ASAN=ON
     - cd ..
     - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config Release --parallel 8
     - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config Debug --parallel 8
@@ -90,7 +90,7 @@ stages:
     - cd ..
     - mkdir build_dbg
     - cd build_dbg
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON -DENABLE_ASAN=ON
     - cd ..
     - mkdir build_dev
     - cd build_dev
@@ -124,7 +124,7 @@ stages:
     - cd ..
     - mkdir build_dbg
     - cd build_dbg
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON -DENABLE_ASAN=ON
     - cd ..
     - mkdir build_dev
     - cd build_dev
@@ -158,7 +158,7 @@ stages:
     - cd ..
     - mkdir build_dbg
     - cd build_dbg
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON -DENABLE_ASAN=ON
     - cd ..
     - mkdir build_dev
     - cd build_dev
