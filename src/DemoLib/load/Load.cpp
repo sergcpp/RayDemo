@@ -57,9 +57,15 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         if (it == textures.end()) {
             int w, h, channels;
             uint8_t *img_data = nullptr;
-            // std::vector<Ray::color_rgba8_t> data;
+            bool force_no_compression = false;
             if (ends_with(name, ".hdr")) {
-                // data = LoadHDR(name, w, h);
+                const std::vector<Ray::color_rgba8_t> temp = LoadHDR(name, w, h);
+
+                channels = 4;
+                img_data = (uint8_t *)STBI_MALLOC(w * h * 4);
+                force_no_compression = true;
+
+                memcpy(img_data, &temp[0].v[0], w * h * sizeof(Ray::color_rgba8_t));
             } else {
                 int channel_to_extract = -1;
                 std::string _name = name;
@@ -154,6 +160,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             tex_desc.h = h;
             tex_desc.is_srgb = srgb;
             tex_desc.is_normalmap = normalmap;
+            tex_desc.force_no_compression = force_no_compression;
             tex_desc.generate_mipmaps = gen_mipmaps;
 
             const uint32_t tex_id = new_scene->AddTexture(tex_desc);
@@ -331,11 +338,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     env_desc.env_col[0] = float(js_env_col.at(0).as_num().val);
                     env_desc.env_col[1] = float(js_env_col.at(1).as_num().val);
                     env_desc.env_col[2] = float(js_env_col.at(2).as_num().val);
-                }
-
-                if (js_env.Has("env_clamp")) {
-                    const JsNumber &js_env_clamp = js_env.at("env_clamp").as_num();
-                    env_desc.env_clamp = float(js_env_clamp.val);
                 }
 
                 if (js_env.Has("env_map")) {
@@ -1219,25 +1221,28 @@ std::vector<Ray::color_rgba8_t> LoadHDR(const std::string &name, int &out_w, int
         throw std::runtime_error("Cannot read resolution!");
     }
 
-    {
-        std::stringstream ss(resolution);
-        std::string tok;
+    { // parse resolution
+        const char *delims = " \r\n";
+        const char *p = resolution.c_str();
+        const char *q = strpbrk(p + 1, delims);
 
-        ss >> tok;
-        if (tok != "-Y") {
+        if ((q - p) != 2 || p[0] != '-' || p[1] != 'Y') {
             throw std::runtime_error("Unsupported format!");
         }
 
-        ss >> tok;
-        res_y = atoi(tok.c_str());
+        p = q + 1;
+        q = strpbrk(p, delims);
+        res_y = int(strtol(p, nullptr, 10));
 
-        ss >> tok;
-        if (tok != "+X") {
+        p = q + 1;
+        q = strpbrk(p, delims);
+        if ((q - p) != 2 || p[0] != '+' || p[1] != 'X') {
             throw std::runtime_error("Unsupported format!");
         }
 
-        ss >> tok;
-        res_x = atoi(tok.c_str());
+        p = q + 1;
+        q = strpbrk(p, delims);
+        res_x = int(strtol(p, nullptr, 10));
     }
 
     if (!res_x || !res_y) {
