@@ -155,6 +155,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             } else if (channels == 1) {
                 tex_desc.format = Ray::eTextureFormat::R8;
             }
+            tex_desc.name = name.c_str();
             tex_desc.data = &img_data[0];
             tex_desc.w = w;
             tex_desc.h = h;
