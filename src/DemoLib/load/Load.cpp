@@ -803,6 +803,50 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     if (new_light.color[0] > 0.0f && new_light.color[1] > 0.0f && new_light.color[2] > 0.0f) {
                         new_scene->AddLight(new_light, Ren::ValuePtr(transform));
                     }
+                } else if (js_light_type.val == "line") {
+                    Ray::line_light_desc_t new_light;
+
+                    new_light.color[0] = float(js_color.at(0).as_num().val);
+                    new_light.color[1] = float(js_color.at(1).as_num().val);
+                    new_light.color[2] = float(js_color.at(2).as_num().val);
+
+                    new_light.radius = 1.0f;
+                    if (js_light_obj.Has("radius")) {
+                        const JsNumber &js_radius = js_light_obj.at("radius").as_num();
+                        new_light.radius = float(js_radius.val);
+                    }
+
+                    new_light.height = 1.0f;
+                    if (js_light_obj.Has("height")) {
+                        const JsNumber &js_height = js_light_obj.at("height").as_num();
+                        new_light.height = float(js_height.val);
+                    }
+
+                    float power = 1.0f;
+                    if (js_light_obj.Has("power")) {
+                        const JsNumber &js_power = js_light_obj.at("power").as_num();
+                        power = float(js_power.val);
+                    }
+
+                    if (js_light_obj.Has("visible")) {
+                        const JsLiteral &js_visible = js_light_obj.at("visible").as_lit();
+                        new_light.visible = (js_visible.val == JsLiteralType::True);
+                    }
+
+                    if (js_light_obj.Has("sky_portal")) {
+                        const JsLiteral &js_sky_portal = js_light_obj.at("sky_portal").as_lit();
+                        new_light.sky_portal = (js_sky_portal.val == JsLiteralType::True);
+                    }
+
+                    const float mul = power / (2.0f * Ren::Pi<float>() * new_light.radius * new_light.height);
+
+                    new_light.color[0] *= mul;
+                    new_light.color[1] *= mul;
+                    new_light.color[2] *= mul;
+
+                    if (new_light.color[0] > 0.0f && new_light.color[1] > 0.0f && new_light.color[2] > 0.0f) {
+                        new_scene->AddLight(new_light, Ren::ValuePtr(transform));
+                    }
                 }
             }
         }
