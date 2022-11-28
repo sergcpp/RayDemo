@@ -41,7 +41,7 @@ class GSRayTest : public GameState {
     bool view_targeted_ = false;
     Ren::Vec3f view_origin_ = {0, 20, 3}, view_dir_ = {-1, 0, 0}, view_up_ = {0, 1, 0}, view_target_ = {0, 0, 0};
 
-    float max_fwd_speed_, focal_distance_ = 100.0f;
+    float max_fwd_speed_, focal_distance_ = 0.4f;
 
     Ren::Vec3f sun_dir_ = {0, 1, 0};
 

@@ -180,7 +180,6 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
         memcpy(&cam_desc.up[0], Ren::ValuePtr(view_up_), 3 * sizeof(float));
         cam_desc.focus_distance = focal_distance_;
-        cam_desc.focus_factor = 0.0f;
 
         if (invalidate_preview_) {
             cam_desc.max_total_depth = 1;
@@ -673,7 +672,7 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
         }
         break;
     case InputManager::RAW_INPUT_MOUSE_WHEEL:
-        focal_distance_ += evt.move.dy;
+        focal_distance_ += 0.1f * evt.move.dy;
         LOGI("focal distance = %f", focal_distance_);
         invalidate_preview_ = true;
         invalidate_timeout_ = 100;
