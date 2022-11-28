@@ -37,6 +37,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     bool view_targeted = false;
     Ren::Vec3f view_origin, view_dir = {0, 0, -1}, view_up, view_target;
     float view_fov = 45.0f;
+    float fstop = 0.0f, sensor_height = 0.036f;
+    float lens_rotation = 0.0f, lens_ratio = 1.0f;
+    int lens_blades = 0;
     Ray::eFilterType filter = Ray::Tent;
     bool srgb = true;
 
@@ -308,6 +311,31 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             if (js_cam.Has("fov")) {
                 const JsNumber &js_view_fov = js_cam.at("fov").as_num();
                 view_fov = float(js_view_fov.val);
+            }
+
+            if (js_cam.Has("fstop")) {
+                const JsNumber &js_fstop = js_cam.at("fstop").as_num();
+                fstop = float(js_fstop.val);
+            }
+
+            if (js_cam.Has("sensor_height")) {
+                const JsNumber &js_sensor_height = js_cam.at("sensor_height").as_num();
+                sensor_height = float(js_sensor_height.val);
+            }
+
+            if (js_cam.Has("lens_rotation")) {
+                const JsNumber &js_lens_rotation = js_cam.at("lens_rotation").as_num();
+                lens_rotation = float(js_lens_rotation.val);
+            }
+
+            if (js_cam.Has("lens_ratio")) {
+                const JsNumber &js_lens_ratio = js_cam.at("lens_ratio").as_num();
+                lens_ratio = float(js_lens_ratio.val);
+            }
+
+            if (js_cam.Has("lens_blades")) {
+                const JsNumber &js_lens_blades = js_cam.at("lens_blades").as_num();
+                lens_blades = float(js_lens_blades.val);
             }
 
             if (js_cam.Has("filter")) {
@@ -888,93 +916,14 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     cam_desc.fov = view_fov;
     cam_desc.gamma = 1.0f;
     cam_desc.focus_distance = 1.0f;
-    cam_desc.focus_factor = 0.0f;
+    cam_desc.fstop = fstop;
+    cam_desc.sensor_height = sensor_height;
+    cam_desc.lens_rotation = lens_rotation;
+    cam_desc.lens_ratio = lens_ratio;
+    cam_desc.lens_blades = lens_blades;
     cam_desc.clamp = true;
 
     new_scene->AddCamera(cam_desc);
-
-    {
-        /*ray::light_desc_t l_desc;
-        l_desc.type = ray::PointLight;
-        l_desc.position[0] = -500;
-        l_desc.position[1] = 50;
-        l_desc.position[2] = 100;
-        l_desc.radius = 5;
-        l_desc.color[0] = 50.0f;
-        l_desc.color[1] = 50.0f;
-        l_desc.color[2] = 50.0f;
-        new_scene->AddLight(l_desc);
-
-        l_desc.position[0] = -500;
-        l_desc.position[1] = 50;
-        l_desc.position[2] = -100;
-        new_scene->AddLight(l_desc);
-
-        l_desc.position[0] = 0;
-        l_desc.position[1] = 50;
-        l_desc.position[2] = 100;
-        new_scene->AddLight(l_desc);
-
-        l_desc.position[0] = 0;
-        l_desc.position[1] = 50;
-        l_desc.position[2] = -100;
-        new_scene->AddLight(l_desc);
-
-        l_desc.position[0] = 500;
-        l_desc.position[1] = 50;
-        l_desc.position[2] = 100;
-        new_scene->AddLight(l_desc);
-
-        l_desc.position[0] = 500;
-        l_desc.position[1] = 50;
-        l_desc.position[2] = -100;
-        new_scene->AddLight(l_desc);*/
-    }
-
-    {
-        /*ray::light_desc_t l_desc;
-        l_desc.type = ray::SpotLight;
-        l_desc.position[0] = -1000;
-        l_desc.position[1] = dist;
-        l_desc.position[2] = -100;
-        l_desc.radius = 10;
-        l_desc.color[0] = d;
-        l_desc.color[1] = 50000.0f;
-        l_desc.color[2] = 50000.0f;
-        l_desc.direction[0] = 0.0f;
-        l_desc.direction[1] = -1.0f;
-        l_desc.direction[2] = 0.0f;
-        l_desc.angle = 90.0f;
-        new_scene->AddLight(l_desc);*/
-    }
-
-    {
-        /*ray::light_desc_t l_desc;
-        l_desc.type = ray::DirectionalLight;
-        l_desc.direction[0] = 0.707f;
-        l_desc.direction[1] = -0.707f;
-        l_desc.direction[2] = 0.0f;
-        l_desc.angle = 0.1f;
-        l_desc.color[0] = 5.75f;
-        l_desc.color[1] = 5.75f;
-        l_desc.color[2] = 5.75f;
-        new_scene->AddLight(l_desc);*/
-    }
-
-    /*{
-        std::random_device rd;
-        std::mt19937 mt{};// (rd());
-        std::uniform_real_distribution<float> norm_float_dist(0.0f, 1.0f);
-
-        for (int i = 0; i < 0; i++) {
-            Ren::Mat4f transform;
-
-            transform = Ren::Translate(transform, { norm_float_dist(mt) * 200.0f, norm_float_dist(mt) * 200.0f,
-    norm_float_dist(mt) * 200.0f });
-
-            new_scene->AddMeshInstance(0, Ren::ValuePtr(transform));
-        }
-    }*/
 
     new_scene->Finalize();
 

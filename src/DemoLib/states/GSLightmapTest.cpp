@@ -186,7 +186,6 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
         memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin_), 3 * sizeof(float));
         memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
         cam_desc.focus_distance = focal_distance_;
-        cam_desc.focus_factor = 0.0f;
 
         ray_scene_->SetCamera(0, cam_desc);
     }
