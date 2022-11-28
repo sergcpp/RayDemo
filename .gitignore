@@ -4,6 +4,7 @@ check*
 DemoApp.exe
 DemoApp-dbg.exe
 DemoApp-dev.exe
+DemoApp-asan.exe
 DemoApp
 DemoLib.dll
 DemoLib_.dll
