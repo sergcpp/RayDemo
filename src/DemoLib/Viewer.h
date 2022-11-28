@@ -19,6 +19,10 @@ struct AppParams {
     double psnr = 0.0;
     int threshold = -1;
     int diff_depth = 4;
+    int spec_depth = 4;
+    int refr_depth = 8;
+    int transp_depth = 8;
+    int total_depth = 8;
 };
 
 class Viewer : public GameBase {

@@ -60,7 +60,7 @@ DemoApp::DemoApp() : quit_(false) { g_app = this; }
 DemoApp::~DemoApp() {}
 
 int DemoApp::Init(int w, int h, const char *scene_name, const char *ref_name, const char *device_name, bool nogpu,
-                  bool nohwrt, bool nobindless, int samples, double min_psnr, int threshold, int diff_depth) {
+                  bool nohwrt, bool nobindless, int samples, double min_psnr, int threshold) {
 #if !defined(__ANDROID__)
 #ifdef _WIN32
     int dpi_result = SetProcessDPIAware();
@@ -102,8 +102,7 @@ int DemoApp::Init(int w, int h, const char *scene_name, const char *ref_name, co
     putenv("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE=1");
 
     try {
-        CreateViewer(w, h, scene_name, ref_name, device_name, nogpu, nohwrt, nobindless, samples, min_psnr, threshold,
-                     diff_depth);
+        CreateViewer(w, h, scene_name, ref_name, device_name, nogpu, nohwrt, nobindless, samples, min_psnr, threshold);
     } catch (std::exception &e) {
         fprintf(stderr, "%s", e.what());
         return -1;
@@ -179,13 +178,21 @@ int DemoApp::Run(int argc, char *argv[]) {
             threshold_ = atoi(argv[i]);
         } else if (strcmp(argv[i], "--diff_depth") == 0 && (++i != argc)) {
             diff_depth_ = atoi(argv[i]);
+        } else if (strcmp(argv[i], "--spec_depth") == 0 && (++i != argc)) {
+            spec_depth_ = atoi(argv[i]);
+        } else if (strcmp(argv[i], "--refr_depth") == 0 && (++i != argc)) {
+            refr_depth_ = atoi(argv[i]);
+        } else if (strcmp(argv[i], "--transp_depth") == 0 && (++i != argc)) {
+            transp_depth_ = atoi(argv[i]);
+        } else if (strcmp(argv[i], "--total_depth") == 0 && (++i != argc)) {
+            total_depth_ = atoi(argv[i]);
         } else if ((strcmp(argv[i], "--device") == 0 || strcmp(argv[i], "-d") == 0) && (++i != argc)) {
             device_name = argv[i];
         }
     }
 
     if (Init(w, h, scene_name_.c_str(), ref_name_.c_str(), device_name, nogpu_, nohwrt_, nobindless_, samples_,
-             min_psnr_, threshold_, diff_depth_) < 0) {
+             min_psnr_, threshold_) < 0) {
         return -1;
     }
 
@@ -361,8 +368,7 @@ void DemoApp::PollEvents() {
 }
 
 void DemoApp::CreateViewer(int w, int h, const char *scene_name, const char *ref_name, const char *device_name,
-                           bool nogpu, bool nohwrt, bool nobindless, int samples, double psnr, int threshold,
-                           int diff_depth) {
+                           bool nogpu, bool nohwrt, bool nobindless, int samples, double psnr, int threshold) {
     if (viewer_) {
         w = viewer_->width;
         h = viewer_->height;
@@ -381,7 +387,11 @@ void DemoApp::CreateViewer(int w, int h, const char *scene_name, const char *ref
     app_params.samples = samples;
     app_params.psnr = psnr;
     app_params.threshold = threshold;
-    app_params.diff_depth = diff_depth;
+    app_params.diff_depth = diff_depth_;
+    app_params.spec_depth = spec_depth_;
+    app_params.refr_depth = refr_depth_;
+    app_params.transp_depth = transp_depth_;
+    app_params.total_depth = total_depth_;
 
     viewer_.reset(new Viewer(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2), nobindless));
     p_input_manager_ = viewer_->GetComponent<InputManager>(INPUT_MANAGER_KEY);

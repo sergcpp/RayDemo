@@ -127,6 +127,10 @@ void GSRayTest::Enter() {
     ray_scene_->GetCamera(0, cam_desc);
 
     cam_desc.max_diff_depth = app_params->diff_depth;
+    cam_desc.max_spec_depth = app_params->spec_depth;
+    cam_desc.max_refr_depth = app_params->refr_depth;
+    cam_desc.max_transp_depth = app_params->transp_depth;
+    cam_desc.max_total_depth = app_params->total_depth;
 
     ray_scene_->SetCamera(0, cam_desc);
 
