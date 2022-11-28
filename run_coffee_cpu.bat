@@ -1,1 +1,1 @@
-DemoApp.exe -w 800 -h 1000 -s assets/scenes/coffee.json --nogpu
+DemoApp.exe -w 640 -h 800 -s assets/scenes/coffee_maker.json --nogpu

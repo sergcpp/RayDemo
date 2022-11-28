@@ -552,19 +552,21 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 if (js_mat_obj.Has("roughness")) {
                     const JsNumber &js_roughness = js_mat_obj.at("roughness").as_num();
                     node_desc.roughness = float(js_roughness.val);
-                } else if (js_mat_obj.Has("strength")) {
+                }
+                
+                if (js_mat_obj.Has("strength")) {
                     const JsNumber &js_strength = js_mat_obj.at("strength").as_num();
                     node_desc.strength = float(js_strength.val);
+                }
 
-                    if (js_mat_obj.Has("multiple_importance")) {
-                        const JsLiteral &js_mult_imp = js_mat_obj.at("multiple_importance").as_lit();
-                        node_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
-                    }
+                if (js_mat_obj.Has("multiple_importance")) {
+                    const JsLiteral &js_mult_imp = js_mat_obj.at("multiple_importance").as_lit();
+                    node_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
+                }
 
-                    if (js_mat_obj.Has("sky_portal")) {
-                        const JsLiteral &js_sky_portal = js_mat_obj.at("sky_portal").as_lit();
-                        node_desc.sky_portal = (js_sky_portal.val == JsLiteralType::True);
-                    }
+                if (js_mat_obj.Has("sky_portal")) {
+                    const JsLiteral &js_sky_portal = js_mat_obj.at("sky_portal").as_lit();
+                    node_desc.sky_portal = (js_sky_portal.val == JsLiteralType::True);
                 }
 
                 if (js_mat_obj.Has("fresnel")) {
