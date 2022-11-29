@@ -346,6 +346,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     env_desc.env_map = get_texture(js_env_map.val, false /* srgb */, false /* normalmap */, false);
                 }
 
+                if (js_env.Has("multiple_importance")) {
+                    const JsLiteral &js_mult_imp = js_env.at("multiple_importance").as_lit();
+                    env_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
+                }
+
                 new_scene->SetEnvironment(env_desc);
             }
 
