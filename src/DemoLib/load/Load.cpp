@@ -749,6 +749,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         power = float(js_power.val);
                     }
 
+                    if (js_light_obj.Has("visible")) {
+                        const JsLiteral &js_visible = js_light_obj.at("visible").as_lit();
+                        new_light.visible = (js_visible.val == JsLiteralType::True);
+                    }
+
                     if (js_light_obj.Has("cast_shadow")) {
                         const JsLiteral &js_cast_shadow = js_light_obj.at("cast_shadow").as_lit();
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
