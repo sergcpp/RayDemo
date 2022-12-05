@@ -465,7 +465,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 if (js_mat_obj.Has("specular_texture")) {
                     const JsString &js_specular_tex = js_mat_obj.at("specular_texture").as_str();
                     mat_desc.specular_texture =
-                        get_texture(js_specular_tex.val, false /* srgb */, false /* normalmap */, true /* mips */);
+                        get_texture(js_specular_tex.val, true /* srgb */, false /* normalmap */, true /* mips */);
                 }
 
                 if (js_mat_obj.Has("specular_tint")) {

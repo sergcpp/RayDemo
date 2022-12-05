@@ -7,6 +7,11 @@ Library part is here: https://github.com/sergcpp/Ray
 <div float="left" >
   <img src="ai043_01.png" width="40.45%" />
   <img src="sponza.png" width="49%" />
+</div>
+<div float="left" >
   <img src="coffee_maker.png" width="40.45%" />
+</div>
+<div float="left" >
+  <img src="bathroom.png" width="89.75%" />
 </div>
 </div>

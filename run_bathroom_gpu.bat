@@ -1,1 +1,1 @@
-DemoApp.exe -w 1024 -h 1024 -s assets/scenes/bathroom.json
+DemoApp.exe -w 678 -h 900 -s assets/scenes/bathroom.json
