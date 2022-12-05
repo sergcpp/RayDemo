@@ -36,12 +36,10 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
     bool view_targeted = false;
     Ren::Vec3f view_origin, view_dir = {0, 0, -1}, view_up, view_target;
-    float view_fov = 45.0f;
-    float fstop = 0.0f, sensor_height = 0.036f;
-    float lens_rotation = 0.0f, lens_ratio = 1.0f;
-    int lens_blades = 0;
-    Ray::eFilterType filter = Ray::Tent;
-    bool srgb = true;
+
+    Ray::camera_desc_t cam_desc;
+    cam_desc.type = Ray::Persp;
+    cam_desc.clamp = true;
 
     std::map<std::string, uint32_t> textures;
     std::map<std::string, uint32_t> materials;
@@ -310,40 +308,50 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             if (js_cam.Has("fov")) {
                 const JsNumber &js_view_fov = js_cam.at("fov").as_num();
-                view_fov = float(js_view_fov.val);
+                cam_desc.fov = float(js_view_fov.val);
             }
 
             if (js_cam.Has("fstop")) {
                 const JsNumber &js_fstop = js_cam.at("fstop").as_num();
-                fstop = float(js_fstop.val);
+                cam_desc.fstop = float(js_fstop.val);
             }
 
             if (js_cam.Has("sensor_height")) {
                 const JsNumber &js_sensor_height = js_cam.at("sensor_height").as_num();
-                sensor_height = float(js_sensor_height.val);
+                cam_desc.sensor_height = float(js_sensor_height.val);
             }
 
             if (js_cam.Has("lens_rotation")) {
                 const JsNumber &js_lens_rotation = js_cam.at("lens_rotation").as_num();
-                lens_rotation = float(js_lens_rotation.val);
+                cam_desc.lens_rotation = float(js_lens_rotation.val);
             }
 
             if (js_cam.Has("lens_ratio")) {
                 const JsNumber &js_lens_ratio = js_cam.at("lens_ratio").as_num();
-                lens_ratio = float(js_lens_ratio.val);
+                cam_desc.lens_ratio = float(js_lens_ratio.val);
             }
 
             if (js_cam.Has("lens_blades")) {
                 const JsNumber &js_lens_blades = js_cam.at("lens_blades").as_num();
-                lens_blades = float(js_lens_blades.val);
+                cam_desc.lens_blades = int(js_lens_blades.val);
+            }
+
+            if (js_cam.Has("clip_start")) {
+                const JsNumber &js_clip_start = js_cam.at("clip_start").as_num();
+                cam_desc.clip_start = float(js_clip_start.val);
+            }
+
+            if (js_cam.Has("clip_end")) {
+                const JsNumber &js_clip_end = js_cam.at("clip_end").as_num();
+                cam_desc.clip_end = float(js_clip_end.val);
             }
 
             if (js_cam.Has("filter")) {
                 const JsString &js_filter = js_cam.at("filter").as_str();
                 if (js_filter.val == "box") {
-                    filter = Ray::Box;
+                    cam_desc.filter = Ray::Box;
                 } else if (js_filter.val == "tent") {
-                    filter = Ray::Tent;
+                    cam_desc.filter = Ray::Tent;
                 } else {
                     throw std::runtime_error("Unknown filter parameter!");
                 }
@@ -351,7 +359,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             if (js_cam.Has("srgb")) {
                 const JsLiteral &js_srgb = js_cam.at("srgb").as_lit();
-                srgb = (js_srgb.val == JsLiteralType::True);
+                cam_desc.dtype = (js_srgb.val == JsLiteralType::True) ? Ray::SRGB : Ray::None;
             }
         }
 
@@ -906,23 +914,10 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         view_dir = Normalize(-dir);
     }
 
-    Ray::camera_desc_t cam_desc;
-    cam_desc.type = Ray::Persp;
-    cam_desc.filter = filter;
-    cam_desc.dtype = srgb ? Ray::SRGB : Ray::None;
-    memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin), 3 * sizeof(float));
-    memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir), 3 * sizeof(float));
-    memcpy(&cam_desc.up[0], Ren::ValuePtr(view_up), 3 * sizeof(float));
-    cam_desc.fov = view_fov;
-    cam_desc.gamma = 1.0f;
-    cam_desc.focus_distance = 1.0f;
-    cam_desc.fstop = fstop;
-    cam_desc.sensor_height = sensor_height;
-    cam_desc.lens_rotation = lens_rotation;
-    cam_desc.lens_ratio = lens_ratio;
-    cam_desc.lens_blades = lens_blades;
-    cam_desc.clamp = true;
-
+    memcpy(&cam_desc.origin[0], ValuePtr(view_origin), 3 * sizeof(float));
+    memcpy(&cam_desc.fwd[0], ValuePtr(view_dir), 3 * sizeof(float));
+    memcpy(&cam_desc.up[0], ValuePtr(view_up), 3 * sizeof(float));
+    
     new_scene->AddCamera(cam_desc);
 
     new_scene->Finalize();
