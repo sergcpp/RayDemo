@@ -749,6 +749,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         power = float(js_power.val);
                     }
 
+                    if (js_light_obj.Has("cast_shadow")) {
+                        const JsLiteral &js_cast_shadow = js_light_obj.at("cast_shadow").as_lit();
+                        new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
+                    }
+
                     const float mul = power / (4.0f * Ren::Pi<float>() * new_light.radius * new_light.radius * 4.0f);
 
                     new_light.color[0] *= mul;
@@ -791,6 +796,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     if (js_light_obj.Has("sky_portal")) {
                         const JsLiteral &js_sky_portal = js_light_obj.at("sky_portal").as_lit();
                         new_light.sky_portal = (js_sky_portal.val == JsLiteralType::True);
+                    }
+
+                    if (js_light_obj.Has("cast_shadow")) {
+                        const JsLiteral &js_cast_shadow = js_light_obj.at("cast_shadow").as_lit();
+                        new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
                     const float mul = power / (new_light.width * new_light.height * 4.0f);
@@ -837,6 +847,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.sky_portal = (js_sky_portal.val == JsLiteralType::True);
                     }
 
+                    if (js_light_obj.Has("cast_shadow")) {
+                        const JsLiteral &js_cast_shadow = js_light_obj.at("cast_shadow").as_lit();
+                        new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
+                    }
+
                     const float mul = power / (Ren::Pi<float>() * new_light.size_x * new_light.size_y);
 
                     new_light.color[0] *= mul;
@@ -879,6 +894,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     if (js_light_obj.Has("sky_portal")) {
                         const JsLiteral &js_sky_portal = js_light_obj.at("sky_portal").as_lit();
                         new_light.sky_portal = (js_sky_portal.val == JsLiteralType::True);
+                    }
+
+                    if (js_light_obj.Has("cast_shadow")) {
+                        const JsLiteral &js_cast_shadow = js_light_obj.at("cast_shadow").as_lit();
+                        new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
                     const float mul = power / (2.0f * Ren::Pi<float>() * new_light.radius * new_light.height);
