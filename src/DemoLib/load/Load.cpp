@@ -462,6 +462,12 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     mat_desc.specular = float(js_specular.val);
                 }
 
+                if (js_mat_obj.Has("specular_texture")) {
+                    const JsString &js_specular_tex = js_mat_obj.at("specular_texture").as_str();
+                    mat_desc.specular_texture =
+                        get_texture(js_specular_tex.val, false /* srgb */, false /* normalmap */, true /* mips */);
+                }
+
                 if (js_mat_obj.Has("specular_tint")) {
                     const JsNumber &js_specular_tint = js_mat_obj.at("specular_tint").as_num();
                     mat_desc.specular_tint = float(js_specular_tint.val);
@@ -595,7 +601,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     const JsNumber &js_roughness = js_mat_obj.at("roughness").as_num();
                     node_desc.roughness = float(js_roughness.val);
                 }
-                
+
                 if (js_mat_obj.Has("strength")) {
                     const JsNumber &js_strength = js_mat_obj.at("strength").as_num();
                     node_desc.strength = float(js_strength.val);
@@ -760,7 +766,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
-                    const float mul = power / (4.0f * Ren::Pi<float>() * new_light.radius * new_light.radius * 4.0f);
+                    float mul = power / (4.0f * Ren::Pi<float>() * new_light.radius * new_light.radius);
+                    mul /= Ren::Pi<float>(); // ???
 
                     new_light.color[0] *= mul;
                     new_light.color[1] *= mul;
@@ -809,7 +816,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
-                    const float mul = power / (new_light.width * new_light.height * 4.0f);
+                    float mul = power / (new_light.width * new_light.height);
+                    mul /= 4.0f; // ???
 
                     new_light.color[0] *= mul;
                     new_light.color[1] *= mul;
@@ -943,7 +951,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     memcpy(&cam_desc.origin[0], ValuePtr(view_origin), 3 * sizeof(float));
     memcpy(&cam_desc.fwd[0], ValuePtr(view_dir), 3 * sizeof(float));
     memcpy(&cam_desc.up[0], ValuePtr(view_up), 3 * sizeof(float));
-    
+
     new_scene->AddCamera(cam_desc);
 
     new_scene->Finalize();
