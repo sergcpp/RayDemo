@@ -20,7 +20,9 @@
 #include <Sys/Time_.h>
 
 #include <SDL2/SDL_events.h>
+
 #include <cassert>
+#include <cfloat>
 
 #ifdef _WIN32
 #include <renderdoc/renderdoc_app.h>
@@ -101,6 +103,10 @@ int DemoApp::Init(int w, int h, const char *scene_name, const char *ref_name, co
 
     putenv("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE=1");
 
+#if !defined(NDEBUG) && defined(_WIN32)
+    _controlfp(_EM_INEXACT, _MCW_EM);
+#endif
+
     try {
         CreateViewer(w, h, scene_name, ref_name, device_name, nogpu, nohwrt, nobindless, samples, min_psnr, threshold);
     } catch (std::exception &e) {
@@ -145,7 +151,7 @@ void DemoApp::Frame() {
 #if !defined(__ANDROID__)
 int DemoApp::Run(int argc, char *argv[]) {
     int w = 640, h = 360;
-    scene_name_ = "assets/scenes/sponza_simple.json";
+    scene_name_ = "assets/scenes/mat_test.json";
     nogpu_ = false;
     nohwrt_ = false;
     nobindless_ = false;

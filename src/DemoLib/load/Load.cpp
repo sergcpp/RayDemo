@@ -38,7 +38,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     Ren::Vec3f view_origin, view_dir = {0, 0, -1}, view_up, view_target;
 
     Ray::camera_desc_t cam_desc;
-    cam_desc.type = Ray::Persp;
     cam_desc.clamp = true;
 
     std::map<std::string, uint32_t> textures;
@@ -102,9 +101,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                             stbi_image_free(img_data);
                             img_data = nullptr;
                             fprintf(stderr, "tjDecompress error %i\n", res2);
+                            return 0xffffffff;
                         }
                     } else {
                         fprintf(stderr, "tjDecompressHeader error %i\n", res);
+                        return 0xffffffff;
                     }
                 } else {
                     stbi_set_flip_vertically_on_load(1);
@@ -969,7 +970,7 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
          bbox_max = Ren::Vec3f{std::numeric_limits<float>::lowest()};
 
     auto grid_index = [&](Ren::Vec3f p) -> int {
-        p = (p - bbox_min) / (bbox_max - bbox_min);
+        p = (p - bbox_min) / (bbox_max - bbox_min + Ren::Vec3f{std::numeric_limits<float>::epsilon()});
         p *= float(SearchGridRes);
 
         const int ix = int(p[0]);
