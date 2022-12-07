@@ -343,7 +343,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         }
     }
 
-    if (ui_enabled_) {
+    if (ui_enabled_ && time_total) {
         const int UiWidth = 196;
         const int UiHeight = 72;
 
