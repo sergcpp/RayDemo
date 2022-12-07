@@ -209,6 +209,7 @@ stages:
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --samples 1024 --psnr 33.49 --threshold 317 --diff_depth 2'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS.split(" ") -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/bathroom.json -w 678 -h 900 $AUX_TEST_ARGS.split(" ") -ref assets/references/bathroom_cycles.png --samples 1024 --psnr 27.41 --threshold 7012 --refr_depth 12 --total_depth 12'
   artifacts:
     when: always
     name: "$env:CI_JOB_NAME"
@@ -225,6 +226,7 @@ stages:
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --samples 1024 --psnr 33.49 --threshold 317 --diff_depth 2'
     #- '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS.split(" ") -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/bathroom.json -w 678 -h 900 $AUX_TEST_ARGS.split(" ") -ref assets/references/bathroom_cycles.png --samples 1024 --psnr 27.41 --threshold 7012 --refr_depth 12 --total_depth 12'
   artifacts:
     when: always
     name: "$env:CI_JOB_NAME"
@@ -263,6 +265,7 @@ stages:
     - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --samples 1024 --psnr 33.49 --threshold 317 --diff_depth 2
     - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2
     - ./$BIN_DIR/DemoApp -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12
+    - ./$BIN_DIR/DemoApp -s assets/scenes/bathroom.json -w 678 -h 900 $AUX_TEST_ARGS -ref assets/references/bathroom_cycles.png --samples 1024 --psnr 27.41 --threshold 7012 --refr_depth 12 --total_depth 12
   artifacts:
     when: always
     name: "$CI_JOB_NAME"
@@ -279,6 +282,7 @@ stages:
     - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --samples 1024 --psnr 33.49 --threshold 317 --diff_depth 2
     - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2
     - ./$BIN_DIR/DemoApp -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12
+    - ./$BIN_DIR/DemoApp -s assets/scenes/bathroom.json -w 678 -h 900 $AUX_TEST_ARGS -ref assets/references/bathroom_cycles.png --samples 1024 --psnr 27.41 --threshold 7012 --refr_depth 12 --total_depth 12
   artifacts:
     when: always
     name: "$CI_JOB_NAME"
