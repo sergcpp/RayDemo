@@ -55,6 +55,8 @@ class GSRayTest : public GameState {
     unsigned int time_acc_ = 0;
     int time_counter_ = 0;
 
+    int total_depth_ = 0;
+
     bool ui_enabled_ = true;
 
     uint64_t test_start_time_ = 0;

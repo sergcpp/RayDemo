@@ -130,7 +130,7 @@ void GSRayTest::Enter() {
     cam_desc.max_spec_depth = app_params->spec_depth;
     cam_desc.max_refr_depth = app_params->refr_depth;
     cam_desc.max_transp_depth = app_params->transp_depth;
-    cam_desc.max_total_depth = app_params->total_depth;
+    cam_desc.max_total_depth = total_depth_ = app_params->total_depth;
 
     ray_scene_->SetCamera(0, cam_desc);
 
@@ -185,8 +185,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             cam_desc.max_total_depth = 1;
             last_invalidate_ = true;
         } else {
-            cam_desc.max_refr_depth = 9;
-            cam_desc.max_total_depth = 9;
+            cam_desc.max_total_depth = total_depth_;
             if (last_invalidate_) {
                 invalidate_preview_ = true;
                 last_invalidate_ = false;
