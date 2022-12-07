@@ -13,7 +13,7 @@
 #include "ui/FontStorage.h"
 
 Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams &_app_params, const int gpu_mode,
-               const bool nobindless)
+               const bool nobindless, const bool nocompression)
     : GameBase(w, h, local_dir) {
     auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
     auto log = GetComponent<Ray::ILog>(LOG_KEY);
@@ -82,6 +82,7 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
         } else {
             s.use_hwrt = (gpu_mode == 2);
             s.use_bindless = !nobindless;
+            s.use_tex_compression = !nocompression;
             ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get()));
         }
 

@@ -62,7 +62,7 @@ DemoApp::DemoApp() : quit_(false) { g_app = this; }
 DemoApp::~DemoApp() {}
 
 int DemoApp::Init(int w, int h, const char *scene_name, const char *ref_name, const char *device_name, bool nogpu,
-                  bool nohwrt, bool nobindless, int samples, double min_psnr, int threshold) {
+                  bool nohwrt, bool nobindless, bool nocompression, int samples, double min_psnr, int threshold) {
 #if !defined(__ANDROID__)
 #ifdef _WIN32
     int dpi_result = SetProcessDPIAware();
@@ -108,7 +108,8 @@ int DemoApp::Init(int w, int h, const char *scene_name, const char *ref_name, co
 #endif
 
     try {
-        CreateViewer(w, h, scene_name, ref_name, device_name, nogpu, nohwrt, nobindless, samples, min_psnr, threshold);
+        CreateViewer(w, h, scene_name, ref_name, device_name, nogpu, nohwrt, nobindless, nocompression, samples,
+                     min_psnr, threshold);
     } catch (std::exception &e) {
         fprintf(stderr, "%s", e.what());
         return -1;
@@ -155,6 +156,7 @@ int DemoApp::Run(int argc, char *argv[]) {
     nogpu_ = false;
     nohwrt_ = false;
     nobindless_ = false;
+    nocompression_ = false;
     samples_ = -1;
     min_psnr_ = 0.0;
     threshold_ = -1;
@@ -176,6 +178,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             nohwrt_ = true;
         } else if (strcmp(argv[i], "--nobindless") == 0) {
             nobindless_ = true;
+        } else if (strcmp(argv[i], "--nocompression") == 0) {
+            nocompression_ = true;
         } else if (strcmp(argv[i], "--samples") == 0 && (++i != argc)) {
             samples_ = atoi(argv[i]);
         } else if (strcmp(argv[i], "--psnr") == 0 && (++i != argc)) {
@@ -197,8 +201,8 @@ int DemoApp::Run(int argc, char *argv[]) {
         }
     }
 
-    if (Init(w, h, scene_name_.c_str(), ref_name_.c_str(), device_name, nogpu_, nohwrt_, nobindless_, samples_,
-             min_psnr_, threshold_) < 0) {
+    if (Init(w, h, scene_name_.c_str(), ref_name_.c_str(), device_name, nogpu_, nohwrt_, nobindless_, nocompression_,
+             samples_, min_psnr_, threshold_) < 0) {
         return -1;
     }
 
@@ -374,7 +378,8 @@ void DemoApp::PollEvents() {
 }
 
 void DemoApp::CreateViewer(int w, int h, const char *scene_name, const char *ref_name, const char *device_name,
-                           bool nogpu, bool nohwrt, bool nobindless, int samples, double psnr, int threshold) {
+                           bool nogpu, bool nohwrt, bool nobindless, bool nocompression, int samples, double psnr,
+                           int threshold) {
     if (viewer_) {
         w = viewer_->width;
         h = viewer_->height;
@@ -399,6 +404,6 @@ void DemoApp::CreateViewer(int w, int h, const char *scene_name, const char *ref
     app_params.transp_depth = transp_depth_;
     app_params.total_depth = total_depth_;
 
-    viewer_.reset(new Viewer(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2), nobindless));
+    viewer_.reset(new Viewer(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2), nobindless, nocompression));
     p_input_manager_ = viewer_->GetComponent<InputManager>(INPUT_MANAGER_KEY);
 }
