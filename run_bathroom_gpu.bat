@@ -1,1 +1,1 @@
-DemoApp.exe -w 678 -h 900 -s assets/scenes/bathroom.json
+DemoApp.exe -w 632 -h 840 -s assets/scenes/bathroom.json --refr_depth 12 --total_depth 12
