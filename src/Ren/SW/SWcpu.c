@@ -15,7 +15,7 @@
 void swCInfoInit(SWcpu_info *info) {
     memset(info, 0, sizeof(SWcpu_info));
 
-    info->vendor = strdup("Unknown");
+    info->vendor = _strdup("Unknown");
     //info->model = "Unknown";
     info->num_cpus = 0;
     info->physical_memory = 0;
@@ -38,7 +38,7 @@ void swCInfoInit(SWcpu_info *info) {
             memcpy(CPUBrandString + 32, CPUInfo, sizeof(CPUInfo));
     }
 
-    info->model = strdup(CPUBrandString);
+    info->model = _strdup(CPUBrandString);
 
     SYSTEM_INFO sys_info;
     GetSystemInfo(&sys_info);
