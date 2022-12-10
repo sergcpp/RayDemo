@@ -217,6 +217,7 @@ stages:
       - ai043_01.png
       - sponza.png
       - coffee_maker.png
+      - bathroom.png
     expire_in: 1 week
 
 .windows-gpu-test-img-job:
@@ -234,6 +235,7 @@ stages:
       - ai043_01.png
       #- sponza.png
       - coffee_maker.png
+      - bathroom.png
     expire_in: 1 week
 
 .test-job:
@@ -273,6 +275,7 @@ stages:
       - ai043_01.png
       - sponza.png
       - coffee_maker.png
+      - bathroom.png
     expire_in: 1 week
 
 .gpu-test-img-job:
@@ -290,6 +293,7 @@ stages:
       - ai043_01.png
       - sponza.png
       - coffee_maker.png
+      - bathroom.png
     expire_in: 1 week
 
 windows-x86_64-build-job:
