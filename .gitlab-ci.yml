@@ -210,6 +210,7 @@ stages:
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS.split(" ") -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS.split(" ") -ref assets/references/bathroom_cycles.png --samples 1024 --psnr 27.41 --threshold 6101 --refr_depth 12 --total_depth 12'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/staircase.json -w 720 -h 900 $AUX_TEST_ARGS.split(" ") -ref assets/references/staircase_cycles.png --samples 1024 --psnr 38.07 --threshold 121 --refr_depth 12 --total_depth 12'
   artifacts:
     when: always
     name: "$env:CI_JOB_NAME"
@@ -218,6 +219,7 @@ stages:
       - sponza.png
       - coffee_maker.png
       - bathroom.png
+      - staircase.png
     expire_in: 1 week
 
 .windows-gpu-test-img-job:
@@ -228,6 +230,7 @@ stages:
     #- '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS.split(" ") -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS.split(" ") -ref assets/references/bathroom_cycles.png --samples 1024 --psnr 27.41 --threshold 6101 --refr_depth 12 --total_depth 12'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/staircase.json -w 720 -h 900 $AUX_TEST_ARGS.split(" ") -ref assets/references/staircase_cycles.png --samples 1024 --psnr 38.07 --threshold 121 --refr_depth 12 --total_depth 12'
   artifacts:
     when: always
     name: "$env:CI_JOB_NAME"
@@ -236,6 +239,7 @@ stages:
       #- sponza.png
       - coffee_maker.png
       - bathroom.png
+      - staircase.png
     expire_in: 1 week
 
 .test-job:
@@ -268,6 +272,7 @@ stages:
     - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2
     - ./$BIN_DIR/DemoApp -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12
     - ./$BIN_DIR/DemoApp -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS -ref assets/references/bathroom_cycles.png --samples 1024 --psnr 27.41 --threshold 6101 --refr_depth 12 --total_depth 12
+    - ./$BIN_DIR/DemoApp -s assets/scenes/staircase.json -w 720 -h 900 $AUX_TEST_ARGS -ref assets/references/staircase_cycles.png --samples 1024 --psnr 38.07 --threshold 121 --refr_depth 12 --total_depth 12
   artifacts:
     when: always
     name: "$CI_JOB_NAME"
@@ -276,6 +281,7 @@ stages:
       - sponza.png
       - coffee_maker.png
       - bathroom.png
+      - staircase.png
     expire_in: 1 week
 
 .gpu-test-img-job:
@@ -286,6 +292,7 @@ stages:
     - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2
     - ./$BIN_DIR/DemoApp -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12
     - ./$BIN_DIR/DemoApp -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS -ref assets/references/bathroom_cycles.png --samples 1024 --psnr 27.41 --threshold 6101 --refr_depth 12 --total_depth 12
+    - ./$BIN_DIR/DemoApp -s assets/scenes/staircase.json -w 720 -h 900 $AUX_TEST_ARGS -ref assets/references/staircase_cycles.png --samples 1024 --psnr 38.07 --threshold 121 --refr_depth 12 --total_depth 12
   artifacts:
     when: always
     name: "$CI_JOB_NAME"
@@ -294,6 +301,7 @@ stages:
       - sponza.png
       - coffee_maker.png
       - bathroom.png
+      - staircase.png
     expire_in: 1 week
 
 windows-x86_64-build-job:
