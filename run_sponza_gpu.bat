@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/sponza_simple.json
+DemoApp.exe -s assets/scenes/sponza.json -w 960 -h 540
