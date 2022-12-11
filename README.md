@@ -13,6 +13,6 @@ Library part is here: https://github.com/sergcpp/Ray
   <img src="staircase.png" width="45.35%" />
 </div>
 <div float="left" >
-  <img src="bathroom.png" width="89.65%" />
+  <img src="bathroom.png" width="89.84%" />
 </div>
 </div>
