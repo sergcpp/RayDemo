@@ -9,10 +9,10 @@ Library part is here: https://github.com/sergcpp/Ray
   <img src="sponza.png" width="49%" />
 </div>
 <div float="left" >
-  <img src="coffee_maker.png" width="44.75%" />
-  <img src="staircase.png" width="44.75%" />
+  <img src="coffee_maker.png" width="44.1%" />
+  <img src="staircase.png" width="45.35%" />
 </div>
 <div float="left" >
-  <img src="bathroom.png" width="89.75%" />
+  <img src="bathroom.png" width="89.65%" />
 </div>
 </div>
