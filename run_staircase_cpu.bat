@@ -1,1 +1,1 @@
-DemoApp.exe -w 800 -h 1000 -s assets/scenes/staircase.json --nogpu
+DemoApp.exe -w 720 -h 900 -s assets/scenes/staircase.json --nogpu
