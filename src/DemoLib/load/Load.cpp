@@ -776,6 +776,65 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     if (new_light.color[0] > 0.0f && new_light.color[1] > 0.0f && new_light.color[2] > 0.0f) {
                         new_scene->AddLight(new_light);
                     }
+                } else if (js_light_type.val == "spot") {
+                    Ray::spot_light_desc_t new_light;
+
+                    new_light.color[0] = float(js_color.at(0).as_num().val);
+                    new_light.color[1] = float(js_color.at(1).as_num().val);
+                    new_light.color[2] = float(js_color.at(2).as_num().val);
+
+                    new_light.position[0] = transform[3][0];
+                    new_light.position[1] = transform[3][1];
+                    new_light.position[2] = transform[3][2];
+
+                    new_light.direction[0] = -transform[1][0];
+                    new_light.direction[1] = -transform[1][1];
+                    new_light.direction[2] = -transform[1][2];
+
+                    new_light.radius = 1.0f;
+                    if (js_light_obj.Has("radius")) {
+                        const JsNumber &js_radius = js_light_obj.at("radius").as_num();
+                        new_light.radius = float(js_radius.val);
+                    }
+
+                    new_light.spot_size = 45.0f;
+                    if (js_light_obj.Has("spot_size")) {
+                        const JsNumber &js_spot_size = js_light_obj.at("spot_size").as_num();
+                        new_light.spot_size = float(js_spot_size.val);
+                    }
+
+                    new_light.spot_blend = 0.15f;
+                    if (js_light_obj.Has("spot_blend")) {
+                        const JsNumber &js_spot_blend = js_light_obj.at("spot_blend").as_num();
+                        new_light.spot_blend = float(js_spot_blend.val);
+                    }
+
+                    float power = 1.0f;
+                    if (js_light_obj.Has("power")) {
+                        const JsNumber &js_power = js_light_obj.at("power").as_num();
+                        power = float(js_power.val);
+                    }
+
+                    if (js_light_obj.Has("visible")) {
+                        const JsLiteral &js_visible = js_light_obj.at("visible").as_lit();
+                        new_light.visible = (js_visible.val == JsLiteralType::True);
+                    }
+
+                    if (js_light_obj.Has("cast_shadow")) {
+                        const JsLiteral &js_cast_shadow = js_light_obj.at("cast_shadow").as_lit();
+                        new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
+                    }
+
+                    float mul = power / (4.0f * Ren::Pi<float>() * new_light.radius * new_light.radius);
+                    mul /= Ren::Pi<float>(); // ???
+
+                    new_light.color[0] *= mul;
+                    new_light.color[1] *= mul;
+                    new_light.color[2] *= mul;
+
+                    if (new_light.color[0] > 0.0f && new_light.color[1] > 0.0f && new_light.color[2] > 0.0f) {
+                        new_scene->AddLight(new_light);
+                    }
                 } else if (js_light_type.val == "rectangle") {
                     Ray::rect_light_desc_t new_light;
 
