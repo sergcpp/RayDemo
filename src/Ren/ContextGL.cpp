@@ -55,7 +55,7 @@ void Ren::Context::Init(int w, int h) {
     Mesh::max_gpu_bones = max_uniform_vec4 / 8;
     printf("\tBones per pass\t: %i\n", Mesh::max_gpu_bones);
     char buff[16];
-    sprintf(buff, "%i", Mesh::max_gpu_bones);
+    snprintf(buff, sizeof(buff), "%i", Mesh::max_gpu_bones);
     /*glsl_defines_ += "#define MAX_GPU_BONES ";
     glsl_defines_ += buff;
     glsl_defines_ += "\r\n";*/

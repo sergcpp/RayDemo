@@ -50,7 +50,7 @@ inline ThreadPool::ThreadPool(size_t threads_count, const char *threads_name)
         workers_.emplace_back([this, i, threads_name] {
             if (threads_name) {
                 char name_buf[64];
-                sprintf(name_buf, "%s_%i", threads_name, int(i));
+                snprintf(name_buf, sizeof(name_buf), "%s_%i", threads_name, int(i));
                 __itt_thread_set_name(name_buf);
             } else {
                 __itt_thread_set_name("Worker thread");
@@ -146,9 +146,9 @@ inline QThreadPool::QThreadPool(const int threads_count, const int q_count,
         workers_.emplace_back([this, i, threads_name] {
             char name_buf[64];
             if (threads_name) {
-                sprintf(name_buf, "%s_%i", threads_name, int(i));
+                snprintf(name_buf, sizeof(name_buf), "%s_%i", threads_name, int(i));
             } else {
-                sprintf(name_buf, "worker_thread_%i", int(i));
+                snprintf(name_buf, sizeof(name_buf), "worker_thread_%i", int(i));
             }
             __itt_thread_set_name(name_buf);
 
