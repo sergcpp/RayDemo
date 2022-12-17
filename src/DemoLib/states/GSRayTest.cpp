@@ -49,7 +49,7 @@ void GSRayTest::UpdateRegionContexts() {
     const auto sz = ray_renderer_->size();
 
     if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
-        rt == Ray::RendererAVX2 || rt == Ray::RendererNEON) {
+        rt == Ray::RendererAVX2 || rt == Ray::RendererAVX512 || rt == Ray::RendererNEON) {
         const int BucketSize = 32;
 
         for (int y = 0; y < sz.second; y += BucketSize) {
@@ -204,7 +204,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     const auto rt = ray_renderer_->type();
 
     if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
-        rt == Ray::RendererAVX2 || rt == Ray::RendererNEON) {
+        rt == Ray::RendererAVX2 || rt == Ray::RendererAVX512 || rt == Ray::RendererNEON) {
         auto render_job = [this](const int i) { ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i]); };
 
         std::vector<std::future<void>> events;
@@ -225,7 +225,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     ray_renderer_->ResetStats();
 
     if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
-        rt == Ray::RendererAVX2 || rt == Ray::RendererNEON) {
+        rt == Ray::RendererAVX2 || rt == Ray::RendererAVX512 || rt == Ray::RendererNEON) {
         st.time_primary_ray_gen_us /= threads_->workers_count();
         st.time_primary_trace_us /= threads_->workers_count();
         st.time_primary_shade_us /= threads_->workers_count();
@@ -407,7 +407,9 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                 stat_line[i][2] = 255;
             }
 
-            swBlitPixels(180 + off_x, 4 + (UiHeight - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
+            if (l) {
+                swBlitPixels(180 + off_x, 4 + (UiHeight - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
+            }
             off_x++;
         }
 
