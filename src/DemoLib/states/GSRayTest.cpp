@@ -205,7 +205,12 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
         rt == Ray::RendererAVX2 || rt == Ray::RendererAVX512 || rt == Ray::RendererNEON) {
-        auto render_job = [this](const int i) { ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i]); };
+        auto render_job = [this](const int i) {
+#if !defined(NDEBUG) && defined(_WIN32)
+            _controlfp(_EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
+#endif
+            ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i]);
+        };
 
         std::vector<std::future<void>> events;
 
@@ -665,8 +670,8 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
                 view_dir_ = Normalize(-dir);
             }
 
-            //LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
-            //LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
+            // LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
+            // LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
 
             invalidate_preview_ = true;
             invalidate_timeout_ = 100;
