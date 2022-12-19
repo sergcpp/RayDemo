@@ -383,6 +383,20 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     env_desc.env_map = get_texture(js_env_map.val, false /* srgb */, false /* normalmap */, false);
                 }
 
+                if (js_env.Has("back_col")) {
+                    const JsArray &js_back_col = js_env.at("back_col").as_arr();
+                    env_desc.back_col[0] = float(js_back_col.at(0).as_num().val);
+                    env_desc.back_col[1] = float(js_back_col.at(1).as_num().val);
+                    env_desc.back_col[2] = float(js_back_col.at(2).as_num().val);
+                } else {
+                    memcpy(env_desc.back_col, env_desc.env_col, 3 * sizeof(float));
+                }
+
+                if (js_env.Has("back_map")) {
+                    const JsString &js_back_map = js_env.at("back_map").as_str();
+                    env_desc.back_map = get_texture(js_back_map.val, false /* srgb */, false /* normalmap */, false);
+                }
+
                 if (js_env.Has("multiple_importance")) {
                     const JsLiteral &js_mult_imp = js_env.at("multiple_importance").as_lit();
                     env_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
