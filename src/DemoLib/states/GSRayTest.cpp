@@ -483,7 +483,9 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                 stat_line[i][2] = 255;
             }
 
-            swBlitPixels(180 + off_x, 4 + (UiHeight - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
+            if (l) {
+                swBlitPixels(180 + off_x, 4 + (UiHeight - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
+            }
             off_x++;
         }
 
