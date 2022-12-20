@@ -504,6 +504,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         get_texture(js_normal_map.val, false /* srgb */, true /* normalmap */, false /* mips */);
                 }
 
+                if (js_mat_obj.Has("normal_map_intensity")) {
+                    const JsNumber &js_normal_map_intensity = js_mat_obj.at("normal_map_intensity").as_num();
+                    mat_desc.normal_map_intensity = float(js_normal_map_intensity.val);
+                }
+
                 if (js_mat_obj.Has("roughness")) {
                     const JsNumber &js_roughness = js_mat_obj.at("roughness").as_num();
                     mat_desc.roughness = float(js_roughness.val);
