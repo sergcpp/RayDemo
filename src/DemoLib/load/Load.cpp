@@ -383,6 +383,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     env_desc.env_map = get_texture(js_env_map.val, false /* srgb */, false /* normalmap */, false);
                 }
 
+                if (js_env.Has("env_map_rot")) {
+                    const JsNumber &js_env_map_rot = js_env.at("env_map_rot").as_num();
+                    env_desc.env_map_rotation = float(js_env_map_rot.val) * Ren::Pi<float>() / 180.0f;
+                }
+
                 if (js_env.Has("back_col")) {
                     const JsArray &js_back_col = js_env.at("back_col").as_arr();
                     env_desc.back_col[0] = float(js_back_col.at(0).as_num().val);
@@ -395,6 +400,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 if (js_env.Has("back_map")) {
                     const JsString &js_back_map = js_env.at("back_map").as_str();
                     env_desc.back_map = get_texture(js_back_map.val, false /* srgb */, false /* normalmap */, false);
+                }
+
+                if (js_env.Has("back_map_rot")) {
+                    const JsNumber &js_back_map_rot = js_env.at("back_map_rot").as_num();
+                    env_desc.back_map_rotation = float(js_back_map_rot.val) * Ren::Pi<float>() / 180.0f;
                 }
 
                 if (js_env.Has("multiple_importance")) {
