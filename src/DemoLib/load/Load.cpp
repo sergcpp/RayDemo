@@ -426,8 +426,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             }
 
             if ((js_env.Has("sun_dir") || js_env.Has("sun_rot")) && js_env.Has("sun_col")) {
-                const JsArray &js_sun_col = js_env.at("sun_col").as_arr();
-
                 Ray::directional_light_desc_t sun_desc;
 
                 if (js_env.Has("sun_dir")) {
@@ -453,9 +451,19 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     sun_desc.direction[2] = sun_dir[2];
                 }
 
+                const JsArray &js_sun_col = js_env.at("sun_col").as_arr();
+
                 sun_desc.color[0] = float(js_sun_col.at(0).as_num().val);
                 sun_desc.color[1] = float(js_sun_col.at(1).as_num().val);
                 sun_desc.color[2] = float(js_sun_col.at(2).as_num().val);
+
+                if (js_env.Has("sun_strength")) {
+                    const JsNumber &js_sun_strength = js_env.at("sun_strength").as_num();
+
+                    sun_desc.color[0] *= float(js_sun_strength.val);
+                    sun_desc.color[1] *= float(js_sun_strength.val);
+                    sun_desc.color[2] *= float(js_sun_strength.val);
+                }
 
                 sun_desc.angle = 0.0f;
                 if (js_env.Has("sun_angle")) {
