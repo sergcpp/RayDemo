@@ -231,6 +231,16 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             }
         }
 
+        if (obj.Has("scale")) {
+            const JsArray &js_scale = obj.at("scale").as_arr();
+
+            const float sx = float(js_scale.at(0).as_num().val);
+            const float sy = float(js_scale.at(1).as_num().val);
+            const float sz = float(js_scale.at(2).as_num().val);
+
+            transform = Ren::Scale(transform, {sx, sy, sz});
+        }
+
         return transform;
     };
 
