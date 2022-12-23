@@ -182,7 +182,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         cam_desc.focus_distance = focal_distance_;
 
         if (invalidate_preview_) {
-            cam_desc.max_total_depth = 1;
+            cam_desc.max_total_depth = std::min(1, total_depth_);
             last_invalidate_ = true;
         } else {
             cam_desc.max_total_depth = total_depth_;
