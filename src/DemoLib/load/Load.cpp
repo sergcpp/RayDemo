@@ -820,7 +820,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     new_light.color[1] *= mul;
                     new_light.color[2] *= mul;
 
-                    if (new_light.color[0] > 0.0f && new_light.color[1] > 0.0f && new_light.color[2] > 0.0f) {
+                    if (new_light.color[0] > 0.0f || new_light.color[1] > 0.0f || new_light.color[2] > 0.0f) {
                         new_scene->AddLight(new_light);
                     }
                 } else if (js_light_type.val == "spot") {
@@ -879,7 +879,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     new_light.color[1] *= mul;
                     new_light.color[2] *= mul;
 
-                    if (new_light.color[0] > 0.0f && new_light.color[1] > 0.0f && new_light.color[2] > 0.0f) {
+                    if (new_light.color[0] > 0.0f || new_light.color[1] > 0.0f || new_light.color[2] > 0.0f) {
                         new_scene->AddLight(new_light);
                     }
                 } else if (js_light_type.val == "rectangle") {
@@ -901,12 +901,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.height = float(js_height.val);
                     }
 
-                    float power = 1.0f;
-                    if (js_light_obj.Has("power")) {
-                        const JsNumber &js_power = js_light_obj.at("power").as_num();
-                        power = float(js_power.val);
-                    }
-
                     if (js_light_obj.Has("visible")) {
                         const JsLiteral &js_visible = js_light_obj.at("visible").as_lit();
                         new_light.visible = (js_visible.val == JsLiteralType::True);
@@ -922,14 +916,22 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
-                    float mul = power / (new_light.width * new_light.height);
-                    mul /= 4.0f; // ???
+                    if (!new_light.sky_portal) {
+                        float power = 1.0f;
+                        if (js_light_obj.Has("power")) {
+                            const JsNumber &js_power = js_light_obj.at("power").as_num();
+                            power = float(js_power.val);
+                        }
 
-                    new_light.color[0] *= mul;
-                    new_light.color[1] *= mul;
-                    new_light.color[2] *= mul;
+                        float mul = power / (new_light.width * new_light.height);
+                        mul /= 4.0f; // ???
 
-                    if (new_light.color[0] > 0.0f && new_light.color[1] > 0.0f && new_light.color[2] > 0.0f) {
+                        new_light.color[0] *= mul;
+                        new_light.color[1] *= mul;
+                        new_light.color[2] *= mul;
+                    }
+
+                    if (new_light.color[0] > 0.0f || new_light.color[1] > 0.0f || new_light.color[2] > 0.0f) {
                         new_scene->AddLight(new_light, Ren::ValuePtr(transform));
                     }
                 } else if (js_light_type.val == "disk") {
@@ -951,12 +953,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.size_y = float(js_size_y.val);
                     }
 
-                    float power = 1.0f;
-                    if (js_light_obj.Has("power")) {
-                        const JsNumber &js_power = js_light_obj.at("power").as_num();
-                        power = float(js_power.val);
-                    }
-
                     if (js_light_obj.Has("visible")) {
                         const JsLiteral &js_visible = js_light_obj.at("visible").as_lit();
                         new_light.visible = (js_visible.val == JsLiteralType::True);
@@ -972,13 +968,21 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
-                    const float mul = power / (Ren::Pi<float>() * new_light.size_x * new_light.size_y);
+                    if (!new_light.sky_portal) {
+                        float power = 1.0f;
+                        if (js_light_obj.Has("power")) {
+                            const JsNumber &js_power = js_light_obj.at("power").as_num();
+                            power = float(js_power.val);
+                        }
 
-                    new_light.color[0] *= mul;
-                    new_light.color[1] *= mul;
-                    new_light.color[2] *= mul;
+                        const float mul = power / (Ren::Pi<float>() * new_light.size_x * new_light.size_y);
 
-                    if (new_light.color[0] > 0.0f && new_light.color[1] > 0.0f && new_light.color[2] > 0.0f) {
+                        new_light.color[0] *= mul;
+                        new_light.color[1] *= mul;
+                        new_light.color[2] *= mul;
+                    }
+
+                    if (new_light.color[0] > 0.0f || new_light.color[1] > 0.0f || new_light.color[2] > 0.0f) {
                         new_scene->AddLight(new_light, Ren::ValuePtr(transform));
                     }
                 } else if (js_light_type.val == "line") {
@@ -1000,12 +1004,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.height = float(js_height.val);
                     }
 
-                    float power = 1.0f;
-                    if (js_light_obj.Has("power")) {
-                        const JsNumber &js_power = js_light_obj.at("power").as_num();
-                        power = float(js_power.val);
-                    }
-
                     if (js_light_obj.Has("visible")) {
                         const JsLiteral &js_visible = js_light_obj.at("visible").as_lit();
                         new_light.visible = (js_visible.val == JsLiteralType::True);
@@ -1021,13 +1019,21 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
-                    const float mul = power / (2.0f * Ren::Pi<float>() * new_light.radius * new_light.height);
+                    if (!new_light.sky_portal) {
+                        float power = 1.0f;
+                        if (js_light_obj.Has("power")) {
+                            const JsNumber &js_power = js_light_obj.at("power").as_num();
+                            power = float(js_power.val);
+                        }
 
-                    new_light.color[0] *= mul;
-                    new_light.color[1] *= mul;
-                    new_light.color[2] *= mul;
+                        const float mul = power / (2.0f * Ren::Pi<float>() * new_light.radius * new_light.height);
 
-                    if (new_light.color[0] > 0.0f && new_light.color[1] > 0.0f && new_light.color[2] > 0.0f) {
+                        new_light.color[0] *= mul;
+                        new_light.color[1] *= mul;
+                        new_light.color[2] *= mul;
+                    }
+
+                    if (new_light.color[0] > 0.0f || new_light.color[1] > 0.0f || new_light.color[2] > 0.0f) {
                         new_scene->AddLight(new_light, Ren::ValuePtr(transform));
                     }
                 }
