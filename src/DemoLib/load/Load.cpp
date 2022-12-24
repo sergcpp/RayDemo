@@ -659,11 +659,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     node_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
                 }
 
-                if (js_mat_obj.Has("sky_portal")) {
-                    const JsLiteral &js_sky_portal = js_mat_obj.at("sky_portal").as_lit();
-                    node_desc.sky_portal = (js_sky_portal.val == JsLiteralType::True);
-                }
-
                 if (js_mat_obj.Has("fresnel")) {
                     const JsNumber &js_fresnel = js_mat_obj.at("fresnel").as_num();
                     node_desc.fresnel = float(js_fresnel.val);
