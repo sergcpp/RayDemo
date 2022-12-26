@@ -317,6 +317,13 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 view_targeted = true;
             }
 
+            if (js_cam.Has("shift")) {
+                const JsArray &js_shift = js_cam.at("shift").as_arr();
+
+                cam_desc.shift[0] = float(js_shift.at(0).as_num().val);
+                cam_desc.shift[1] = float(js_shift.at(1).as_num().val);
+            }
+
             if (js_cam.Has("fov")) {
                 const JsNumber &js_view_fov = js_cam.at("fov").as_num();
                 cam_desc.fov = float(js_view_fov.val);
