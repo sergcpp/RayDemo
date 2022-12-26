@@ -291,6 +291,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         }
 
         WritePNG(pixel_data, w, h, 3, false /* flip */, (base_name + ".png").c_str());
+        LOGI("Written: %s (%i samples)", (base_name + ".png").c_str(), region_contexts_[0].iteration);
     }
 
     const bool should_compare_result = write_output && !app_params->ref_name.empty();
