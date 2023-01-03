@@ -274,7 +274,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     write_output &= (region_contexts_[0].iteration % 128) == 0;
     if (app_params->samples != -1) {
         // write output image once target sample count has been reached
-        write_output |= (region_contexts_[0].iteration >= app_params->samples);
+        write_output |= (region_contexts_[0].iteration == app_params->samples);
     }
 
     if (write_output) {
