@@ -20,8 +20,7 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
 
     JsObject main_config;
 
-    {
-        // load config
+    { // load config
         Sys::AssetFile config_file("assets/config.json");
         size_t config_file_size = config_file.size();
         std::unique_ptr<char[]> buf(new char[config_file_size]);
@@ -37,8 +36,7 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
 
     const JsObject &ui_settings = main_config.at("ui_settings").as_obj();
 
-    {
-        // load fonts
+    { // load fonts
         auto font_storage = std::make_shared<FontStorage>();
         AddComponent(UI_FONTS_KEY, font_storage);
 
@@ -61,8 +59,7 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
         AddComponent(APP_PARAMS_KEY, app_params);
     }
 
-    {
-        // create ray renderer
+    { // create ray renderer
         Ray::settings_t s;
         s.w = w;
         s.h = h;
