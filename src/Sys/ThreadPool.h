@@ -158,7 +158,7 @@ inline QThreadPool::QThreadPool(const int threads_count, const int q_count,
 
                 {
                     std::unique_lock<std::mutex> lock(q_mtx_);
-                    condition_.wait(lock, [this, i, &q_index] {
+                    condition_.wait(lock, [this, &q_index] {
                         for (int j = 0; j < int(tasks_.size()); j++) {
                             if (!q_active_[j] && !tasks_[j].empty()) {
                                 q_index = j;

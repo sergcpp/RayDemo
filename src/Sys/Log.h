@@ -8,10 +8,6 @@
 #else
 #include <cstdio>
 #include <ctime>
-//#define  LOGI(...) fprintf(stdout, "\n" __VA_ARGS__)
-
-//tm _tm;                                                                     \
-//localtime_s(&_tm, &now);                                                    \
 
 #define  LOGI(...) {                                                            \
     char buff[27];                                                              \

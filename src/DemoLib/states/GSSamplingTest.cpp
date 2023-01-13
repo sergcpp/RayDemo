@@ -161,17 +161,10 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
 
                 for (uint32_t ny = 0; ny < nsamplesy; ++ny) {
                     for (uint32_t nx = 0; nx < nsamplesx; ++nx) {
-                        int last_ndx = ndx;
+                        //int last_ndx = ndx;
                         //ndx = ((y - 3 * (height / 4)) * width + x) * nsamplesx * sample_limit * 31 + i * nsamplesx + nx;
                         ndx = ((y - 3 * (height / 4)) * width + x) * 31 + i * nsamplesx + nx;
                         //ndx = (i * (width + height) + x) * nsamplesx + nx;
-                        //if (!(last_ndx == 0 || last_ndx + 1 == ndx)) {
-                        //__debugbreak();
-                        //}
-
-                        if (x == 0 && (y - 3 * (height / 4)) == 0) {
-                            volatile int ii = 0;
-                        }
 
                         float ff = construct_float(hash(x));
 
@@ -191,7 +184,6 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
                 pixels_[4 * (y * width + x) + 1] = pixels_[4 * (y * width + x) + 2] = pixels_[4 * (y * width + x) + 0];
                 pixels_[4 * (y * width + x) + 3] = 1.0f;
             }
-            volatile int ii = 0;
         }
     }
 #endif

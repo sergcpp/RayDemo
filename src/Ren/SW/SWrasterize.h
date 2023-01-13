@@ -39,7 +39,6 @@ sw_inline void _swProcessPixelLine(SWprogram *p, SWframebuffer *f, SWint x, SWin
 sw_inline void _swProcessLine(SWprogram *p, SWframebuffer *f,
                               SWfloat vs_out1[SW_MAX_VTX_ATTRIBS], SWfloat vs_out2[SW_MAX_VTX_ATTRIBS],
                               SWint b_depth_test, SWint b_depth_write) {
-    SWfloat t = 0.0f;
     SWint x, p0[2], p1[2];
 
     _swProjectOnScreen(f, vs_out1, p0);
@@ -92,7 +91,6 @@ sw_inline void _swProcessLine(SWprogram *p, SWframebuffer *f,
         sw_add(fs_res, fs_delta, p->v_out_size);
 
         error2 += derror2;
-        t += dt;
 
         if (error2 > dx) {
             y += (p1[1] > p0[1] ? 1 : -1);
@@ -473,15 +471,11 @@ sw_inline void _swProcessTriangle_nocorrect(SWprogram *p, SWframebuffer *f, SWfl
             if (full_cover) {
                 SWint ix, iy;
                 for (iy = y; iy < y + SW_TILE_SIZE; iy++) {
-                    SWint Cx1 = Cy1, Cx3 = Cy3;
                     for (ix = x; ix < x + SW_TILE_SIZE; ix++) {
                         _swProcessPixel_nocorrect(p, f, ix, iy, vs_interpolated,
                                                   depth_test, b_depth_write, b_blend);
 
                         sw_add(vs_interpolated, vs_dx, num_attributes);
-
-                        Cx1 -= d01[1];
-                        Cx3 -= d20[1];
                     }
 
                     sw_add(vs_interpolated, vs_dy, num_attributes);
