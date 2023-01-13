@@ -148,7 +148,7 @@ void GSCPUTest::Draw(uint64_t dt_us) {
             font_->set_scale(1.0f);
         }
 
-        float font_height = font_->height(ui_root_.get());
+        //float font_height = font_->height(ui_root_.get());
         //font_->DrawText(ui_renderer_.get(), "regular", { 0.25f, 1 - font_height }, ui_root_.get());
         //font_->DrawText(ui_renderer_.get(), "random", { 0.25f, 1 - 2 * 0.25f - font_height }, ui_root_.get());
         //font_->DrawText(ui_renderer_.get(), "jittered", { 0.25f, 1 - 2 * 0.5f - font_height }, ui_root_.get());

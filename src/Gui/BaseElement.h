@@ -35,7 +35,7 @@ protected:
     std::bitset<32>     flags_;
 public:
     BaseElement(const Vec2f &pos, const Vec2f &size, const BaseElement *parent);
-    ~BaseElement() {}
+    virtual ~BaseElement() {}
 
     bool visible() const {
         return flags_[Visible];

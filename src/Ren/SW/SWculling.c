@@ -162,16 +162,12 @@ sw_inline void _swProcessTriangle(SWzbuffer *zbuf, const SWfloat *v0, const SWfl
             if (full_cover) {
                 SWint ix, iy;
                 for (iy = y; iy < y + SW_TILE_SIZE; iy++) {
-                    SWint Cx1 = Cy1, Cx3 = Cy3;
                     for (ix = x; ix < x + SW_TILE_SIZE; ix++) {
                         if (!depth_test || swZbufTestDepth(zbuf, ix, iy, vs_interpolated[2])) {
                             swZbufSetDepth(zbuf, ix, iy, sw_min(vs_interpolated[2], zbuf->zmax));
                         }
 
                         sw_add_3(vs_interpolated, vs_dx);
-
-                        Cx1 -= d01[1];
-                        Cx3 -= d20[1];
                     }
 
                     sw_add_3(vs_interpolated, vs_dy);
@@ -326,7 +322,6 @@ sw_inline SWint _swTestTriangle(const SWzbuffer *zbuf, const SWfloat *v0, const 
             if (full_cover) {
                 SWint ix, iy;
                 for (iy = y; iy < y + SW_TILE_SIZE; iy++) {
-                    SWint Cx1 = Cy1, Cx3 = Cy3;
                     for (ix = x; ix < x + SW_TILE_SIZE; ix++) {
                         SWfloat z = swZbufGetDepth(zbuf, ix, iy);
                         if (z == zbuf->zmax || (z - vs_interpolated[2]) > -eps) {
@@ -334,9 +329,6 @@ sw_inline SWint _swTestTriangle(const SWzbuffer *zbuf, const SWfloat *v0, const 
                         }
 
                         sw_add_3(vs_interpolated, vs_dx);
-
-                        Cx1 -= d01[1];
-                        Cx3 -= d20[1];
                     }
 
                     sw_add_3(vs_interpolated, vs_dy);

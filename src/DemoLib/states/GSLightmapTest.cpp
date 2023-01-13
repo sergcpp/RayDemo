@@ -141,7 +141,7 @@ void GSLightmapTest::Enter() {
         cam_desc.no_background = true;
         cam_desc.output_sh = true;
 
-        uint32_t cam_index = ray_scene_->AddCamera(cam_desc);
+        //uint32_t cam_index = ray_scene_->AddCamera(cam_desc);
         //ray_scene_->set_current_cam(cam_index);
     }
 
@@ -251,7 +251,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     int w, h;
 
     std::tie(w, h) = ray_renderer_->size();
-    const auto *pixel_data = ray_renderer_->get_pixels_ref();
+    //const auto *pixel_data = ray_renderer_->get_pixels_ref();
 
 #if defined(USE_SW_RENDER)
 #if 0
@@ -262,11 +262,11 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     static std::vector<Ray::pixel_color_t> temp_buf;
     temp_buf.resize(w * h);
 
-    const float Y0 = std::sqrt(1.0f / (4.0f * Ren::Pi<float>()));
-    const float Y1 = std::sqrt(3.0f / (4.0f * Ren::Pi<float>()));
+    //const float Y0 = std::sqrt(1.0f / (4.0f * Ren::Pi<float>()));
+    //const float Y1 = std::sqrt(3.0f / (4.0f * Ren::Pi<float>()));
 
-    const float A0 = Ren::Pi<float>() / std::sqrt(4 * Ren::Pi<float>());
-    const float A1 = std::sqrt(Ren::Pi<float>() / 3);
+    //const float A0 = Ren::Pi<float>() / std::sqrt(4 * Ren::Pi<float>());
+    //const float A1 = std::sqrt(Ren::Pi<float>() / 3);
 
     const float AY0 = 0.25f;
     const float AY1 = 0.5f;

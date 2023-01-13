@@ -263,7 +263,7 @@ void GSRayBucketTest::Draw(uint64_t dt_us) {
         invalidate_preview_ = false;
     }
 
-    const auto rt = ray_renderer_->type();
+    //const auto rt = ray_renderer_->type();
 
     int w, h;
 

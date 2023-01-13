@@ -406,20 +406,20 @@ void GSHDRTest::Draw(uint64_t dt_us) {
             }
         }*/
 
-        auto sample_env_r = [&](float theta, float phi) -> double { return sample_env(theta, phi)[0]; };
+        //auto sample_env_r = [&](float theta, float phi) -> double { return sample_env(theta, phi)[0]; };
 
-        auto sample_env_g = [&](float theta, float phi) -> double { return sample_env(theta, phi)[1]; };
+        //auto sample_env_g = [&](float theta, float phi) -> double { return sample_env(theta, phi)[1]; };
 
-        auto sample_env_b = [&](float theta, float phi) -> double { return sample_env(theta, phi)[2]; };
+        //auto sample_env_b = [&](float theta, float phi) -> double { return sample_env(theta, phi)[2]; };
 
-        auto sample_env2 = [this](float theta, float phi) -> double {
-            return std::max(0.0, 5.0 * std::cos(theta) - 4.0) +
-                   std::max(0.0, -4.0 * std::sin(theta - Ren::Pi<float>()) * std::cos(phi - 2.5) - 3.0);
-        };
+        //auto sample_env2 = [](float theta, float phi) -> double {
+        //    return std::max(0.0, 5.0 * std::cos(theta) - 4.0) +
+        //           std::max(0.0, -4.0 * std::sin(theta - Ren::Pi<float>()) * std::cos(phi - 2.5) - 3.0);
+        //};
 
-        const int bands_count = 2, coeff_count = bands_count * bands_count;
+        //const int bands_count = 2, coeff_count = bands_count * bands_count;
 
-        const int sample_count = 1024 * 128;
+        //const int sample_count = 1024 * 128;
 
         //double sh_result[3][coeff_count];
 
@@ -503,7 +503,7 @@ void GSHDRTest::Draw(uint64_t dt_us) {
     }
 
     std::function<Vec2f(int, Vec2f)> sample_quadtree;
-    sample_quadtree = [this, &sample_quadtree](int lod, Vec2f origin) -> Vec2f {
+    sample_quadtree = [this](int lod, Vec2f origin) -> Vec2f {
         int res = (quadtree_res_ >> lod);
         float step = 1.0f / float(res);
 
@@ -552,7 +552,7 @@ void GSHDRTest::Draw(uint64_t dt_us) {
     };
 
     for (int i = 0; i < 1; ++i) {
-        auto r = Vec2f{random_->GetNormalizedFloat(), random_->GetNormalizedFloat()};
+        //auto r = Vec2f{random_->GetNormalizedFloat(), random_->GetNormalizedFloat()};
 
 #if 0
         const float theta = std::acos(1.0f - 2.0f * r[1]);
