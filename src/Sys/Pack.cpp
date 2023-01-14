@@ -29,6 +29,8 @@ void Sys::ReadPackage(const char *pack_name, onfile_func on_file) {
 
         on_file(f.name, buf.get(), f.size);
     }
+
+    (void)file_size;
 }
 
 #ifndef __ANDROID__
@@ -74,6 +76,8 @@ std::vector<Sys::FileDesc> Sys::EnumFilesInPackage(const char *pack_name) {
         in_file.Read((char *)&f, sizeof(FileDesc));
         assert(f.off + f.size <= file_size);
     }
+
+    (void)file_size;
 
     return file_list;
 }
