@@ -36,6 +36,33 @@ stages:
       - windows-x86_64/
     expire_in: 1 week
 
+.windows-x86_64-build-clang-job:
+  stage: build
+  tags:
+    - windows
+  script:
+    - echo "Compiling the code..."
+    - mkdir build
+    - cd build
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -T ClangCL -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - cmake --build build --target ALL_BUILD --config Release --parallel 16
+    - cmake --build build --target ALL_BUILD --config Debug --parallel 16
+    - cmake --build build --target ALL_BUILD --config RelWithDebInfo --parallel 16
+    - echo "Compile complete."
+    - mkdir windows-x86_64_clang
+    - copy build/src/Eng/tests/Release/test_Eng.exe windows-x86_64_clang
+    - copy build/src/Ray/tests/Release/test_Ray.exe windows-x86_64_clang
+    - copy build/src/Ren/tests/Release/test_Ren.exe windows-x86_64_clang
+    - copy build/src/Ren/SW/tests/Release/test_SW.exe windows-x86_64_clang
+    - copy build/src/Sys/tests/Release/test_Sys.exe windows-x86_64_clang
+    - copy DemoApp.exe windows-x86_64_clang
+  artifacts:
+    name: windows-x86_64_clang
+    paths:
+      - windows-x86_64_clang/
+    expire_in: 1 week
+
 .windows-arm64-build-job:
   stage: build
   tags:
@@ -307,6 +334,12 @@ stages:
 windows-x86_64-build-job:
   extends:
     - .windows-x86_64-build-job
+  tags:
+    - windows,builder
+
+windows-x86_64-build-clang-job:
+  extends:
+    - .windows-x86_64-build-clang-job
   tags:
     - windows,builder
 
