@@ -72,7 +72,7 @@ void GSRayTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
 
         ray_scene_->GetEnvironment(env_desc);
 
-        memcpy(&env_desc.sun_dir[0], Ren::ValuePtr(sun_dir), 3 * sizeof(float));
+        memcpy(&env_desc.sun_dir[0], ValuePtr(sun_dir), 3 * sizeof(float));
 
         ray_scene_->SetEnvironment(env_desc);
 
@@ -176,9 +176,9 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         Ray::camera_desc_t cam_desc;
         ray_scene_->GetCamera(0, cam_desc);
 
-        memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin_), 3 * sizeof(float));
-        memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
-        memcpy(&cam_desc.up[0], Ren::ValuePtr(view_up_), 3 * sizeof(float));
+        memcpy(&cam_desc.origin[0], ValuePtr(view_origin_), 3 * sizeof(float));
+        memcpy(&cam_desc.fwd[0], ValuePtr(view_dir_), 3 * sizeof(float));
+        memcpy(&cam_desc.up[0], ValuePtr(view_up_), 3 * sizeof(float));
         cam_desc.focus_distance = focal_distance_;
 
         if (invalidate_preview_) {
@@ -203,8 +203,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     const auto rt = ray_renderer_->type();
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
-        rt == Ray::RendererAVX2 || rt == Ray::RendererAVX512 || rt == Ray::RendererNEON) {
+    if (Ray::RendererSupportsMultithreading(rt)) {
         auto render_job = [this](const int i) {
 #if !defined(NDEBUG) && defined(_WIN32)
             _controlfp(_EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
@@ -229,8 +228,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     ray_renderer_->GetStats(st);
     ray_renderer_->ResetStats();
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
-        rt == Ray::RendererAVX2 || rt == Ray::RendererAVX512 || rt == Ray::RendererNEON) {
+    if (Ray::RendererSupportsMultithreading(rt)) {
         st.time_primary_ray_gen_us /= threads_->workers_count();
         st.time_primary_trace_us /= threads_->workers_count();
         st.time_primary_shade_us /= threads_->workers_count();
