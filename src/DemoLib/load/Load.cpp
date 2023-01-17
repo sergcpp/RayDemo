@@ -1480,7 +1480,7 @@ std::vector<Ray::color_rgba8_t> Load_stb_image(const std::string &name, int &w, 
     int channels;
     uint8_t *img_data = stbi_load(name.c_str(), &w, &h, &channels, 4);
     if (!img_data) {
-        throw std::runtime_error("Cannot load image!");
+        return {};
     }
 
     std::vector<Ray::color_rgba8_t> tex_data(w * h);
