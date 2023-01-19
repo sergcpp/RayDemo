@@ -234,9 +234,11 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         st.time_primary_ray_gen_us /= threads_->workers_count();
         st.time_primary_trace_us /= threads_->workers_count();
         st.time_primary_shade_us /= threads_->workers_count();
+        st.time_primary_shadow_us /= threads_->workers_count();
         st.time_secondary_sort_us /= threads_->workers_count();
         st.time_secondary_trace_us /= threads_->workers_count();
         st.time_secondary_shade_us /= threads_->workers_count();
+        st.time_secondary_shadow_us /= threads_->workers_count();
     }
 
     // LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
@@ -253,8 +255,9 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     for (const auto &st : stats_) {
         const unsigned long long _time_total = st.time_primary_ray_gen_us + st.time_primary_trace_us +
-                                               st.time_primary_shade_us + st.time_secondary_sort_us +
-                                               st.time_secondary_trace_us + st.time_secondary_shade_us;
+                                               st.time_primary_shade_us + st.time_primary_shadow_us +
+                                               st.time_secondary_sort_us + st.time_secondary_trace_us +
+                                               st.time_secondary_shade_us + st.time_secondary_shadow_us;
         time_total = std::max(time_total, _time_total);
     }
 
@@ -351,63 +354,88 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     if (ui_enabled_ && time_total) {
         const int UiWidth = 196;
-        const int UiHeight = 72;
+        const int UiHeight = 96;
 
         uint8_t stat_line[UiHeight][3];
         int off_x = (UiWidth - 64) - int(stats_.size());
 
         for (const auto &st : stats_) {
-            const int p0 = int(UiHeight * float(st.time_secondary_shade_us) / time_total);
-            const int p1 = int(UiHeight * float(st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-            const int p2 = int(
-                UiHeight * float(st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) /
-                time_total);
+            const int p0 = int(UiHeight * float(st.time_secondary_shadow_us) / time_total);
+            const int p1 = int(UiHeight * float(st.time_secondary_shade_us + st.time_secondary_shadow_us) / time_total);
+            const int p2 =
+                int(UiHeight *
+                    float(st.time_secondary_trace_us + st.time_secondary_shade_us + st.time_secondary_shadow_us) /
+                    time_total);
             const int p3 = int(UiHeight *
-                               float(st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
-                                     st.time_secondary_shade_us) /
+                               float(st.time_secondary_sort_us + st.time_secondary_trace_us +
+                                     st.time_secondary_shade_us + st.time_secondary_shadow_us) /
                                time_total);
-            const int p4 = int(UiHeight *
-                               float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_sort_us +
-                                     st.time_secondary_trace_us + st.time_secondary_shade_us) /
-                               time_total);
+            const int p4 =
+                int(UiHeight *
+                    float(st.time_primary_shadow_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
+                          st.time_secondary_shade_us + st.time_secondary_shadow_us) /
+                    time_total);
             const int p5 =
                 int(UiHeight *
-                    float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
-                          st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) /
+                    float(st.time_primary_shade_us + st.time_primary_shadow_us + st.time_secondary_sort_us +
+                          st.time_secondary_trace_us + st.time_secondary_shade_us + st.time_secondary_shadow_us) /
                     time_total);
-            const int l = p5;
+            const int p6 = int(UiHeight *
+                               float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_primary_shadow_us +
+                                     st.time_secondary_sort_us + st.time_secondary_trace_us +
+                                     st.time_secondary_shade_us + st.time_secondary_shadow_us) /
+                               time_total);
+            const int p7 =
+                int(UiHeight *
+                    float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
+                          st.time_primary_shadow_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
+                          st.time_secondary_shade_us + st.time_secondary_shadow_us) /
+                    time_total);
+            const int l = p7;
 
             for (int i = 0; i < p0; i++) {
-                stat_line[i][0] = 0;
-                stat_line[i][1] = 255;
-                stat_line[i][2] = 255;
+                stat_line[i][0] = 100;
+                stat_line[i][1] = 100;
+                stat_line[i][2] = 100;
             }
 
             for (int i = p0; i < p1; i++) {
-                stat_line[i][0] = 255;
-                stat_line[i][1] = 0;
+                stat_line[i][0] = 0;
+                stat_line[i][1] = 255;
                 stat_line[i][2] = 255;
             }
 
             for (int i = p1; i < p2; i++) {
                 stat_line[i][0] = 255;
+                stat_line[i][1] = 0;
+                stat_line[i][2] = 255;
+            }
+
+            for (int i = p2; i < p3; i++) {
+                stat_line[i][0] = 255;
                 stat_line[i][1] = 255;
                 stat_line[i][2] = 0;
             }
 
-            for (int i = p2; i < p3; i++) {
+            for (int i = p3; i < p4; i++) {
+                stat_line[i][0] = 100;
+                stat_line[i][1] = 100;
+                stat_line[i][2] = 100;
+            }
+
+            for (int i = p4; i < p5; i++) {
                 stat_line[i][0] = 255;
                 stat_line[i][1] = 0;
                 stat_line[i][2] = 0;
             }
 
-            for (int i = p3; i < p4; i++) {
+            for (int i = p5; i < p6; i++) {
                 stat_line[i][0] = 0;
                 stat_line[i][1] = 255;
                 stat_line[i][2] = 0;
             }
 
-            for (int i = p4; i < p5; i++) {
+            for (int i = p6; i < p7; i++) {
                 stat_line[i][0] = 0;
                 stat_line[i][1] = 0;
                 stat_line[i][2] = 255;
@@ -419,17 +447,19 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             off_x++;
         }
 
-        for (int j = 0; j < 70 && !stats_.empty(); ++j) {
+        for (int j = 0; j < 78 && !stats_.empty(); ++j) {
             const auto &st = stats_.back();
 
-            const float v0 = float(UiHeight) * float(st.time_secondary_shade_us) / time_total;
-            const float v1 = float(UiHeight) * float(st.time_secondary_trace_us) / time_total;
-            const float v2 = float(UiHeight) * float(st.time_secondary_sort_us) / time_total;
-            const float v3 = float(UiHeight) * float(st.time_primary_shade_us) / time_total;
-            const float v4 = float(UiHeight) * float(st.time_primary_trace_us) / time_total;
-            const float v5 = float(UiHeight) * float(st.time_primary_ray_gen_us) / time_total;
+            const float v0 = float(UiHeight) * float(st.time_secondary_shadow_us) / time_total;
+            const float v1 = float(UiHeight) * float(st.time_secondary_shade_us) / time_total;
+            const float v2 = float(UiHeight) * float(st.time_secondary_trace_us) / time_total;
+            const float v3 = float(UiHeight) * float(st.time_secondary_sort_us) / time_total;
+            const float v4 = float(UiHeight) * float(st.time_primary_shadow_us) / time_total;
+            const float v5 = float(UiHeight) * float(st.time_primary_shade_us) / time_total;
+            const float v6 = float(UiHeight) * float(st.time_primary_trace_us) / time_total;
+            const float v7 = float(UiHeight) * float(st.time_primary_ray_gen_us) / time_total;
 
-            const float sz = float(UiHeight) / 6.5f;
+            const float sz = float(UiHeight) / 8.5f;
             const float k = std::min(float(j) / 16.0f, 1.0f);
 
             const float vv0 = (1.0f - k) * float(v0) + k * sz;
@@ -438,6 +468,8 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             const float vv3 = (1.0f - k) * float(v3) + k * sz;
             const float vv4 = (1.0f - k) * float(v4) + k * sz;
             const float vv5 = (1.0f - k) * float(v5) + k * sz;
+            const float vv6 = (1.0f - k) * float(v6) + k * sz;
+            const float vv7 = (1.0f - k) * float(v7) + k * sz;
 
             const int p0 = int(vv0);
             const int p1 = int(vv0 + vv1);
@@ -445,40 +477,54 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             const int p3 = int(vv0 + vv1 + vv2 + vv3);
             const int p4 = int(vv0 + vv1 + vv2 + vv3 + vv4);
             const int p5 = int(vv0 + vv1 + vv2 + vv3 + vv4 + vv5);
+            const int p6 = int(vv0 + vv1 + vv2 + vv3 + vv4 + vv5 + vv6);
+            const int p7 = int(vv0 + vv1 + vv2 + vv3 + vv4 + vv5 + vv6 + vv7);
 
-            const int l = p5;
+            const int l = p7;
 
             for (int i = 0; i < p0; i++) {
-                stat_line[i][0] = 0;
-                stat_line[i][1] = 255;
-                stat_line[i][2] = 255;
+                stat_line[i][0] = 100;
+                stat_line[i][1] = 100;
+                stat_line[i][2] = 100;
             }
 
             for (int i = p0; i < p1; i++) {
-                stat_line[i][0] = 255;
-                stat_line[i][1] = 0;
+                stat_line[i][0] = 0;
+                stat_line[i][1] = 255;
                 stat_line[i][2] = 255;
             }
 
             for (int i = p1; i < p2; i++) {
                 stat_line[i][0] = 255;
+                stat_line[i][1] = 0;
+                stat_line[i][2] = 255;
+            }
+
+            for (int i = p2; i < p3; i++) {
+                stat_line[i][0] = 255;
                 stat_line[i][1] = 255;
                 stat_line[i][2] = 0;
             }
 
-            for (int i = p2; i < p3; i++) {
+            for (int i = p3; i < p4; i++) {
+                stat_line[i][0] = 100;
+                stat_line[i][1] = 100;
+                stat_line[i][2] = 100;
+            }
+
+            for (int i = p4; i < p5; i++) {
                 stat_line[i][0] = 255;
                 stat_line[i][1] = 0;
                 stat_line[i][2] = 0;
             }
 
-            for (int i = p3; i < p4; i++) {
+            for (int i = p5; i < p6; i++) {
                 stat_line[i][0] = 0;
                 stat_line[i][1] = 255;
                 stat_line[i][2] = 0;
             }
 
-            for (int i = p4; i < p5; i++) {
+            for (int i = p6; i < p7; i++) {
                 stat_line[i][0] = 0;
                 stat_line[i][1] = 0;
                 stat_line[i][2] = 255;
@@ -553,39 +599,51 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         const float xx = -1.0f + 2.0f * (180.0f + 152.0f) / ui_root_->size_px()[0];
         const auto cur = ui_renderer_->GetParams();
         {
+            ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
+                                        cur.scissor_test());
+            font_->DrawText(ui_renderer_.get(), "SecShadow", {xx, 1 - 2 * font_height}, ui_root_.get());
+            ui_renderer_->PopParams();
+        }
+        {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 0.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "SecShade", {xx, 1 - 2 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_.get(), "SecShade", {xx, 1 - 3 * font_height}, ui_root_.get());
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{0.0f, 1.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "SecTrace", {xx, 1 - 3 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_.get(), "SecTrace", {xx, 1 - 4 * font_height}, ui_root_.get());
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{0.0f, 0.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "SecSort", {xx, 1 - 4 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_.get(), "SecSort", {xx, 1 - 5 * font_height}, ui_root_.get());
+            ui_renderer_->PopParams();
+        }
+        {
+            ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
+                                        cur.scissor_test());
+            font_->DrawText(ui_renderer_.get(), "1stShadow", {xx, 1 - 6 * font_height}, ui_root_.get());
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{0.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "1stShade", {xx, 1 - 5 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_.get(), "1stShade", {xx, 1 - 7 * font_height}, ui_root_.get());
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 0.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "1stTrace", {xx, 1 - 6 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_.get(), "1stTrace", {xx, 1 - 8 * font_height}, ui_root_.get());
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "Raygen", {xx, 1 - 7 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_.get(), "Raygen", {xx, 1 - 9 * font_height}, ui_root_.get());
             ui_renderer_->PopParams();
         }
 
