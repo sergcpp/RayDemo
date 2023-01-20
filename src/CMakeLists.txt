@@ -40,7 +40,7 @@ if(WIN32)
         set(SDL2_INCLUDE_DIRS libs/SDL2/include)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs")
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /fp:except")
-        set(CMAKE_CXX_FLAGS_ASAN "${CMAKE_CXX_FLAGS_DEBUG} /MTd /fsanitize=address")
+        set(CMAKE_CXX_FLAGS_ASAN "/MTd /Zi /Od /RTC1 /fsanitize=address")
         set(CMAKE_EXE_LINKER_FLAGS_ASAN "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /INCREMENTAL:NO")
     endif()
 
