@@ -81,7 +81,7 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
     //renderer_->set_current_cam(&cam_);
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    uint32_t width = (uint32_t)game_->width, height = (uint32_t)game_->height;
+    const auto width = uint32_t(game_->width), height = uint32_t(game_->height);
 
     int sample_limit = 32;
     if (++iteration_ > sample_limit) {

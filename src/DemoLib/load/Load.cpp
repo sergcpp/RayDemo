@@ -1237,13 +1237,13 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 
         uint32_t s;
 
-        s = (uint32_t)attrs.size();
+        s = uint32_t(attrs.size());
         out_file.write((char *)&s, sizeof(s));
 
-        s = (uint32_t)indices.size();
+        s = uint32_t(indices.size());
         out_file.write((char *)&s, sizeof(s));
 
-        s = (uint32_t)groups.size();
+        s = uint32_t(groups.size());
         out_file.write((char *)&s, sizeof(s));
 
         out_file.write((char *)&attrs[0], attrs.size() * sizeof(attrs[0]));
