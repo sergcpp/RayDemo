@@ -44,7 +44,7 @@ inline uint32_t non_static_hash(const char *s) {
 class GoID {
     uint32_t hash_;
 public:
-    explicit GoID(int k) : hash_((uint32_t)k) {}
+    explicit GoID(int k) : hash_(uint32_t(k)) {}
     explicit GoID(unsigned int k) : hash_(k) {}
     template<uint32_t N>
     explicit GoID(const char (&k)[N]) : hash_(static_hash(k)) {}
