@@ -61,8 +61,8 @@ DemoApp::DemoApp() : quit_(false) { g_app = this; }
 
 DemoApp::~DemoApp() {}
 
-int DemoApp::Init(int w, int h, const char *scene_name, const char *ref_name, const char *device_name, bool nogpu,
-                  bool nohwrt, bool nobindless, bool nocompression, int samples, double min_psnr, int threshold) {
+int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool nohwrt, bool nobindless,
+                  bool nocompression) {
 #if !defined(__ANDROID__)
 #ifdef _WIN32
     int dpi_result = SetProcessDPIAware();
@@ -108,8 +108,7 @@ int DemoApp::Init(int w, int h, const char *scene_name, const char *ref_name, co
 #endif
 
     try {
-        CreateViewer(w, h, scene_name, ref_name, device_name, nogpu, nohwrt, nobindless, nocompression, samples,
-                     min_psnr, threshold);
+        CreateViewer(w, h, app_params, nogpu, nohwrt, nobindless, nocompression);
     } catch (std::exception &e) {
         fprintf(stderr, "%s", e.what());
         return -1;
@@ -152,16 +151,14 @@ void DemoApp::Frame() {
 #if !defined(__ANDROID__)
 int DemoApp::Run(int argc, char *argv[]) {
     int w = 640, h = 360;
-    scene_name_ = "assets/scenes/mat_test.json";
-    nogpu_ = false;
-    nohwrt_ = false;
-    nobindless_ = false;
-    nocompression_ = false;
-    samples_ = -1;
-    min_psnr_ = 0.0;
-    threshold_ = -1;
-    diff_depth_ = 4;
-    const char *device_name = nullptr;
+
+    AppParams app_params;
+    app_params.scene_name = "assets/scenes/mat_test.json";
+
+    bool nogpu = false;
+    bool nohwrt = false;
+    bool nobindless = false;
+    bool nocompression = false;
 
     for (size_t i = 1; i < argc; i++) {
         if ((strcmp(argv[i], "--width") == 0 || strcmp(argv[i], "-w") == 0) && (++i != argc)) {
@@ -169,40 +166,39 @@ int DemoApp::Run(int argc, char *argv[]) {
         } else if ((strcmp(argv[i], "--height") == 0 || strcmp(argv[i], "-h") == 0) && (++i != argc)) {
             h = atoi(argv[i]);
         } else if ((strcmp(argv[i], "--scene") == 0 || strcmp(argv[i], "-s") == 0) && (++i != argc)) {
-            scene_name_ = argv[i];
+            app_params.scene_name = argv[i];
         } else if ((strcmp(argv[i], "--reference") == 0 || strcmp(argv[i], "-ref") == 0) && (++i != argc)) {
-            ref_name_ = argv[i];
+            app_params.ref_name = argv[i];
         } else if (strcmp(argv[i], "--nogpu") == 0) {
-            nogpu_ = true;
+            nogpu = true;
         } else if (strcmp(argv[i], "--nohwrt") == 0) {
-            nohwrt_ = true;
+            nohwrt = true;
         } else if (strcmp(argv[i], "--nobindless") == 0) {
-            nobindless_ = true;
+            nobindless = true;
         } else if (strcmp(argv[i], "--nocompression") == 0) {
-            nocompression_ = true;
+            nocompression = true;
         } else if (strcmp(argv[i], "--samples") == 0 && (++i != argc)) {
-            samples_ = atoi(argv[i]);
+            app_params.samples = atoi(argv[i]);
         } else if (strcmp(argv[i], "--psnr") == 0 && (++i != argc)) {
-            min_psnr_ = atof(argv[i]);
+            app_params.psnr = atof(argv[i]);
         } else if (strcmp(argv[i], "--threshold") == 0 && (++i != argc)) {
-            threshold_ = atoi(argv[i]);
+            app_params.threshold = atoi(argv[i]);
         } else if (strcmp(argv[i], "--diff_depth") == 0 && (++i != argc)) {
-            diff_depth_ = atoi(argv[i]);
+            app_params.diff_depth = atoi(argv[i]);
         } else if (strcmp(argv[i], "--spec_depth") == 0 && (++i != argc)) {
-            spec_depth_ = atoi(argv[i]);
+            app_params.spec_depth = atoi(argv[i]);
         } else if (strcmp(argv[i], "--refr_depth") == 0 && (++i != argc)) {
-            refr_depth_ = atoi(argv[i]);
+            app_params.refr_depth = atoi(argv[i]);
         } else if (strcmp(argv[i], "--transp_depth") == 0 && (++i != argc)) {
-            transp_depth_ = atoi(argv[i]);
+            app_params.transp_depth = atoi(argv[i]);
         } else if (strcmp(argv[i], "--total_depth") == 0 && (++i != argc)) {
-            total_depth_ = atoi(argv[i]);
+            app_params.total_depth = atoi(argv[i]);
         } else if ((strcmp(argv[i], "--device") == 0 || strcmp(argv[i], "-d") == 0) && (++i != argc)) {
-            device_name = argv[i];
+            app_params.device_name = argv[i];
         }
     }
 
-    if (Init(w, h, scene_name_.c_str(), ref_name_.c_str(), device_name, nogpu_, nohwrt_, nobindless_, nocompression_,
-             samples_, min_psnr_, threshold_) < 0) {
+    if (Init(w, h, app_params, nogpu, nohwrt, nobindless, nocompression) < 0) {
         return -1;
     }
 
@@ -377,33 +373,14 @@ void DemoApp::PollEvents() {
     }
 }
 
-void DemoApp::CreateViewer(int w, int h, const char *scene_name, const char *ref_name, const char *device_name,
-                           bool nogpu, bool nohwrt, bool nobindless, bool nocompression, int samples, double psnr,
-                           int threshold) {
+void DemoApp::CreateViewer(int w, int h, const AppParams &app_params, const bool nogpu, const bool nohwrt,
+                           const bool nobindless, const bool nocompression) {
     if (viewer_) {
         w = viewer_->width;
         h = viewer_->height;
     }
 
     viewer_ = {};
-
-    AppParams app_params;
-    app_params.scene_name = scene_name;
-    if (ref_name) {
-        app_params.ref_name = ref_name;
-    }
-    if (device_name) {
-        app_params.device_name = device_name;
-    }
-    app_params.samples = samples;
-    app_params.psnr = psnr;
-    app_params.threshold = threshold;
-    app_params.diff_depth = diff_depth_;
-    app_params.spec_depth = spec_depth_;
-    app_params.refr_depth = refr_depth_;
-    app_params.transp_depth = transp_depth_;
-    app_params.total_depth = total_depth_;
-
     viewer_.reset(new Viewer(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2), nobindless, nocompression));
     p_input_manager_ = viewer_->GetComponent<InputManager>(INPUT_MANAGER_KEY);
 }
