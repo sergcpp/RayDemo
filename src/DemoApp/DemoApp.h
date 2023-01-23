@@ -11,6 +11,7 @@ struct SDL_Renderer;
 struct SDL_Texture;
 struct SDL_Window;
 
+struct AppParams;
 class GameBase;
 
 class DemoApp {
@@ -21,12 +22,6 @@ class DemoApp {
     SDL_Texture *texture_ = nullptr;
 #endif
     SDL_Window *window_ = nullptr;
-
-    std::string scene_name_, ref_name_;
-    int samples_ = -1, threshold_ = -1;
-    double min_psnr_ = 0.0;
-    int diff_depth_ = 4, spec_depth_ = 4, refr_depth_ = 8, transp_depth_ = 8, total_depth_ = 8;
-    bool nogpu_, nohwrt_, nobindless_, nocompression_;
 
     std::shared_ptr<InputManager> p_input_manager_;
 
@@ -39,15 +34,14 @@ class DemoApp {
 
     std::unique_ptr<GameBase> viewer_;
 
-    void CreateViewer(int w, int h, const char *scene_name, const char *ref_name, const char *device_name, bool nogpu,
-                      bool nohwrt, bool nobindless, bool nocompression, int samples, double psnr, int threshold);
+    void CreateViewer(int w, int h, const AppParams &app_params, bool nogpu, bool nohwrt, bool nobindless,
+                      bool nocompression);
 
   public:
     DemoApp();
     ~DemoApp();
 
-    int Init(int w, int h, const char *scene_name, const char *ref_name, const char *device_name, bool nogpu,
-             bool nohwrt, bool nobindless, bool nocompression, int samples, double psnr, int threshold);
+    int Init(int w, int h, const AppParams &app_params, bool nogpu, bool nohwrt, bool nobindless, bool nocompression);
     void Destroy();
 
     void Frame();
