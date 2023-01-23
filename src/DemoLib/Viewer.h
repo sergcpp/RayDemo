@@ -23,6 +23,7 @@ struct AppParams {
     int refr_depth = 8;
     int transp_depth = 8;
     int total_depth = 8;
+    int max_tex_res = -1;
 };
 
 class Viewer : public GameBase {
