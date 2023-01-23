@@ -31,7 +31,7 @@
 
 #define DUMP_BIN_FILES 1
 
-std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene) {
+std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res) {
     auto new_scene = std::shared_ptr<Ray::SceneBase>(r->CreateScene());
 
     bool view_targeted = false;
@@ -145,6 +145,29 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             }
             if (!img_data) {
                 throw std::runtime_error("Cannot load image!");
+            }
+
+            while (max_tex_res != -1 && (w > max_tex_res || h > max_tex_res)) {
+                const int new_w = (w / 2), new_h = (h / 2);
+                auto new_img_data = (uint8_t *)STBI_MALLOC(new_w * new_h * channels);
+
+                for (int y = 0; y < h - 1; y += 2) {
+                    for (int x = 0; x < w - 1; x += 2) {
+                        for (int k = 0; k < channels; ++k) {
+                            const uint8_t c00 = img_data[channels * ((y + 0) * w + (x + 0)) + k];
+                            const uint8_t c01 = img_data[channels * ((y + 0) * w + (x + 1)) + k];
+                            const uint8_t c10 = img_data[channels * ((y + 1) * w + (x + 0)) + k];
+                            const uint8_t c11 = img_data[channels * ((y + 1) * w + (x + 1)) + k];
+
+                            new_img_data[channels * ((y / 2) * (w / 2) + (x / 2)) + k] = (c00 + c01 + c10 + c11) / 4;
+                        }
+                    }
+                }
+
+                stbi_image_free(img_data);
+                img_data = new_img_data;
+                w = new_w;
+                h = new_h;
             }
 
             Ray::tex_desc_t tex_desc;

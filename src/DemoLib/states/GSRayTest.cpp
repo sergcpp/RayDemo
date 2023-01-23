@@ -99,7 +99,7 @@ void GSRayTest::Enter() {
     if (js_scene.Size()) {
         try {
             const uint64_t t1 = Sys::GetTimeMs();
-            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene);
+            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res);
             const uint64_t t2 = Sys::GetTimeMs();
             LOGI("Scene loaded in %.1fs", (t2 - t1) * 0.001f);
         } catch (std::exception &e) {

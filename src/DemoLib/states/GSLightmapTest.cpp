@@ -9,11 +9,11 @@
 #endif
 
 #include <Eng/GameStateManager.h>
+#include <Gui/Renderer.h>
 #include <Sys/Json.h>
 #include <Sys/Log.h>
-#include <Sys/Time_.h>
 #include <Sys/ThreadPool.h>
-#include <Gui/Renderer.h>
+#include <Sys/Time_.h>
 
 #include "../Viewer.h"
 #include "../load/Load.h"
@@ -24,18 +24,18 @@ const float FORWARD_SPEED = 1.0f;
 }
 
 GSLightmapTest::GSLightmapTest(GameBase *game) : game_(game) {
-    state_manager_  = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_            = game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
+    state_manager_ = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
+    ctx_ = game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
 
-    ui_renderer_    = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
-    ui_root_        = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
+    ui_renderer_ = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
+    ui_root_ = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
 
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
 
-    ray_renderer_   = game->GetComponent<Ray::RendererBase>(RAY_RENDERER_KEY);
+    ray_renderer_ = game->GetComponent<Ray::RendererBase>(RAY_RENDERER_KEY);
 
-    threads_        = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
+    threads_ = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
 
 void GSLightmapTest::UpdateRegionContexts() {
@@ -49,15 +49,14 @@ void GSLightmapTest::UpdateRegionContexts() {
 
         for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
             for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
-                auto rect = Ray::rect_t{ x, y, 
-                    std::min(sz.first - x, BUCKET_SIZE),
-                    std::min(sz.second - y, BUCKET_SIZE) };
+                auto rect =
+                    Ray::rect_t{x, y, std::min(sz.first - x, BUCKET_SIZE), std::min(sz.second - y, BUCKET_SIZE)};
 
                 region_contexts_.emplace_back(rect);
             }
         }
     } else {
-        auto rect = Ray::rect_t{ 0, 0, sz.first, sz.second };
+        auto rect = Ray::rect_t{0, 0, sz.first, sz.second};
         region_contexts_.emplace_back(rect);
     }
 }
@@ -81,9 +80,11 @@ void GSLightmapTest::Enter() {
 
     max_fwd_speed_ = GSRayTestInternal::FORWARD_SPEED;
 
+    auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
+
     JsObject js_scene;
 
-    { 
+    {
         std::ifstream in_file("./assets/scenes/test_lmap.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
@@ -92,7 +93,7 @@ void GSLightmapTest::Enter() {
 
     if (js_scene.Size()) {
         try {
-            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene);
+            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res);
         } catch (std::exception &e) {
             LOGE("%s", e.what());
         }
@@ -119,8 +120,8 @@ void GSLightmapTest::Enter() {
         ray_scene_->GetCamera(0, cam_desc);
         cam_desc.lighting_only = true;
         cam_desc.skip_direct_lighting = true;
-        //cam_desc.skip_indirect_lighting = true;
-        //cam_desc.no_background = true;
+        // cam_desc.skip_indirect_lighting = true;
+        // cam_desc.no_background = true;
         cam_desc.output_sh = true;
 
         ray_scene_->SetCamera(0, cam_desc);
@@ -129,7 +130,7 @@ void GSLightmapTest::Enter() {
         memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
     }
 
-    {   // add camera for lightmapping
+    { // add camera for lightmapping
         Ray::camera_desc_t cam_desc;
         cam_desc.type = Ray::Geo;
         cam_desc.mi_index = 0;
@@ -137,12 +138,12 @@ void GSLightmapTest::Enter() {
         cam_desc.gamma = 2.2f;
         cam_desc.lighting_only = true;
         cam_desc.skip_direct_lighting = true;
-        //cam_desc.skip_indirect_lighting = true;
+        // cam_desc.skip_indirect_lighting = true;
         cam_desc.no_background = true;
         cam_desc.output_sh = true;
 
-        //uint32_t cam_index = ray_scene_->AddCamera(cam_desc);
-        //ray_scene_->set_current_cam(cam_index);
+        // uint32_t cam_index = ray_scene_->AddCamera(cam_desc);
+        // ray_scene_->set_current_cam(cam_index);
     }
 
     UpdateRegionContexts();
@@ -172,14 +173,12 @@ void GSLightmapTest::Enter() {
 #endif
 }
 
-void GSLightmapTest::Exit() {
-
-}
+void GSLightmapTest::Exit() {}
 
 void GSLightmapTest::Draw(uint64_t dt_us) {
-    //renderer_->ClearColorAndDepth(0, 0, 0, 1);
+    // renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    {   // update camera
+    { // update camera
         Ray::camera_desc_t cam_desc;
         ray_scene_->GetCamera(0, cam_desc);
 
@@ -200,9 +199,10 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
 
     const auto rt = ray_renderer_->type();
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX || rt == Ray::RendererAVX2) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
+        rt == Ray::RendererAVX2) {
         auto render_job = [this](int i) { ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i]); };
-        
+
         std::vector<std::future<void>> events;
 
         for (int i = 0; i < (int)region_contexts_.size(); i++) {
@@ -220,9 +220,10 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     ray_renderer_->GetStats(st);
     ray_renderer_->ResetStats();
 
-    //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
+    // LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX || rt == Ray::RendererAVX2) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
+        rt == Ray::RendererAVX2) {
         st.time_primary_ray_gen_us /= threads_->workers_count();
         st.time_primary_trace_us /= threads_->workers_count();
         st.time_primary_shade_us /= threads_->workers_count();
@@ -240,7 +241,8 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
 
     for (const auto &st : stats_) {
         unsigned long long _time_total = st.time_primary_ray_gen_us + st.time_primary_trace_us +
-            st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us;
+                                         st.time_primary_shade_us + st.time_secondary_sort_us +
+                                         st.time_secondary_trace_us + st.time_secondary_shade_us;
         time_total = std::max(time_total, _time_total);
     }
 
@@ -251,7 +253,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     int w, h;
 
     std::tie(w, h) = ray_renderer_->size();
-    //const auto *pixel_data = ray_renderer_->get_pixels_ref();
+    // const auto *pixel_data = ray_renderer_->get_pixels_ref();
 
 #if defined(USE_SW_RENDER)
 #if 0
@@ -262,11 +264,11 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     static std::vector<Ray::pixel_color_t> temp_buf;
     temp_buf.resize(w * h);
 
-    //const float Y0 = std::sqrt(1.0f / (4.0f * Ren::Pi<float>()));
-    //const float Y1 = std::sqrt(3.0f / (4.0f * Ren::Pi<float>()));
+    // const float Y0 = std::sqrt(1.0f / (4.0f * Ren::Pi<float>()));
+    // const float Y1 = std::sqrt(3.0f / (4.0f * Ren::Pi<float>()));
 
-    //const float A0 = Ren::Pi<float>() / std::sqrt(4 * Ren::Pi<float>());
-    //const float A1 = std::sqrt(Ren::Pi<float>() / 3);
+    // const float A0 = Ren::Pi<float>() / std::sqrt(4 * Ren::Pi<float>());
+    // const float A1 = std::sqrt(Ren::Pi<float>() / 3);
 
     const float AY0 = 0.25f;
     const float AY1 = 0.5f;
@@ -282,21 +284,27 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
             int i = y * w + x;
 
             temp_buf[i].r = coeff[0] * sh_data[i].coeff_r[0] + coeff[1] * sh_data[i].coeff_r[1] +
-                coeff[2] * sh_data[i].coeff_r[2] + coeff[3] * sh_data[i].coeff_r[3];
+                            coeff[2] * sh_data[i].coeff_r[2] + coeff[3] * sh_data[i].coeff_r[3];
             temp_buf[i].g = coeff[0] * sh_data[i].coeff_g[0] + coeff[1] * sh_data[i].coeff_g[1] +
-                coeff[2] * sh_data[i].coeff_g[2] + coeff[3] * sh_data[i].coeff_g[3];
+                            coeff[2] * sh_data[i].coeff_g[2] + coeff[3] * sh_data[i].coeff_g[3];
             temp_buf[i].b = coeff[0] * sh_data[i].coeff_b[0] + coeff[1] * sh_data[i].coeff_b[1] +
-                coeff[2] * sh_data[i].coeff_b[2] + coeff[3] * sh_data[i].coeff_b[3];
+                            coeff[2] * sh_data[i].coeff_b[2] + coeff[3] * sh_data[i].coeff_b[3];
             temp_buf[i].a = 1.0f;
 
-            if (temp_buf[i].r < 0.0f) temp_buf[i].r = 0.0f;
-            else if (temp_buf[i].r > 1.0f) temp_buf[i].r = 1.0f;
+            if (temp_buf[i].r < 0.0f)
+                temp_buf[i].r = 0.0f;
+            else if (temp_buf[i].r > 1.0f)
+                temp_buf[i].r = 1.0f;
 
-            if (temp_buf[i].g < 0.0f) temp_buf[i].g = 0.0f;
-            else if (temp_buf[i].g > 1.0f) temp_buf[i].g = 1.0f;
+            if (temp_buf[i].g < 0.0f)
+                temp_buf[i].g = 0.0f;
+            else if (temp_buf[i].g > 1.0f)
+                temp_buf[i].g = 1.0f;
 
-            if (temp_buf[i].b < 0.0f) temp_buf[i].b = 0.0f;
-            else if (temp_buf[i].b > 1.0f) temp_buf[i].b = 1.0f;
+            if (temp_buf[i].b < 0.0f)
+                temp_buf[i].b = 0.0f;
+            else if (temp_buf[i].b > 1.0f)
+                temp_buf[i].b = 1.0f;
         }
     }
 
@@ -309,38 +317,57 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     for (const auto &st : stats_) {
         int p0 = (int)(64 * float(st.time_secondary_shade_us) / time_total);
         int p1 = (int)(64 * float(st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-        int p2 = (int)(64 * float(st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-        int p3 = (int)(64 * float(st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us + 
-                                  st.time_secondary_shade_us) / time_total);
-        int p4 = (int)(64 * float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_sort_us + 
-                                  st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-        int p5 = (int)(64 * float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
-                                  st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+        int p2 = (int)(64 * float(st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) /
+                       time_total);
+        int p3 = (int)(64 *
+                       float(st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
+                             st.time_secondary_shade_us) /
+                       time_total);
+        int p4 = (int)(64 *
+                       float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_sort_us +
+                             st.time_secondary_trace_us + st.time_secondary_shade_us) /
+                       time_total);
+        int p5 = (int)(64 *
+                       float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
+                             st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) /
+                       time_total);
 
         int l = p5;
 
         for (int i = 0; i < p0; i++) {
-            stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 255;
+            stat_line[i][0] = 0;
+            stat_line[i][1] = 255;
+            stat_line[i][2] = 255;
         }
 
         for (int i = p0; i < p1; i++) {
-            stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 255;
+            stat_line[i][0] = 255;
+            stat_line[i][1] = 0;
+            stat_line[i][2] = 255;
         }
 
         for (int i = p1; i < p2; i++) {
-            stat_line[i][0] = 255; stat_line[i][1] = 255; stat_line[i][2] = 0;
+            stat_line[i][0] = 255;
+            stat_line[i][1] = 255;
+            stat_line[i][2] = 0;
         }
 
         for (int i = p2; i < p3; i++) {
-            stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 0;
+            stat_line[i][0] = 255;
+            stat_line[i][1] = 0;
+            stat_line[i][2] = 0;
         }
 
         for (int i = p3; i < p4; i++) {
-            stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 0;
+            stat_line[i][0] = 0;
+            stat_line[i][1] = 255;
+            stat_line[i][2] = 0;
         }
 
         for (int i = p4; i < p5; i++) {
-            stat_line[i][0] = 0; stat_line[i][1] = 0; stat_line[i][2] = 255;
+            stat_line[i][0] = 0;
+            stat_line[i][1] = 0;
+            stat_line[i][2] = 255;
         }
 
         swBlitPixels(180 + off_x, 4 + (64 - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
@@ -394,16 +421,17 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
         stats5 += std::to_string(cur_time_stat_ms_);
         stats5 += " ms";
 
-        font_->DrawText(ui_renderer_.get(), stats1.c_str(), { -1, 1 - 1 * font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats2.c_str(), { -1, 1 - 2 * font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats3.c_str(), { -1, 1 - 3 * font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats4.c_str(), { -1, 1 - 4 * font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats5.c_str(), { -1, 1 - 5 * font_height }, ui_root_.get());
+        font_->DrawText(ui_renderer_.get(), stats1.c_str(), {-1, 1 - 1 * font_height}, ui_root_.get());
+        font_->DrawText(ui_renderer_.get(), stats2.c_str(), {-1, 1 - 2 * font_height}, ui_root_.get());
+        font_->DrawText(ui_renderer_.get(), stats3.c_str(), {-1, 1 - 3 * font_height}, ui_root_.get());
+        font_->DrawText(ui_renderer_.get(), stats4.c_str(), {-1, 1 - 4 * font_height}, ui_root_.get());
+        font_->DrawText(ui_renderer_.get(), stats5.c_str(), {-1, 1 - 5 * font_height}, ui_root_.get());
 
-        std::string stats6 = std::to_string(time_total/1000);
+        std::string stats6 = std::to_string(time_total / 1000);
         stats6 += " ms";
 
-        font_->DrawText(ui_renderer_.get(), stats6.c_str(), { -1 + 2 * 135.0f/w, 1 - 2 * 4.0f/h - font_height }, ui_root_.get());
+        font_->DrawText(ui_renderer_.get(), stats6.c_str(), {-1 + 2 * 135.0f / w, 1 - 2 * 4.0f / h - font_height},
+                        ui_root_.get());
 
         ui_renderer_->EndDraw();
     }
@@ -416,7 +444,7 @@ void GSLightmapTest::Update(uint64_t dt_ms) {
 
     const float Pi = 3.14159265358979323846f;
 
-    Vec3f up = { 0, 1, 0 };
+    Vec3f up = {0, 1, 0};
     Vec3f side = Normalize(Cross(view_dir_, up));
 
     view_origin_ += view_dir_ * forward_speed_;
@@ -442,16 +470,14 @@ void GSLightmapTest::Update(uint64_t dt_ms) {
         angle += 0.05f * dt_ms;
 
         Mat4f tr(1.0f);
-        tr = Translate(tr, Vec3f{ 0, std::sin(angle * Pi / 180.0f) * 200.0f, 0 });
-        //tr = math::rotate(tr, math::radians(angle), math::vec3{ 1, 0, 0 });
-        //tr = math::rotate(tr, math::radians(angle), math::vec3{ 0, 1, 0 });
+        tr = Translate(tr, Vec3f{0, std::sin(angle * Pi / 180.0f) * 200.0f, 0});
+        // tr = math::rotate(tr, math::radians(angle), math::vec3{ 1, 0, 0 });
+        // tr = math::rotate(tr, math::radians(angle), math::vec3{ 0, 1, 0 });
         ray_scene_->SetMeshInstanceTransform(1, ValuePtr(tr));
     }
     //_L = math::normalize(_L);
 
     //////////////////////////////////////////////////////////////////////////
-
-
 }
 
 void GSLightmapTest::HandleInput(const InputManager::Event &evt) {
@@ -467,7 +493,7 @@ void GSLightmapTest::HandleInput(const InputManager::Event &evt) {
         break;
     case InputManager::RAW_INPUT_P1_MOVE:
         if (view_grabbed_) {
-            Vec3f up = { 0, 1, 0 };
+            Vec3f up = {0, 1, 0};
             Vec3f side = Normalize(Cross(view_dir_, up));
             up = Cross(side, view_dir_);
 
@@ -486,8 +512,8 @@ void GSLightmapTest::HandleInput(const InputManager::Event &evt) {
                 view_dir_ = Normalize(-dir);
             }
 
-            //LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
-            //LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
+            // LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
+            // LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
 
             invalidate_preview_ = true;
         }
@@ -509,7 +535,7 @@ void GSLightmapTest::HandleInput(const InputManager::Event &evt) {
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_SPACE) {
             animate_ = !animate_;
         } else if (evt.raw_key == 'e' || evt.raw_key == 'q') {
-            Vec3f up = { 1, 0, 0 };
+            Vec3f up = {1, 0, 0};
             Vec3f side = Normalize(Cross(sun_dir_, up));
             up = Cross(side, sun_dir_);
 
@@ -523,8 +549,7 @@ void GSLightmapTest::HandleInput(const InputManager::Event &evt) {
 
             UpdateEnvironment(sun_dir_);
         }
-    }
-    break;
+    } break;
     case InputManager::RAW_INPUT_KEY_UP: {
         if (evt.key == InputManager::RAW_INPUT_BUTTON_UP) {
             forward_speed_ = 0;
@@ -535,8 +560,7 @@ void GSLightmapTest::HandleInput(const InputManager::Event &evt) {
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_RIGHT) {
             side_speed_ = 0;
         }
-    }
-    break;
+    } break;
     case InputManager::RAW_INPUT_RESIZE:
         ray_renderer_->Resize((int)evt.point.x, (int)evt.point.y);
         UpdateRegionContexts();
