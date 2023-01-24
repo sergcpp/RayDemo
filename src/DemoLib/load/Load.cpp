@@ -613,9 +613,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 if (js_mat_obj.Has("ior")) {
                     const JsNumber &js_ior = js_mat_obj.at("ior").as_num();
                     mat_desc.ior = float(js_ior.val);
-                } else if (js_mat_obj.Has("int_ior")) {
-                    const JsNumber &js_ior = js_mat_obj.at("int_ior").as_num();
-                    mat_desc.ior = float(js_ior.val);
                 }
 
                 if (js_mat_obj.Has("transmission")) {
@@ -694,14 +691,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     node_desc.fresnel = float(js_fresnel.val);
                 }
 
-                if (js_mat_obj.Has("int_ior")) {
-                    const JsNumber &js_int_ior = js_mat_obj.at("int_ior").as_num();
-                    node_desc.int_ior = float(js_int_ior.val);
-                }
-
-                if (js_mat_obj.Has("ext_ior")) {
-                    const JsNumber &js_ext_ior = js_mat_obj.at("ext_ior").as_num();
-                    node_desc.ext_ior = float(js_ext_ior.val);
+                if (js_mat_obj.Has("ior")) {
+                    const JsNumber &js_ior = js_mat_obj.at("ior").as_num();
+                    node_desc.ior = float(js_ior.val);
                 }
 
                 if (js_type.val == "diffuse") {
