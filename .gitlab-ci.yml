@@ -9,18 +9,12 @@ stages:
   tags:
     - windows
   script:
-    - echo "Compiling shaders..."
-    - cd src/Ray
-    - ./compile_shaders.bat
-    - git diff --quiet -- internal/shaders
-    - cd ../..
     - echo "Compiling the code..."
     - mkdir build
     - cd build
     - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
     - cd ..
     - cmake --build build --target ALL_BUILD --config Release --parallel 16
-    - cmake --build build --target ALL_BUILD --config Debug --parallel 16
     - cmake --build build --target ALL_BUILD --config RelWithDebInfo --parallel 16
     - echo "Compile complete."
     - mkdir windows-x86_64
@@ -30,6 +24,31 @@ stages:
     - copy build/src/Ren/SW/tests/Release/test_SW.exe windows-x86_64
     - copy build/src/Sys/tests/Release/test_Sys.exe windows-x86_64
     - copy DemoApp.exe windows-x86_64
+  artifacts:
+    name: windows-x86_64
+    paths:
+      - windows-x86_64/
+    expire_in: 1 week
+
+.windows-x86_64-build-dbg-job:
+  stage: build
+  tags:
+    - windows
+  script:
+    - echo "Compiling the code..."
+    - mkdir build
+    - cd build
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - cmake --build build --target ALL_BUILD --config Debug --parallel 16
+    - echo "Compile complete."
+    - mkdir windows-x86_64
+    - copy build/src/Eng/tests/Debug/test_Eng.exe windows-x86_64
+    - copy build/src/Ray/tests/Debug/test_Ray-dbg.exe windows-x86_64
+    - copy build/src/Ren/tests/Debug/test_Ren.exe windows-x86_64
+    - copy build/src/Ren/SW/tests/Debug/test_SW.exe windows-x86_64
+    - copy build/src/Sys/tests/Debug/test_Sys.exe windows-x86_64
+    - copy DemoApp-dbg.exe windows-x86_64
   artifacts:
     name: windows-x86_64
     paths:
@@ -345,6 +364,12 @@ stages:
 windows-x86_64-build-job:
   extends:
     - .windows-x86_64-build-job
+  tags:
+    - windows,builder
+
+windows-x86_64-build-dbg-job:
+  extends:
+    - .windows-x86_64-build-dbg-job
   tags:
     - windows,builder
 
