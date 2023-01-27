@@ -4,7 +4,7 @@ stages:
   - test-img
   - deploy
 
-.windows-x86_64-build-job:
+.windows-x86_64-build-rel-job:
   stage: build
   tags:
     - windows
@@ -15,7 +15,6 @@ stages:
     - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
     - cd ..
     - cmake --build build --target ALL_BUILD --config Release --parallel 16
-    - cmake --build build --target ALL_BUILD --config RelWithDebInfo --parallel 16
     - echo "Compile complete."
     - mkdir windows-x86_64
     - copy build/src/Eng/tests/Release/test_Eng.exe windows-x86_64
@@ -24,6 +23,31 @@ stages:
     - copy build/src/Ren/SW/tests/Release/test_SW.exe windows-x86_64
     - copy build/src/Sys/tests/Release/test_Sys.exe windows-x86_64
     - copy DemoApp.exe windows-x86_64
+  artifacts:
+    name: windows-x86_64
+    paths:
+      - windows-x86_64/
+    expire_in: 1 week
+
+.windows-x86_64-build-dev-job:
+  stage: build
+  tags:
+    - windows
+  script:
+    - echo "Compiling the code..."
+    - mkdir build
+    - cd build
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cd ..
+    - cmake --build build --target ALL_BUILD --config RelWithDebInfo --parallel 16
+    - echo "Compile complete."
+    - mkdir windows-x86_64
+    - copy build/src/Eng/tests/RelWithDebInfo/test_Eng.exe windows-x86_64
+    - copy build/src/Ray/tests/RelWithDebInfo/test_Ray-dev.exe windows-x86_64
+    - copy build/src/Ren/tests/RelWithDebInfo/test_Ren.exe windows-x86_64
+    - copy build/src/Ren/SW/tests/RelWithDebInfo/test_SW.exe windows-x86_64
+    - copy build/src/Sys/tests/RelWithDebInfo/test_Sys.exe windows-x86_64
+    - copy DemoApp-dev.exe windows-x86_64
   artifacts:
     name: windows-x86_64
     paths:
@@ -361,9 +385,15 @@ stages:
       - staircase.png
     expire_in: 1 week
 
-windows-x86_64-build-job:
+windows-x86_64-build-rel-job:
   extends:
-    - .windows-x86_64-build-job
+    - .windows-x86_64-build-rel-job
+  tags:
+    - windows,builder
+
+windows-x86_64-build-dev-job:
+  extends:
+    - .windows-x86_64-build-dev-job
   tags:
     - windows,builder
 
@@ -416,7 +446,7 @@ windows-x86_64-cpu-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64,fastcpu,avx512
 
@@ -427,7 +457,7 @@ windows-x86_64-gpu-amd-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
     - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,amd
@@ -439,7 +469,7 @@ windows-x86_64-gpu-nv-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
     - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,nv
@@ -452,7 +482,7 @@ windows-x86_64-gpu-xe-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
     - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,xe
@@ -464,7 +494,7 @@ windows-x86_64-gpu-arc-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
     - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,arc
@@ -476,7 +506,7 @@ windows-x86_64-cpu-test-img-job:
   extends:
     - .windows-test-img-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
     - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,fastcpu
@@ -490,7 +520,7 @@ windows-x86_64-gpu-nv-test-img-job:
   extends:
     - .windows-gpu-test-img-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
     - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,nv
@@ -504,7 +534,7 @@ windows-x86_64-gpu-amd-test-img-job:
   extends:
     - .windows-gpu-test-img-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
     - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,amd
@@ -518,7 +548,7 @@ windows-x86_64-gpu-amd-test-img-job:
 #  extends:
 #    - .windows-gpu-test-img-job
 #  needs:
-#    - windows-x86_64-build-job
+#    - windows-x86_64-build-rel-job
 #    - windows-x86_64-build-shaders-job
 #  tags:
 #    - windows,x86_64,xe
@@ -532,7 +562,7 @@ windows-x86_64-gpu-arc-test-img-job:
   extends:
     - .windows-gpu-test-img-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
     - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,arc
@@ -737,7 +767,7 @@ deploy-job:
       optional: true
     - linux-x86_64-cpu-test-job
     - linux-x86_64-gpu-nv-test-job
-    #- linux-x86_64-gpu-amd-test-job
+    - linux-x86_64-gpu-amd-test-job
     - job: linux-x86_64-cpu-test-img-job
       optional: true
     - job: linux-x86_64-gpu-nv-test-img-job
