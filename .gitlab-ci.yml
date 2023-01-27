@@ -36,6 +36,17 @@ stages:
       - windows-x86_64/
     expire_in: 1 week
 
+.windows-x86_64-build-shaders-job:
+  stage: build
+  tags:
+    - windows
+  script:
+    - echo "Compiling shaders..."
+    - cd src/Ray
+    - ./compile_shaders.bat
+    - git diff --quiet -- internal/shaders
+    - cd ../..
+
 .windows-x86_64-build-clang-job:
   stage: build
   tags:
@@ -337,6 +348,12 @@ windows-x86_64-build-job:
   tags:
     - windows,builder
 
+windows-x86_64-build-shaders-job:
+  extends:
+    - .windows-x86_64-build-shaders-job
+  tags:
+    - windows,builder
+
 windows-x86_64-build-clang-job:
   extends:
     - .windows-x86_64-build-clang-job
@@ -386,6 +403,7 @@ windows-x86_64-gpu-amd-test-job:
     - .windows-test-job
   needs:
     - windows-x86_64-build-job
+    - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,amd
 
@@ -397,6 +415,7 @@ windows-x86_64-gpu-nv-test-job:
     - .windows-test-job
   needs:
     - windows-x86_64-build-job
+    - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,nv
 
@@ -409,6 +428,7 @@ windows-x86_64-gpu-xe-test-job:
     - .windows-test-job
   needs:
     - windows-x86_64-build-job
+    - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,xe
 
@@ -420,6 +440,7 @@ windows-x86_64-gpu-arc-test-job:
     - .windows-test-job
   needs:
     - windows-x86_64-build-job
+    - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,arc
 
@@ -431,6 +452,7 @@ windows-x86_64-cpu-test-img-job:
     - .windows-test-img-job
   needs:
     - windows-x86_64-build-job
+    - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,fastcpu
   rules:
@@ -444,6 +466,7 @@ windows-x86_64-gpu-nv-test-img-job:
     - .windows-gpu-test-img-job
   needs:
     - windows-x86_64-build-job
+    - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,nv
   rules:
@@ -457,6 +480,7 @@ windows-x86_64-gpu-amd-test-img-job:
     - .windows-gpu-test-img-job
   needs:
     - windows-x86_64-build-job
+    - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,amd
   rules:
@@ -470,6 +494,7 @@ windows-x86_64-gpu-amd-test-img-job:
 #    - .windows-gpu-test-img-job
 #  needs:
 #    - windows-x86_64-build-job
+#    - windows-x86_64-build-shaders-job
 #  tags:
 #    - windows,x86_64,xe
 #  rules:
@@ -483,6 +508,7 @@ windows-x86_64-gpu-arc-test-img-job:
     - .windows-gpu-test-img-job
   needs:
     - windows-x86_64-build-job
+    - windows-x86_64-build-shaders-job
   tags:
     - windows,x86_64,arc
   rules:
