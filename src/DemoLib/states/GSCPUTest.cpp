@@ -1,4 +1,4 @@
-#include "GSSamplingTest.h"
+#include "GSCPUTest.h"
 
 #include <fstream>
 #include <iostream>
@@ -40,7 +40,7 @@ GSCPUTest::GSCPUTest(GameBase *game) : game_(game) {
     threads_        = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
 
-GSCPUTest::~GSCPUTest() {}
+GSCPUTest::~GSCPUTest() = default;
 
 void GSCPUTest::Enter() {
 #if defined(USE_SW_RENDER)
@@ -116,7 +116,6 @@ void GSCPUTest::Draw(uint64_t dt_us) {
     } else if (state_ == eStarted) {
         
     } else if (state_ == eFinished) {
-        
 
     }
 

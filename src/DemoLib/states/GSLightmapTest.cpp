@@ -192,7 +192,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     uint64_t t1 = Sys::GetTimeMs();
 
     if (invalidate_preview_) {
-        ray_renderer_->Clear();
+        ray_renderer_->Clear({0, 0, 0, 0});
         UpdateRegionContexts();
         invalidate_preview_ = false;
     }
@@ -216,7 +216,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
         ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[0]);
     }
 
-    Ray::RendererBase::stats_t st;
+    Ray::RendererBase::stats_t st = {};
     ray_renderer_->GetStats(st);
     ray_renderer_->ResetStats();
 
@@ -384,7 +384,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     time_counter_++;
 
     if (time_counter_ == 20) {
-        cur_time_stat_ms_ = float(time_acc_) / time_counter_;
+        cur_time_stat_ms_ = float(time_acc_) / float(time_counter_);
         time_acc_ = 0;
         time_counter_ = 0;
     }

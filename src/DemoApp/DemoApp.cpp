@@ -59,7 +59,7 @@ extern RENDERDOC_DevicePointer rdoc_device;
 
 DemoApp::DemoApp() : quit_(false) { g_app = this; }
 
-DemoApp::~DemoApp() {}
+DemoApp::~DemoApp() = default;
 
 int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool nohwrt, bool nobindless,
                   bool nocompression) {
@@ -101,7 +101,8 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
 #endif
 #endif
 
-    putenv("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE=1");
+    char envarg[] = "MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE=1";
+    putenv(envarg);
 
 #if !defined(NDEBUG) && defined(_WIN32)
     _controlfp(_EM_INEXACT, _MCW_EM);

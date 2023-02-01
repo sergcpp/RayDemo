@@ -197,7 +197,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         ray_scene_->SetCamera(0, cam_desc);
 
         if (invalidate_preview_ || last_invalidate_) {
-            ray_renderer_->Clear();
+            ray_renderer_->Clear({0, 0, 0, 0});
             UpdateRegionContexts();
             invalidate_preview_ = false;
         }
@@ -226,7 +226,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[0]);
     }
 
-    Ray::RendererBase::stats_t st;
+    Ray::RendererBase::stats_t st = {};
     ray_renderer_->GetStats(st);
     ray_renderer_->ResetStats();
 

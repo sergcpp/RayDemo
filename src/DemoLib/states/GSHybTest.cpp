@@ -193,9 +193,9 @@ void GSHybTest::Draw(uint64_t dt_us) {
 
     if (invalidate_preview_) {
         for (auto &t : gpu_tracers_) {
-            t->Clear();
+            t->Clear({0, 0, 0, 0});
         }
-        cpu_tracer_->Clear();
+        cpu_tracer_->Clear({0, 0, 0, 0});
         UpdateRegionContexts();
         invalidate_preview_ = false;
     }
@@ -235,7 +235,7 @@ void GSHybTest::Draw(uint64_t dt_us) {
     }
 
     if (!gpu_gpu_div_dac_dirty_ && gpu_tracers_.size() == 2) {
-        Ray::RendererBase::stats_t st1, st2;
+        Ray::RendererBase::stats_t st1 = {}, st2 = {};
         gpu_tracers_[0]->GetStats(st1);
         gpu_tracers_[1]->GetStats(st2);
 
@@ -265,7 +265,7 @@ void GSHybTest::Draw(uint64_t dt_us) {
 
     {
         for (auto &t : gpu_tracers_) {
-            Ray::RendererBase::stats_t _st;
+            Ray::RendererBase::stats_t _st = {};
             t->GetStats(_st);
             t->ResetStats();
 
@@ -487,7 +487,7 @@ void GSHybTest::Draw(uint64_t dt_us) {
     time_counter_++;
 
     if (time_counter_ == 20) {
-        cur_time_stat_ms_ = float(time_acc_) / time_counter_;
+        cur_time_stat_ms_ = float(time_acc_) / float(time_counter_);
         time_acc_ = 0;
         time_counter_ = 0;
     }
