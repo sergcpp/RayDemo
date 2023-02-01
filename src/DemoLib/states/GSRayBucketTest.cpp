@@ -258,7 +258,7 @@ void GSRayBucketTest::Draw(uint64_t dt_us) {
     uint64_t t1 = Sys::GetTimeMs();
 
     if (invalidate_preview_) {
-        ray_renderer_->Clear();
+        ray_renderer_->Clear({0, 0, 0, 0});
         UpdateRegionContexts();
         invalidate_preview_ = false;
     }

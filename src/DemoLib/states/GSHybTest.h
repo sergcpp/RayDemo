@@ -65,9 +65,6 @@ class GSHybTest : public GameState {
     bool gpu_cpu_div_fac_dirty_ = false, gpu_gpu_div_dac_dirty_ = false;
 
     bool draw_limits_ = true;
-#if !defined(DISABLE_OCL)
-    std::vector<Ray::Ocl::Platform> ocl_platforms_;
-#endif
     std::vector<Ray::RegionContext> gpu_region_contexts_;
     std::vector<Ray::RegionContext> cpu_region_contexts_;
 

@@ -206,9 +206,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         if (obj.Has("pos")) {
             const JsArray &js_pos = obj.at("pos").as_arr();
 
-            const float px = float(js_pos.at(0).as_num().val);
-            const float py = float(js_pos.at(1).as_num().val);
-            const float pz = float(js_pos.at(2).as_num().val);
+            const auto px = float(js_pos.at(0).as_num().val);
+            const auto py = float(js_pos.at(1).as_num().val);
+            const auto pz = float(js_pos.at(2).as_num().val);
 
             transform = Ren::Translate(transform, {px, py, pz});
         }
@@ -257,9 +257,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         if (obj.Has("scale")) {
             const JsArray &js_scale = obj.at("scale").as_arr();
 
-            const float sx = float(js_scale.at(0).as_num().val);
-            const float sy = float(js_scale.at(1).as_num().val);
-            const float sz = float(js_scale.at(2).as_num().val);
+            const auto sx = float(js_scale.at(0).as_num().val);
+            const auto sy = float(js_scale.at(1).as_num().val);
+            const auto sz = float(js_scale.at(2).as_num().val);
 
             transform = Ren::Scale(transform, {sx, sy, sz});
         }
@@ -298,9 +298,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             } else if (js_cam.Has("view_rot")) {
                 const JsArray &js_view_rot = js_cam.at("view_rot").as_arr();
 
-                float rx = float(js_view_rot.at(0).as_num().val);
-                float ry = float(js_view_rot.at(1).as_num().val);
-                float rz = float(js_view_rot.at(2).as_num().val);
+                auto rx = float(js_view_rot.at(0).as_num().val);
+                auto ry = float(js_view_rot.at(1).as_num().val);
+                auto rz = float(js_view_rot.at(2).as_num().val);
 
                 rx *= Ren::Pi<float>() / 180.0f;
                 ry *= Ren::Pi<float>() / 180.0f;
