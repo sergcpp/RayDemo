@@ -632,6 +632,12 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     mat_desc.emission_color[2] = float(js_emission_color.at(2).as_num().val);
                 }
 
+                if (js_mat_obj.Has("emission_texture")) {
+                    const JsString &js_emission_tex = js_mat_obj.at("emission_texture").as_str();
+                    mat_desc.emission_texture =
+                        get_texture(js_emission_tex.val, true /* srgb */, false /* normalmap */, true /* mips */);
+                }
+
                 if (js_mat_obj.Has("emission_strength")) {
                     const JsNumber &js_emission_strength = js_mat_obj.at("emission_strength").as_num();
                     mat_desc.emission_strength = float(js_emission_strength.val);
