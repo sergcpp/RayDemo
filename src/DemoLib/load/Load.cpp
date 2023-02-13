@@ -362,6 +362,16 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 cam_desc.sensor_height = float(js_sensor_height.val);
             }
 
+            if (js_cam.Has("exposure")) {
+                const JsNumber &js_exposure = js_cam.at("exposure").as_num();
+                cam_desc.exposure = float(js_exposure.val);
+            }
+
+            if (js_cam.Has("gamma")) {
+                const JsNumber &js_gamma = js_cam.at("gamma").as_num();
+                cam_desc.gamma = float(js_gamma.val);
+            }
+
             if (js_cam.Has("lens_rotation")) {
                 const JsNumber &js_lens_rotation = js_cam.at("lens_rotation").as_num();
                 cam_desc.lens_rotation = float(js_lens_rotation.val);
