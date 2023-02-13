@@ -120,6 +120,10 @@ void GSRayTest::Enter() {
             if (js_cam.Has("fwd_speed")) {
                 max_fwd_speed_ = float(js_cam.at("fwd_speed").as_num().val);
             }
+
+            if (js_cam.Has("focus_distance")) {
+                focal_distance_ = float(js_cam.at("focus_distance").as_num().val);
+            }
         }
     }
 
