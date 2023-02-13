@@ -299,6 +299,7 @@ stages:
   stage: test-img
   script:
     - echo "Running image tests..."
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 27.32 --threshold 7970'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --samples 1024 --psnr 34.28 --threshold 242'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS.split(" ") -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12'
@@ -319,6 +320,7 @@ stages:
   stage: test-img
   script:
     - echo "Running image tests..."
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 27.32 --threshold 7970'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --samples 1024 --psnr 34.28 --threshold 242'
     #- '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS.split(" ") -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12'
@@ -361,6 +363,7 @@ stages:
   stage: test-img
   script:
     - echo "Running image tests..."
+    - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 27.32 --threshold 7970
     - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --samples 1024 --psnr 34.28 --threshold 242
     - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2
     - ./$BIN_DIR/DemoApp -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12
@@ -381,6 +384,7 @@ stages:
   stage: test-img
   script:
     - echo "Running image tests..."
+    - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 27.32 --threshold 7970
     - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --samples 1024 --psnr 34.28 --threshold 242
     - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.png --samples 1024 --psnr 34.25 --threshold 980 --diff_depth 2
     - ./$BIN_DIR/DemoApp -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS -ref assets/references/coffee_maker_cycles.png --samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12
