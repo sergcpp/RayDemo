@@ -106,8 +106,10 @@ void GSRayTest::Enter() {
             LOGE("%s", e.what());
         }
 
-        if (js_scene.Has("camera")) {
-            const JsObject &js_cam = js_scene.at("camera").as_obj();
+        current_cam_ = ray_scene_->current_cam();
+
+        if (js_scene.Has("cameras")) {
+            const JsObject &js_cam = js_scene.at("cameras").as_arr().at(current_cam_).as_obj();
             if (js_cam.Has("view_target")) {
                 const JsArray &js_view_target = js_cam.at("view_target").as_arr();
 
@@ -120,17 +122,13 @@ void GSRayTest::Enter() {
             if (js_cam.Has("fwd_speed")) {
                 max_fwd_speed_ = float(js_cam.at("fwd_speed").as_num().val);
             }
-
-            if (js_cam.Has("focus_distance")) {
-                focal_distance_ = float(js_cam.at("focus_distance").as_num().val);
-            }
         }
     }
 
     Ray::camera_desc_t cam_desc;
-    ray_scene_->GetCamera(0, cam_desc);
+    ray_scene_->GetCamera(current_cam_, cam_desc);
 
-    cam_desc.focus_distance = focal_distance_;
+    focal_distance_ = cam_desc.focus_distance;
 
     cam_desc.max_diff_depth = app_params->diff_depth;
     cam_desc.max_spec_depth = app_params->spec_depth;
@@ -180,7 +178,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     if (app_params->ref_name.empty()) { // make sure camera doesn't change during reference tests
         Ray::camera_desc_t cam_desc;
-        ray_scene_->GetCamera(0, cam_desc);
+        ray_scene_->GetCamera(current_cam_, cam_desc);
 
         memcpy(&cam_desc.origin[0], ValuePtr(view_origin_), 3 * sizeof(float));
         memcpy(&cam_desc.fwd[0], ValuePtr(view_dir_), 3 * sizeof(float));
@@ -198,7 +196,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             }
         }
 
-        ray_scene_->SetCamera(0, cam_desc);
+        ray_scene_->SetCamera(current_cam_, cam_desc);
 
         if (invalidate_preview_ || last_invalidate_) {
             ray_renderer_->Clear({0, 0, 0, 0});
