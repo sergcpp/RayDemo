@@ -273,6 +273,19 @@ stages:
       - macos-arm64/
     expire_in: 1 week
 
+.macos-universal-prepare-job:
+  stage: build
+  tags:
+    - macos
+  script:
+    - echo "Making universal binary..."
+    - mkdir macos-universal
+    - lipo -create -output macos-universal/DemoApp macos-x86_64/DemoApp macos-arm64/DemoApp
+  artifacts:
+    paths:
+      - macos-universal/
+    expire_in: 1 week
+
 .windows-test-job:
   stage: test
   script:
@@ -466,6 +479,15 @@ macos-arm64-build-job:
     - .macos-arm64-build-job
   tags:
     - macos,arm64,builder
+
+macos-universal-prepare-job:
+  extends:
+    - .macos-universal-prepare-job
+  needs:
+    - macos-x86_64-build-job
+    - macos-arm64-build-job
+  tags:
+    - macos,builder
 
 windows-x86_64-cpu-test-job:
   variables:
@@ -712,12 +734,12 @@ macos-x86_64-cpu-test-job:
 
 macos-x86_64-cpu-test-img-job:
   variables:
-    BIN_DIR: macos-x86_64
+    BIN_DIR: macos-universal
     AUX_TEST_ARGS: '--nogpu'
   extends:
     - .test-img-job
   needs:
-    - macos-x86_64-build-job
+    - macos-universal-prepare-job
   tags:
     - macos,x86_64
   rules:
@@ -747,12 +769,12 @@ macos-arm64-gpu-m1-test-job:
 
 macos-arm64-cpu-test-img-job:
   variables:
-    BIN_DIR: macos-arm64
+    BIN_DIR: macos-universal
     AUX_TEST_ARGS: '--nogpu'
   extends:
     - .test-img-job
   needs:
-    - macos-arm64-build-job
+    - macos-universal-prepare-job
   tags:
     - macos,arm64
   rules:
@@ -760,12 +782,12 @@ macos-arm64-cpu-test-img-job:
 
 macos-arm64-gpu-m1-test-img-job:
   variables:
-    BIN_DIR: macos-arm64
+    BIN_DIR: macos-universal
     AUX_TEST_ARGS: '--nocpu'
   extends:
     - .gpu-test-img-job
   needs:
-    - macos-arm64-build-job
+    - macos-universal-prepare-job
   tags:
     - macos,arm64,m1
   rules:
