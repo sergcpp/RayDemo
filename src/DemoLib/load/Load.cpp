@@ -37,9 +37,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     bool view_targeted = false;
     Ren::Vec3f view_origin, view_dir = {0, 0, -1}, view_up, view_target;
 
-    Ray::camera_desc_t cam_desc;
-    cam_desc.clamp = true;
-
     std::map<std::string, uint32_t> textures;
     std::map<std::string, uint32_t> materials;
     std::map<std::string, uint32_t> meshes;
@@ -279,138 +276,169 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 global_settings.use_fast_bvh_build = (use_fast.val == JsLiteralType::True);
             }
         }
-        if (js_scene.Has("camera")) {
-            const JsObject &js_cam = js_scene.at("camera").as_obj();
-            if (js_cam.Has("view_origin")) {
-                const JsArray &js_view_origin = js_cam.at("view_origin").as_arr();
+        if (js_scene.Has("cameras")) {
+            const JsArray &js_cams = js_scene.at("cameras").as_arr();
 
-                view_origin[0] = float(js_view_origin.at(0).as_num().val);
-                view_origin[1] = float(js_view_origin.at(1).as_num().val);
-                view_origin[2] = float(js_view_origin.at(2).as_num().val);
-            }
+            for (const auto &js_cam_el : js_cams.elements) {
+                const JsObject &js_cam = js_cam_el.as_obj();
 
-            if (js_cam.Has("view_dir")) {
-                const JsArray &js_view_dir = js_cam.at("view_dir").as_arr();
+                Ray::camera_desc_t cam_desc;
+                cam_desc.clamp = true;
 
-                view_dir[0] = float(js_view_dir.at(0).as_num().val);
-                view_dir[1] = float(js_view_dir.at(1).as_num().val);
-                view_dir[2] = float(js_view_dir.at(2).as_num().val);
-            } else if (js_cam.Has("view_rot")) {
-                const JsArray &js_view_rot = js_cam.at("view_rot").as_arr();
+                if (js_cam.Has("view_origin")) {
+                    const JsArray &js_view_origin = js_cam.at("view_origin").as_arr();
 
-                auto rx = float(js_view_rot.at(0).as_num().val);
-                auto ry = float(js_view_rot.at(1).as_num().val);
-                auto rz = float(js_view_rot.at(2).as_num().val);
-
-                rx *= Ren::Pi<float>() / 180.0f;
-                ry *= Ren::Pi<float>() / 180.0f;
-                rz *= Ren::Pi<float>() / 180.0f;
-
-                Ren::Mat4f transform;
-                transform = Ren::Rotate(transform, float(rz), Ren::Vec3f{0.0f, 0.0f, 1.0f});
-                transform = Ren::Rotate(transform, float(rx), Ren::Vec3f{1.0f, 0.0f, 0.0f});
-                transform = Ren::Rotate(transform, float(ry), Ren::Vec3f{0.0f, 1.0f, 0.0f});
-
-                Ren::Vec4f view_vec = {0.0f, -1.0f, 0.0f, 0.0f};
-                view_vec = transform * view_vec;
-
-                memcpy(&view_dir[0], Ren::ValuePtr(view_vec), 3 * sizeof(float));
-
-                Ren::Vec4f view_up_vec = {0.0f, 0.0f, -1.0f, 0.0f};
-                view_up_vec = transform * view_up_vec;
-
-                memcpy(&view_up[0], Ren::ValuePtr(view_up_vec), 3 * sizeof(float));
-            }
-
-            if (js_cam.Has("view_up")) {
-                const JsArray &js_view_up = js_cam.at("view_up").as_arr();
-
-                view_up[0] = float(js_view_up.at(0).as_num().val);
-                view_up[1] = float(js_view_up.at(1).as_num().val);
-                view_up[2] = float(js_view_up.at(2).as_num().val);
-            }
-
-            if (js_cam.Has("view_target")) {
-                const JsArray &js_view_target = js_cam.at("view_target").as_arr();
-
-                view_target[0] = float(js_view_target.at(0).as_num().val);
-                view_target[1] = float(js_view_target.at(1).as_num().val);
-                view_target[2] = float(js_view_target.at(2).as_num().val);
-
-                view_targeted = true;
-            }
-
-            if (js_cam.Has("shift")) {
-                const JsArray &js_shift = js_cam.at("shift").as_arr();
-
-                cam_desc.shift[0] = float(js_shift.at(0).as_num().val);
-                cam_desc.shift[1] = float(js_shift.at(1).as_num().val);
-            }
-
-            if (js_cam.Has("fov")) {
-                const JsNumber &js_view_fov = js_cam.at("fov").as_num();
-                cam_desc.fov = float(js_view_fov.val);
-            }
-
-            if (js_cam.Has("fstop")) {
-                const JsNumber &js_fstop = js_cam.at("fstop").as_num();
-                cam_desc.fstop = float(js_fstop.val);
-            }
-
-            if (js_cam.Has("sensor_height")) {
-                const JsNumber &js_sensor_height = js_cam.at("sensor_height").as_num();
-                cam_desc.sensor_height = float(js_sensor_height.val);
-            }
-
-            if (js_cam.Has("exposure")) {
-                const JsNumber &js_exposure = js_cam.at("exposure").as_num();
-                cam_desc.exposure = float(js_exposure.val);
-            }
-
-            if (js_cam.Has("gamma")) {
-                const JsNumber &js_gamma = js_cam.at("gamma").as_num();
-                cam_desc.gamma = float(js_gamma.val);
-            }
-
-            if (js_cam.Has("lens_rotation")) {
-                const JsNumber &js_lens_rotation = js_cam.at("lens_rotation").as_num();
-                cam_desc.lens_rotation = float(js_lens_rotation.val);
-            }
-
-            if (js_cam.Has("lens_ratio")) {
-                const JsNumber &js_lens_ratio = js_cam.at("lens_ratio").as_num();
-                cam_desc.lens_ratio = float(js_lens_ratio.val);
-            }
-
-            if (js_cam.Has("lens_blades")) {
-                const JsNumber &js_lens_blades = js_cam.at("lens_blades").as_num();
-                cam_desc.lens_blades = int(js_lens_blades.val);
-            }
-
-            if (js_cam.Has("clip_start")) {
-                const JsNumber &js_clip_start = js_cam.at("clip_start").as_num();
-                cam_desc.clip_start = float(js_clip_start.val);
-            }
-
-            if (js_cam.Has("clip_end")) {
-                const JsNumber &js_clip_end = js_cam.at("clip_end").as_num();
-                cam_desc.clip_end = float(js_clip_end.val);
-            }
-
-            if (js_cam.Has("filter")) {
-                const JsString &js_filter = js_cam.at("filter").as_str();
-                if (js_filter.val == "box") {
-                    cam_desc.filter = Ray::Box;
-                } else if (js_filter.val == "tent") {
-                    cam_desc.filter = Ray::Tent;
-                } else {
-                    throw std::runtime_error("Unknown filter parameter!");
+                    view_origin[0] = float(js_view_origin.at(0).as_num().val);
+                    view_origin[1] = float(js_view_origin.at(1).as_num().val);
+                    view_origin[2] = float(js_view_origin.at(2).as_num().val);
                 }
+
+                if (js_cam.Has("view_dir")) {
+                    const JsArray &js_view_dir = js_cam.at("view_dir").as_arr();
+
+                    view_dir[0] = float(js_view_dir.at(0).as_num().val);
+                    view_dir[1] = float(js_view_dir.at(1).as_num().val);
+                    view_dir[2] = float(js_view_dir.at(2).as_num().val);
+                } else if (js_cam.Has("view_rot")) {
+                    const JsArray &js_view_rot = js_cam.at("view_rot").as_arr();
+
+                    auto rx = float(js_view_rot.at(0).as_num().val);
+                    auto ry = float(js_view_rot.at(1).as_num().val);
+                    auto rz = float(js_view_rot.at(2).as_num().val);
+
+                    rx *= Ren::Pi<float>() / 180.0f;
+                    ry *= Ren::Pi<float>() / 180.0f;
+                    rz *= Ren::Pi<float>() / 180.0f;
+
+                    Ren::Mat4f transform;
+                    transform = Ren::Rotate(transform, float(rz), Ren::Vec3f{0.0f, 0.0f, 1.0f});
+                    transform = Ren::Rotate(transform, float(rx), Ren::Vec3f{1.0f, 0.0f, 0.0f});
+                    transform = Ren::Rotate(transform, float(ry), Ren::Vec3f{0.0f, 1.0f, 0.0f});
+
+                    Ren::Vec4f view_vec = {0.0f, -1.0f, 0.0f, 0.0f};
+                    view_vec = transform * view_vec;
+
+                    memcpy(&view_dir[0], Ren::ValuePtr(view_vec), 3 * sizeof(float));
+
+                    Ren::Vec4f view_up_vec = {0.0f, 0.0f, -1.0f, 0.0f};
+                    view_up_vec = transform * view_up_vec;
+
+                    memcpy(&view_up[0], Ren::ValuePtr(view_up_vec), 3 * sizeof(float));
+                }
+
+                if (js_cam.Has("view_up")) {
+                    const JsArray &js_view_up = js_cam.at("view_up").as_arr();
+
+                    view_up[0] = float(js_view_up.at(0).as_num().val);
+                    view_up[1] = float(js_view_up.at(1).as_num().val);
+                    view_up[2] = float(js_view_up.at(2).as_num().val);
+                }
+
+                if (js_cam.Has("view_target")) {
+                    const JsArray &js_view_target = js_cam.at("view_target").as_arr();
+
+                    view_target[0] = float(js_view_target.at(0).as_num().val);
+                    view_target[1] = float(js_view_target.at(1).as_num().val);
+                    view_target[2] = float(js_view_target.at(2).as_num().val);
+
+                    view_targeted = true;
+                }
+
+                if (js_cam.Has("shift")) {
+                    const JsArray &js_shift = js_cam.at("shift").as_arr();
+
+                    cam_desc.shift[0] = float(js_shift.at(0).as_num().val);
+                    cam_desc.shift[1] = float(js_shift.at(1).as_num().val);
+                }
+
+                if (js_cam.Has("fov")) {
+                    const JsNumber &js_view_fov = js_cam.at("fov").as_num();
+                    cam_desc.fov = float(js_view_fov.val);
+                }
+
+                if (js_cam.Has("fstop")) {
+                    const JsNumber &js_fstop = js_cam.at("fstop").as_num();
+                    cam_desc.fstop = float(js_fstop.val);
+                }
+
+                if (js_cam.Has("focus_distance")) {
+                    const JsNumber &js_focus_distance = js_cam.at("focus_distance").as_num();
+                    cam_desc.focus_distance = float(js_focus_distance.val);
+                } else {
+                    cam_desc.focus_distance = 0.4f;
+                }
+
+                if (js_cam.Has("sensor_height")) {
+                    const JsNumber &js_sensor_height = js_cam.at("sensor_height").as_num();
+                    cam_desc.sensor_height = float(js_sensor_height.val);
+                }
+
+                if (js_cam.Has("exposure")) {
+                    const JsNumber &js_exposure = js_cam.at("exposure").as_num();
+                    cam_desc.exposure = float(js_exposure.val);
+                }
+
+                if (js_cam.Has("gamma")) {
+                    const JsNumber &js_gamma = js_cam.at("gamma").as_num();
+                    cam_desc.gamma = float(js_gamma.val);
+                }
+
+                if (js_cam.Has("lens_rotation")) {
+                    const JsNumber &js_lens_rotation = js_cam.at("lens_rotation").as_num();
+                    cam_desc.lens_rotation = float(js_lens_rotation.val);
+                }
+
+                if (js_cam.Has("lens_ratio")) {
+                    const JsNumber &js_lens_ratio = js_cam.at("lens_ratio").as_num();
+                    cam_desc.lens_ratio = float(js_lens_ratio.val);
+                }
+
+                if (js_cam.Has("lens_blades")) {
+                    const JsNumber &js_lens_blades = js_cam.at("lens_blades").as_num();
+                    cam_desc.lens_blades = int(js_lens_blades.val);
+                }
+
+                if (js_cam.Has("clip_start")) {
+                    const JsNumber &js_clip_start = js_cam.at("clip_start").as_num();
+                    cam_desc.clip_start = float(js_clip_start.val);
+                }
+
+                if (js_cam.Has("clip_end")) {
+                    const JsNumber &js_clip_end = js_cam.at("clip_end").as_num();
+                    cam_desc.clip_end = float(js_clip_end.val);
+                }
+
+                if (js_cam.Has("filter")) {
+                    const JsString &js_filter = js_cam.at("filter").as_str();
+                    if (js_filter.val == "box") {
+                        cam_desc.filter = Ray::Box;
+                    } else if (js_filter.val == "tent") {
+                        cam_desc.filter = Ray::Tent;
+                    } else {
+                        throw std::runtime_error("Unknown filter parameter!");
+                    }
+                }
+
+                if (js_cam.Has("srgb")) {
+                    const JsLiteral &js_srgb = js_cam.at("srgb").as_lit();
+                    cam_desc.dtype = (js_srgb.val == JsLiteralType::True) ? Ray::SRGB : Ray::None;
+                }
+
+                if (view_targeted) {
+                    Ren::Vec3f dir = view_origin - view_target;
+                    view_dir = Normalize(-dir);
+                }
+
+                memcpy(&cam_desc.origin[0], ValuePtr(view_origin), 3 * sizeof(float));
+                memcpy(&cam_desc.fwd[0], ValuePtr(view_dir), 3 * sizeof(float));
+                memcpy(&cam_desc.up[0], ValuePtr(view_up), 3 * sizeof(float));
+
+                new_scene->AddCamera(cam_desc);
             }
 
-            if (js_cam.Has("srgb")) {
-                const JsLiteral &js_srgb = js_cam.at("srgb").as_lit();
-                cam_desc.dtype = (js_srgb.val == JsLiteralType::True) ? Ray::SRGB : Ray::None;
+            if (js_scene.Has("current_cam")) {
+                const JsNumber &js_current_cam = js_scene.at("current_cam").as_num();
+                new_scene->set_current_cam(uint32_t(js_current_cam.val));
             }
         }
 
@@ -1087,17 +1115,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         LOGE("Error in parsing json file! %s", e.what());
         return nullptr;
     }
-
-    if (view_targeted) {
-        Ren::Vec3f dir = view_origin - view_target;
-        view_dir = Normalize(-dir);
-    }
-
-    memcpy(&cam_desc.origin[0], ValuePtr(view_origin), 3 * sizeof(float));
-    memcpy(&cam_desc.fwd[0], ValuePtr(view_dir), 3 * sizeof(float));
-    memcpy(&cam_desc.up[0], ValuePtr(view_up), 3 * sizeof(float));
-
-    new_scene->AddCamera(cam_desc);
 
     new_scene->Finalize();
 
