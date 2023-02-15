@@ -34,9 +34,10 @@
 std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res) {
     auto new_scene = std::shared_ptr<Ray::SceneBase>(r->CreateScene());
 
-    std::map<std::string, uint32_t> textures;
-    std::map<std::string, uint32_t> materials;
-    std::map<std::string, uint32_t> meshes;
+    std::vector<Ray::Camera> cameras;
+    std::map<std::string, Ray::Texture> textures;
+    std::map<std::string, Ray::Material> materials;
+    std::map<std::string, Ray::Mesh> meshes;
 
     auto jpg_decompressor = std::unique_ptr<void, int (*)(tjhandle)>(tjInitDecompress(), &tjDestroy);
 
@@ -95,11 +96,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                             stbi_image_free(img_data);
                             img_data = nullptr;
                             fprintf(stderr, "tjDecompress error %i\n", res2);
-                            return 0xffffffff;
+                            return Ray::InvalidTexture;
                         }
                     } else {
                         fprintf(stderr, "tjDecompressHeader error %i\n", res);
-                        return 0xffffffff;
+                        return Ray::InvalidTexture;
                     }
                 } else {
                     stbi_set_flip_vertically_on_load(1);
@@ -183,12 +184,12 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             tex_desc.force_no_compression = force_no_compression;
             tex_desc.generate_mipmaps = gen_mipmaps;
 
-            const uint32_t tex_id = new_scene->AddTexture(tex_desc);
-            textures[name] = tex_id;
+            const Ray::Texture tex_handle = new_scene->AddTexture(tex_desc);
+            textures[name] = tex_handle;
 
             stbi_image_free(img_data);
 
-            return tex_id;
+            return tex_handle;
         } else {
             return it->second;
         }
@@ -433,12 +434,12 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 memcpy(&cam_desc.fwd[0], ValuePtr(view_dir), 3 * sizeof(float));
                 memcpy(&cam_desc.up[0], ValuePtr(view_up), 3 * sizeof(float));
 
-                new_scene->AddCamera(cam_desc);
+                cameras.emplace_back(new_scene->AddCamera(cam_desc));
             }
 
             if (js_scene.Has("current_cam")) {
                 const JsNumber &js_current_cam = js_scene.at("current_cam").as_num();
-                new_scene->set_current_cam(uint32_t(js_current_cam.val));
+                new_scene->set_current_cam(cameras[int(js_current_cam.val)]);
             }
         }
 
@@ -755,7 +756,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     for (const auto &m : mix_materials.elements) {
                         auto it = materials.find(m.as_str().val);
                         if (it != materials.end()) {
-                            if (node_desc.mix_materials[0] == 0xffffffff) {
+                            if (node_desc.mix_materials[0] == Ray::InvalidMaterial) {
                                 node_desc.mix_materials[0] = it->second;
                             } else {
                                 node_desc.mix_materials[1] = it->second;
@@ -814,8 +815,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             for (size_t i = 0; i < groups.size(); i += 2) {
                 const JsString &js_mat_name = js_materials.at(i / 2).as_str();
-                uint32_t mat_index = materials.at(js_mat_name.val);
-                mesh_desc.shapes.push_back({mat_index, mat_index, groups[i], groups[i + 1]});
+                Ray::Material mat_handle = materials.at(js_mat_name.val);
+                mesh_desc.shapes.push_back({mat_handle, mat_handle, groups[i], groups[i + 1]});
             }
 
             if (js_mesh_obj.Has("allow_spatial_splits")) {
@@ -1108,8 +1109,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             const Ren::Mat4f transform = parse_transform(js_mesh_instance_obj);
 
-            const uint32_t mesh_index = meshes.at(js_mesh_name.val);
-            new_scene->AddMeshInstance(mesh_index, Ren::ValuePtr(transform));
+            const Ray::Mesh mesh_handle = meshes.at(js_mesh_name.val);
+            new_scene->AddMeshInstance(mesh_handle, Ren::ValuePtr(transform));
         }
     } catch (std::runtime_error &e) {
         LOGE("Error in parsing json file! %s", e.what());
