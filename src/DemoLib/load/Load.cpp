@@ -34,10 +34,10 @@
 std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res) {
     auto new_scene = std::shared_ptr<Ray::SceneBase>(r->CreateScene());
 
-    std::vector<Ray::Camera> cameras;
-    std::map<std::string, Ray::Texture> textures;
-    std::map<std::string, Ray::Material> materials;
-    std::map<std::string, Ray::Mesh> meshes;
+    std::vector<Ray::CameraHandle> cameras;
+    std::map<std::string, Ray::TextureHandle> textures;
+    std::map<std::string, Ray::MaterialHandle> materials;
+    std::map<std::string, Ray::MeshHandle> meshes;
 
     auto jpg_decompressor = std::unique_ptr<void, int (*)(tjhandle)>(tjInitDecompress(), &tjDestroy);
 
@@ -96,11 +96,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                             stbi_image_free(img_data);
                             img_data = nullptr;
                             fprintf(stderr, "tjDecompress error %i\n", res2);
-                            return Ray::InvalidTexture;
+                            return Ray::InvalidTextureHandle;
                         }
                     } else {
                         fprintf(stderr, "tjDecompressHeader error %i\n", res);
-                        return Ray::InvalidTexture;
+                        return Ray::InvalidTextureHandle;
                     }
                 } else {
                     stbi_set_flip_vertically_on_load(1);
@@ -184,7 +184,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             tex_desc.force_no_compression = force_no_compression;
             tex_desc.generate_mipmaps = gen_mipmaps;
 
-            const Ray::Texture tex_handle = new_scene->AddTexture(tex_desc);
+            const Ray::TextureHandle tex_handle = new_scene->AddTexture(tex_desc);
             textures[name] = tex_handle;
 
             stbi_image_free(img_data);
@@ -756,7 +756,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     for (const auto &m : mix_materials.elements) {
                         auto it = materials.find(m.as_str().val);
                         if (it != materials.end()) {
-                            if (node_desc.mix_materials[0] == Ray::InvalidMaterial) {
+                            if (node_desc.mix_materials[0] == Ray::InvalidMaterialHandle) {
                                 node_desc.mix_materials[0] = it->second;
                             } else {
                                 node_desc.mix_materials[1] = it->second;
@@ -815,7 +815,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             for (size_t i = 0; i < groups.size(); i += 2) {
                 const JsString &js_mat_name = js_materials.at(i / 2).as_str();
-                Ray::Material mat_handle = materials.at(js_mat_name.val);
+                const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
                 mesh_desc.shapes.push_back({mat_handle, mat_handle, groups[i], groups[i + 1]});
             }
 
@@ -1109,7 +1109,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             const Ren::Mat4f transform = parse_transform(js_mesh_instance_obj);
 
-            const Ray::Mesh mesh_handle = meshes.at(js_mesh_name.val);
+            const Ray::MeshHandle mesh_handle = meshes.at(js_mesh_name.val);
             new_scene->AddMeshInstance(mesh_handle, Ren::ValuePtr(transform));
         }
     } catch (std::runtime_error &e) {

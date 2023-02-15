@@ -117,14 +117,14 @@ void GSLightmapTest::Enter() {
 
     {
         Ray::camera_desc_t cam_desc;
-        ray_scene_->GetCamera(Ray::Camera{0}, cam_desc);
+        ray_scene_->GetCamera(Ray::CameraHandle{0}, cam_desc);
         cam_desc.lighting_only = true;
         cam_desc.skip_direct_lighting = true;
         // cam_desc.skip_indirect_lighting = true;
         // cam_desc.no_background = true;
         cam_desc.output_sh = true;
 
-        ray_scene_->SetCamera(Ray::Camera{0}, cam_desc);
+        ray_scene_->SetCamera(Ray::CameraHandle{0}, cam_desc);
 
         memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
         memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
@@ -180,13 +180,13 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
 
     { // update camera
         Ray::camera_desc_t cam_desc;
-        ray_scene_->GetCamera(Ray::Camera{0}, cam_desc);
+        ray_scene_->GetCamera(Ray::CameraHandle{0}, cam_desc);
 
         memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin_), 3 * sizeof(float));
         memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
         cam_desc.focus_distance = focal_distance_;
 
-        ray_scene_->SetCamera(Ray::Camera{0}, cam_desc);
+        ray_scene_->SetCamera(Ray::CameraHandle{0}, cam_desc);
     }
 
     uint64_t t1 = Sys::GetTimeMs();
@@ -473,7 +473,7 @@ void GSLightmapTest::Update(uint64_t dt_ms) {
         tr = Translate(tr, Vec3f{0, std::sin(angle * Pi / 180.0f) * 200.0f, 0});
         // tr = math::rotate(tr, math::radians(angle), math::vec3{ 1, 0, 0 });
         // tr = math::rotate(tr, math::radians(angle), math::vec3{ 0, 1, 0 });
-        ray_scene_->SetMeshInstanceTransform(Ray::MeshInstance{1}, ValuePtr(tr));
+        ray_scene_->SetMeshInstanceTransform(Ray::MeshInstanceHandle{1}, ValuePtr(tr));
     }
     //_L = math::normalize(_L);
 

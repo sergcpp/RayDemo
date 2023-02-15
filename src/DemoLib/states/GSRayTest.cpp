@@ -695,7 +695,7 @@ void GSRayTest::Update(const uint64_t dt_us) {
         tr = Translate(tr, Vec3f{0, std::sin(angle * Pi / 180.0f) * 200.0f, 0});
         // tr = math::rotate(tr, math::radians(angle), math::vec3{ 1, 0, 0 });
         // tr = math::rotate(tr, math::radians(angle), math::vec3{ 0, 1, 0 });
-        ray_scene_->SetMeshInstanceTransform(Ray::MeshInstance{1}, ValuePtr(tr));
+        ray_scene_->SetMeshInstanceTransform(Ray::MeshInstanceHandle{1}, ValuePtr(tr));
     }
     //_L = math::normalize(_L);
 

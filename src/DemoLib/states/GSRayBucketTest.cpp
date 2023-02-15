@@ -224,7 +224,7 @@ void GSRayBucketTest::Enter() {
     }
 
     Ray::camera_desc_t cam_desc;
-    ray_scene_->GetCamera(Ray::Camera{0}, cam_desc);
+    ray_scene_->GetCamera(Ray::CameraHandle{0}, cam_desc);
 
     memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
     memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
@@ -244,7 +244,7 @@ void GSRayBucketTest::Draw(uint64_t dt_us) {
 
     {   // update camera
         Ray::camera_desc_t cam_desc;
-        ray_scene_->GetCamera(Ray::Camera{0}, cam_desc);
+        ray_scene_->GetCamera(Ray::CameraHandle{0}, cam_desc);
 
         memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin_), 3 * sizeof(float));
         memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
@@ -252,7 +252,7 @@ void GSRayBucketTest::Draw(uint64_t dt_us) {
         cam_desc.max_refr_depth = 8;
         cam_desc.max_total_depth = 8;
 
-        ray_scene_->SetCamera(Ray::Camera{0}, cam_desc);
+        ray_scene_->SetCamera(Ray::CameraHandle{0}, cam_desc);
     }
 
     uint64_t t1 = Sys::GetTimeMs();
@@ -411,7 +411,7 @@ void GSRayBucketTest::Update(uint64_t dt_us) {
         tr = Translate(tr, Vec3f{ 0, std::sin(angle * Pi / 180.0f) * 200.0f, 0 });
         //tr = math::rotate(tr, math::radians(angle), math::vec3{ 1, 0, 0 });
         //tr = math::rotate(tr, math::radians(angle), math::vec3{ 0, 1, 0 });
-        ray_scene_->SetMeshInstanceTransform(Ray::MeshInstance{1}, ValuePtr(tr));
+        ray_scene_->SetMeshInstanceTransform(Ray::MeshInstanceHandle{1}, ValuePtr(tr));
     }
     //_L = math::normalize(_L);
 
