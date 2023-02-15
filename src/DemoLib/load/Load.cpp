@@ -34,9 +34,6 @@
 std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res) {
     auto new_scene = std::shared_ptr<Ray::SceneBase>(r->CreateScene());
 
-    bool view_targeted = false;
-    Ren::Vec3f view_origin, view_dir = {0, 0, -1}, view_up, view_target;
-
     std::map<std::string, uint32_t> textures;
     std::map<std::string, uint32_t> materials;
     std::map<std::string, uint32_t> meshes;
@@ -284,6 +281,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 Ray::camera_desc_t cam_desc;
                 cam_desc.clamp = true;
+
+                bool view_targeted = false;
+                Ren::Vec3f view_origin, view_dir = {0, 0, -1}, view_up, view_target;
 
                 if (js_cam.Has("view_origin")) {
                     const JsArray &js_view_origin = js_cam.at("view_origin").as_arr();
