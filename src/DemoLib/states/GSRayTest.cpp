@@ -106,10 +106,11 @@ void GSRayTest::Enter() {
             LOGE("%s", e.what());
         }
 
+        // TODO: do not rely on handle being the index!
         current_cam_ = ray_scene_->current_cam();
 
         if (js_scene.Has("cameras")) {
-            const JsObject &js_cam = js_scene.at("cameras").as_arr().at(current_cam_).as_obj();
+            const JsObject &js_cam = js_scene.at("cameras").as_arr().at(current_cam_._index).as_obj();
             if (js_cam.Has("view_target")) {
                 const JsArray &js_view_target = js_cam.at("view_target").as_arr();
 
@@ -136,7 +137,7 @@ void GSRayTest::Enter() {
     cam_desc.max_transp_depth = app_params->transp_depth;
     cam_desc.max_total_depth = total_depth_ = app_params->total_depth;
 
-    ray_scene_->SetCamera(0, cam_desc);
+    ray_scene_->SetCamera(current_cam_, cam_desc);
 
     memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
     memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
@@ -694,7 +695,7 @@ void GSRayTest::Update(const uint64_t dt_us) {
         tr = Translate(tr, Vec3f{0, std::sin(angle * Pi / 180.0f) * 200.0f, 0});
         // tr = math::rotate(tr, math::radians(angle), math::vec3{ 1, 0, 0 });
         // tr = math::rotate(tr, math::radians(angle), math::vec3{ 0, 1, 0 });
-        ray_scene_->SetMeshInstanceTransform(1, ValuePtr(tr));
+        ray_scene_->SetMeshInstanceTransform(Ray::MeshInstance{1}, ValuePtr(tr));
     }
     //_L = math::normalize(_L);
 

@@ -163,7 +163,8 @@ void GSHybTest::Enter() {
     }
 
     Ray::camera_desc_t cam_desc;
-    cpu_scene_->GetCamera(0, cam_desc);
+    // TODO: fix this
+    cpu_scene_->GetCamera(Ray::Camera{0}, cam_desc);
 
     memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
     memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
@@ -178,15 +179,15 @@ void GSHybTest::Draw(uint64_t dt_us) {
 
     { // update camera
         Ray::camera_desc_t cam_desc;
-        cpu_scene_->GetCamera(0, cam_desc);
+        cpu_scene_->GetCamera(Ray::Camera{0}, cam_desc);
 
         memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin_), 3 * sizeof(float));
         memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
 
         for (auto &s : gpu_scenes_) {
-            s->SetCamera(0, cam_desc);
+            s->SetCamera(Ray::Camera{0}, cam_desc);
         }
-        cpu_scene_->SetCamera(0, cam_desc);
+        cpu_scene_->SetCamera(Ray::Camera{0}, cam_desc);
     }
 
     uint64_t t1 = Sys::GetTimeMs();
@@ -577,7 +578,7 @@ void GSHybTest::Update(uint64_t dt_us) {
         // tr = math::rotate(tr, math::radians(angle), math::vec3{ 1, 0, 0 });
         // tr = math::rotate(tr, math::radians(angle), math::vec3{ 0, 1, 0 });
         // gpu_scene_->SetMeshInstanceTransform(1, math::value_ptr(tr));
-        cpu_scene_->SetMeshInstanceTransform(1, ValuePtr(tr));
+        cpu_scene_->SetMeshInstanceTransform(Ray::MeshInstance{1}, ValuePtr(tr));
     }
     //_L = math::normalize(_L);
 
