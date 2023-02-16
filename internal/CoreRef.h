@@ -37,37 +37,34 @@ struct ray_data_t {
     float o[3], d[3], pdf;
     // throughput color of ray
     float c[3];
-#ifdef USE_RAY_DIFFERENTIALS
-    // derivatives
-    float do_dx[3], dd_dx[3], do_dy[3], dd_dy[3];
-#else
+    // stack of ior values
+    float ior[4];
     // ray cone params
     float cone_width, cone_spread;
-#endif
     // 16-bit pixel coordinates of ray ((x << 16) | y)
     int xy;
     // four 8-bit ray depth counters
-    int ray_depth;
+    int depth;
 };
-#ifdef USE_RAY_DIFFERENTIALS
-static_assert(sizeof(ray_data_t) == 96, "!");
-#else
-static_assert(sizeof(ray_data_t) == 56, "!");
-#endif
+static_assert(sizeof(ray_data_t) == 72, "!");
 
 struct shadow_ray_t {
-    // origin and direction
-    float o[3], d[3], dist;
+    // origin
+    float o[3];
+    // four 8-bit ray depth counters
+    int depth;
+    // direction and distance
+    float d[3], dist;
     // throughput color of ray
     float c[3];
     // 16-bit pixel coordinates of ray ((x << 16) | y)
     int xy;
 };
-static_assert(sizeof(shadow_ray_t) == 44, "!");
+static_assert(sizeof(shadow_ray_t) == 48, "!");
 
-const int RayPacketDimX = 1;
-const int RayPacketDimY = 1;
-const int RayPacketSize = RayPacketDimX * RayPacketDimY;
+const int RPDimX = 1;
+const int RPDimY = 1;
+const int RPSize = RPDimX * RPDimY;
 
 struct hit_data_t {
     int mask;
@@ -79,6 +76,11 @@ struct hit_data_t {
     hit_data_t();
 };
 
+struct surface_t {
+    simd_fvec4 P, T, B, N, plane_N;
+    simd_fvec2 uvs;
+};
+
 struct derivatives_t {
     simd_fvec4 do_dx, do_dy, dd_dx, dd_dy;
     simd_fvec2 duv_dx, duv_dy;
@@ -87,10 +89,13 @@ struct derivatives_t {
 };
 
 struct light_sample_t {
-    simd_fvec4 col, L;
-    float area = 0.0f, dist, pdf = 0.0f, cast_shadow = 1.0f;
+    simd_fvec4 col, L, lp;
+    float area = 0, dist_mul = 1, pdf = 0;
+    uint32_t cast_shadow : 1;
+    uint32_t from_env : 1;
+    uint32_t _pad0 : 30;
 };
-static_assert(sizeof(light_sample_t) == 48, "!");
+static_assert(sizeof(light_sample_t) == 64, "!");
 
 class TexStorageBase;
 template <typename T, int N> class TexStorageLinear;
@@ -109,12 +114,33 @@ force_inline int hash(int x) {
     return reinterpret_cast<const int &>(ret);
 }
 
+force_inline simd_fvec4 rgbe_to_rgb(const color_t<uint8_t, 4> &rgbe) {
+    const float f = std::exp2(float(rgbe.v[3]) - 128.0f);
+    return simd_fvec4{to_norm_float(rgbe.v[0]) * f, to_norm_float(rgbe.v[1]) * f, to_norm_float(rgbe.v[2]) * f, 1.0f};
+}
+
+force_inline int total_depth(const ray_data_t &r) {
+    const int diff_depth = r.depth & 0x000000ff;
+    const int spec_depth = (r.depth >> 8) & 0x000000ff;
+    const int refr_depth = (r.depth >> 16) & 0x000000ff;
+    const int transp_depth = (r.depth >> 24) & 0x000000ff;
+    return diff_depth + spec_depth + refr_depth + transp_depth;
+}
+
+force_inline int total_depth(const shadow_ray_t &r) {
+    const int diff_depth = r.depth & 0x000000ff;
+    const int spec_depth = (r.depth >> 8) & 0x000000ff;
+    const int refr_depth = (r.depth >> 16) & 0x000000ff;
+    const int transp_depth = (r.depth >> 24) & 0x000000ff;
+    return diff_depth + spec_depth + refr_depth + transp_depth;
+}
+
 // Generation of rays
-void GeneratePrimaryRays(int iteration, const camera_t &cam, const rect_t &r, int w, int h, const float *halton,
+void GeneratePrimaryRays(int iteration, const camera_t &cam, const rect_t &r, int w, int h, const float *random_seq,
                          aligned_vector<ray_data_t> &out_rays);
 void SampleMeshInTextureSpace(int iteration, int obj_index, int uv_layer, const mesh_t &mesh, const transform_t &tr,
                               const uint32_t *vtx_indices, const vertex_t *vertices, const rect_t &r, int w, int h,
-                              const float *halton, aligned_vector<ray_data_t> &out_rays,
+                              const float *random_seq, aligned_vector<ray_data_t> &out_rays,
                               aligned_vector<hit_data_t> &out_inters);
 
 // Sorting of rays
@@ -181,19 +207,19 @@ bool Traverse_MicroTree_WithStack_AnyHit(const float ro[3], const float rd[3], c
 float BRDF_PrincipledDiffuse(const simd_fvec4 &V, const simd_fvec4 &N, const simd_fvec4 &L, const simd_fvec4 &H,
                              float roughness);
 
-simd_fvec4 Evaluate_OrenDiffuse_BSDF(const simd_fvec4 &V, const simd_fvec4 &N, const simd_fvec4 &L,
-                                     const float roughness, const simd_fvec4 &base_color);
+simd_fvec4 Evaluate_OrenDiffuse_BSDF(const simd_fvec4 &V, const simd_fvec4 &N, const simd_fvec4 &L, float roughness,
+                                     const simd_fvec4 &base_color);
 simd_fvec4 Sample_OrenDiffuse_BSDF(const simd_fvec4 &T, const simd_fvec4 &B, const simd_fvec4 &N, const simd_fvec4 &I,
-                                   const float roughness, const simd_fvec4 &base_color, const float rand_u,
-                                   const float rand_v, simd_fvec4 &out_V);
+                                   float roughness, const simd_fvec4 &base_color, float rand_u, float rand_v,
+                                   simd_fvec4 &out_V);
 
 simd_fvec4 Evaluate_PrincipledDiffuse_BSDF(const simd_fvec4 &V, const simd_fvec4 &N, const simd_fvec4 &L,
-                                           const float roughness, const simd_fvec4 &base_color,
-                                           const simd_fvec4 &sheen_color, const bool uniform_sampling);
+                                           float roughness, const simd_fvec4 &base_color, const simd_fvec4 &sheen_color,
+                                           bool uniform_sampling);
 simd_fvec4 Sample_PrincipledDiffuse_BSDF(const simd_fvec4 &T, const simd_fvec4 &B, const simd_fvec4 &N,
-                                         const simd_fvec4 &I, const float roughness, const simd_fvec4 &base_color,
-                                         const simd_fvec4 &sheen_color, const bool uniform_sampling, const float rand_u,
-                                         const float rand_v, simd_fvec4 &out_V);
+                                         const simd_fvec4 &I, float roughness, const simd_fvec4 &base_color,
+                                         const simd_fvec4 &sheen_color, bool uniform_sampling, float rand_u,
+                                         float rand_v, simd_fvec4 &out_V);
 
 simd_fvec4 Evaluate_GGXSpecular_BSDF(const simd_fvec4 &view_dir_ts, const simd_fvec4 &sampled_normal_ts,
                                      const simd_fvec4 &reflected_dir_ts, float alpha_x, float alpha_y, float spec_ior,
@@ -235,26 +261,95 @@ simd_fvec4 SampleAnisotropic(const TexStorageBase *const textures[], uint32_t in
                              const simd_fvec2 &duv_dx, const simd_fvec2 &duv_dy);
 simd_fvec4 SampleLatlong_RGBE(const TexStorageRGBA &storage, uint32_t index, const simd_fvec4 &dir, float y_rotation);
 
-// Get visibility between two points accounting for transparent materials
-float ComputeVisibility(const float p[3], const float d[3], float dist, float rand_val, int rand_hash2,
-                        const scene_data_t &sc, uint32_t node_index, const TexStorageBase *const textures[]);
-
-// Compute derivatives at hit point
-void ComputeDerivatives(const simd_fvec4 &I, float t, const simd_fvec4 &do_dx, const simd_fvec4 &do_dy,
-                        const simd_fvec4 &dd_dx, const simd_fvec4 &dd_dy, const vertex_t &v1, const vertex_t &v2,
-                        const vertex_t &v3, const simd_fvec4 &plane_N, const transform_t &tr, derivatives_t &out_der);
+// Trace rays through scene hierarchy
+void IntersectScene(ray_data_t &r, int min_transp_depth, int max_transp_depth, const float *random_seq,
+                    const scene_data_t &sc, uint32_t root_index, const TexStorageBase *const textures[],
+                    hit_data_t &inter);
+simd_fvec4 IntersectScene(const shadow_ray_t &r, int max_transp_depth, const scene_data_t &sc, uint32_t node_index,
+                          const TexStorageBase *const textures[]);
 
 // Pick point on any light source for evaluation
-void SampleLightSource(const simd_fvec4 &P, const scene_data_t &sc, const TexStorageBase *const textures[],
-                       const float halton[], const float sample_off[2], light_sample_t &ls);
+void SampleLightSource(const simd_fvec4 &P, const simd_fvec4 &T, const simd_fvec4 &B, const simd_fvec4 &N,
+                       const scene_data_t &sc, const TexStorageBase *const textures[], const float random_seq[],
+                       const float sample_off[2], light_sample_t &ls);
 
 // Account for visible lights contribution
 void IntersectAreaLights(const ray_data_t &ray, const light_t lights[], Span<const uint32_t> visible_lights,
                          const transform_t transforms[], hit_data_t &inout_inter);
+float IntersectAreaLights(const shadow_ray_t &ray, const light_t lights[], Span<const uint32_t> blocker_lights,
+                          const transform_t transforms[]);
+
+// Get environment collor at direction
+simd_fvec4 Evaluate_EnvColor(const ray_data_t &ray, const environment_t &env, const TexStorageRGBA &tex_storage);
+// Get light color at intersection point
+simd_fvec4 Evaluate_LightColor(const ray_data_t &ray, const hit_data_t &inter, const environment_t &env,
+                               const TexStorageRGBA &tex_storage, const light_t *lights);
+
+// Evaluate individual nodes
+simd_fvec4 Evaluate_DiffuseNode(const light_sample_t &ls, const ray_data_t &ray, const surface_t &surf,
+                                const simd_fvec4 &base_color, float roughness, float mix_weight, shadow_ray_t &sh_r);
+void Sample_DiffuseNode(const ray_data_t &ray, const surface_t &surf, const simd_fvec4 &base_color, float roughness,
+                        float rand_u, float rand_v, float mix_weight, ray_data_t &new_ray);
+
+simd_fvec4 Evaluate_GlossyNode(const light_sample_t &ls, const ray_data_t &ray, const surface_t &surf,
+                               const simd_fvec4 &base_color, float roughness2, float spec_ior, float spec_F0,
+                               float mix_weight, shadow_ray_t &sh_r);
+void Sample_GlossyNode(const ray_data_t &ray, const surface_t &surf, const simd_fvec4 &base_color, float roughness,
+                       float spec_ior, float spec_F0, float rand_u, float rand_v, float mix_weight,
+                       ray_data_t &new_ray);
+
+simd_fvec4 Evaluate_RefractiveNode(const light_sample_t &ls, const ray_data_t &ray, const surface_t &surf,
+                                   const simd_fvec4 &base_color, float roughness2, float eta, float mix_weight,
+                                   shadow_ray_t &sh_r);
+void Sample_RefractiveNode(const ray_data_t &ray, const surface_t &surf, const simd_fvec4 &base_color, float roughness,
+                           bool is_backfacing, float int_ior, float ext_ior, float rand_u, float rand_v,
+                           float mix_weight, ray_data_t &new_ray);
+
+struct diff_params_t {
+    simd_fvec4 base_color;
+    simd_fvec4 sheen_color;
+    float roughness;
+};
+
+struct spec_params_t {
+    simd_fvec4 tmp_col;
+    float roughness;
+    float ior;
+    float F0;
+    float anisotropy;
+};
+
+struct clearcoat_params_t {
+    float roughness;
+    float ior;
+    float F0;
+};
+
+struct transmission_params_t {
+    float roughness;
+    float int_ior;
+    float eta;
+    float fresnel;
+    bool backfacing;
+};
+
+struct lobe_weights_t {
+    float diffuse, specular, clearcoat, refraction;
+};
+
+simd_fvec4 Evaluate_PrincipledNode(const light_sample_t &ls, const ray_data_t &ray, const surface_t &surf,
+                                   const lobe_weights_t &lobe_weights, const diff_params_t &diff,
+                                   const spec_params_t &spec, const clearcoat_params_t &coat,
+                                   const transmission_params_t &trans, float metallic, float N_dot_L, float mix_weight,
+                                   shadow_ray_t &sh_r);
+void Sample_PrincipledNode(const pass_settings_t &ps, const ray_data_t &ray, const surface_t &surf,
+                           const lobe_weights_t &lobe_weights, const diff_params_t &diff, const spec_params_t &spec,
+                           const clearcoat_params_t &coat, const transmission_params_t &trans, float metallic,
+                           float rand_u, float rand_v, float mix_rand, float mix_weight, ray_data_t &new_ray);
 
 // Shade
-Ray::pixel_color_t ShadeSurface(int px_index, const pass_info_t &pi, const hit_data_t &inter, const ray_data_t &ray,
-                                const float *halton, const scene_data_t &sc, uint32_t node_index,
+Ray::pixel_color_t ShadeSurface(const pass_settings_t &ps, const hit_data_t &inter, const ray_data_t &ray,
+                                const float *random_seq, const scene_data_t &sc, uint32_t node_index,
                                 const TexStorageBase *const textures[], ray_data_t *out_secondary_rays,
                                 int *out_secondary_rays_count, shadow_ray_t *out_shadow_rays,
                                 int *out_shadow_rays_count);

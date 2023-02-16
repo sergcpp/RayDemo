@@ -9,8 +9,6 @@
 #include "UniformIntDistribution.h"
 
 #include "Vk/DebugMarker.h"
-#include "Vk/DescriptorPool.h"
-#include "Vk/DrawCall.h"
 #include "Vk/Shader.h"
 
 #include "../Log.h"
@@ -40,24 +38,28 @@ static_assert(Types::LIGHT_TYPE_TRI == Ray::LIGHT_TYPE_TRI, "!");
 
 namespace Ray {
 namespace Vk {
-#include "shaders/debug_rt.comp.inl"
-#include "shaders/intersect_area_lights.comp.inl"
-#include "shaders/mix_incremental.comp.inl"
-#include "shaders/postprocess.comp.inl"
-#include "shaders/prepare_indir_args.comp.inl"
-#include "shaders/primary_ray_gen.comp.inl"
-#include "shaders/shade_primary_hits_atlas.comp.inl"
-#include "shaders/shade_primary_hits_bindless.comp.inl"
-#include "shaders/shade_secondary_hits_atlas.comp.inl"
-#include "shaders/shade_secondary_hits_bindless.comp.inl"
-#include "shaders/trace_primary_rays_hwrt.comp.inl"
-#include "shaders/trace_primary_rays_swrt.comp.inl"
-#include "shaders/trace_secondary_rays_hwrt.comp.inl"
-#include "shaders/trace_secondary_rays_swrt.comp.inl"
-#include "shaders/trace_shadow_hwrt_atlas.comp.inl"
-#include "shaders/trace_shadow_hwrt_bindless.comp.inl"
-#include "shaders/trace_shadow_swrt_atlas.comp.inl"
-#include "shaders/trace_shadow_swrt_bindless.comp.inl"
+#include "shaders/output/debug_rt.comp.inl"
+#include "shaders/output/intersect_area_lights.comp.inl"
+#include "shaders/output/intersect_scene_primary_hwrt_atlas.comp.inl"
+#include "shaders/output/intersect_scene_primary_hwrt_bindless.comp.inl"
+#include "shaders/output/intersect_scene_primary_swrt_atlas.comp.inl"
+#include "shaders/output/intersect_scene_primary_swrt_bindless.comp.inl"
+#include "shaders/output/intersect_scene_secondary_hwrt_atlas.comp.inl"
+#include "shaders/output/intersect_scene_secondary_hwrt_bindless.comp.inl"
+#include "shaders/output/intersect_scene_secondary_swrt_atlas.comp.inl"
+#include "shaders/output/intersect_scene_secondary_swrt_bindless.comp.inl"
+#include "shaders/output/intersect_scene_shadow_hwrt_atlas.comp.inl"
+#include "shaders/output/intersect_scene_shadow_hwrt_bindless.comp.inl"
+#include "shaders/output/intersect_scene_shadow_swrt_atlas.comp.inl"
+#include "shaders/output/intersect_scene_shadow_swrt_bindless.comp.inl"
+#include "shaders/output/mix_incremental.comp.inl"
+#include "shaders/output/postprocess.comp.inl"
+#include "shaders/output/prepare_indir_args.comp.inl"
+#include "shaders/output/primary_ray_gen.comp.inl"
+#include "shaders/output/shade_primary_atlas.comp.inl"
+#include "shaders/output/shade_primary_bindless.comp.inl"
+#include "shaders/output/shade_secondary_atlas.comp.inl"
+#include "shaders/output/shade_secondary_bindless.comp.inl"
 } // namespace Vk
 } // namespace Ray
 
@@ -77,161 +79,145 @@ Ray::Vk::Renderer::Renderer(const settings_t &s, ILog *log) : loaded_halton_(-1)
 
     sh_prim_rays_gen_ = Shader{"Primary Raygen",
                                ctx_.get(),
-                               internal_shaders_primary_ray_gen_comp_spv,
-                               internal_shaders_primary_ray_gen_comp_spv_size,
+                               internal_shaders_output_primary_ray_gen_comp_spv,
+                               internal_shaders_output_primary_ray_gen_comp_spv_size,
                                eShaderType::Comp,
                                log};
-    sh_trace_primary_rays_[0] = Shader{"Trace Primary Rays SWRT",
-                                       ctx_.get(),
-                                       internal_shaders_trace_primary_rays_swrt_comp_spv,
-                                       internal_shaders_trace_primary_rays_swrt_comp_spv_size,
-                                       eShaderType::Comp,
-                                       log};
     if (use_hwrt_) {
-        sh_trace_primary_rays_[1] = Shader{"Trace Primary Rays HWRT",
-                                           ctx_.get(),
-                                           internal_shaders_trace_primary_rays_hwrt_comp_spv,
-                                           internal_shaders_trace_primary_rays_hwrt_comp_spv_size,
-                                           eShaderType::Comp,
-                                           log};
+        sh_intersect_scene_primary_ =
+            Shader{"Intersect Scene (Primary) (HWRT)",
+                   ctx_.get(),
+                   use_bindless_ ? internal_shaders_output_intersect_scene_primary_hwrt_bindless_comp_spv
+                                 : internal_shaders_output_intersect_scene_primary_hwrt_atlas_comp_spv,
+                   use_bindless_ ? int(internal_shaders_output_intersect_scene_primary_hwrt_bindless_comp_spv_size)
+                                 : int(internal_shaders_output_intersect_scene_primary_hwrt_atlas_comp_spv_size),
+                   eShaderType::Comp,
+                   log};
+    } else {
+        sh_intersect_scene_primary_ =
+            Shader{"Intersect Scene (Primary) (SWRT)",
+                   ctx_.get(),
+                   use_bindless_ ? internal_shaders_output_intersect_scene_primary_swrt_bindless_comp_spv
+                                 : internal_shaders_output_intersect_scene_primary_swrt_atlas_comp_spv,
+                   use_bindless_ ? int(internal_shaders_output_intersect_scene_primary_swrt_bindless_comp_spv_size)
+                                 : int(internal_shaders_output_intersect_scene_primary_swrt_atlas_comp_spv_size),
+                   eShaderType::Comp,
+                   log};
     }
-    sh_trace_secondary_rays_[0] = Shader{"Trace Secondary Rays SWRT",
-                                         ctx_.get(),
-                                         internal_shaders_trace_secondary_rays_swrt_comp_spv,
-                                         internal_shaders_trace_secondary_rays_swrt_comp_spv_size,
-                                         eShaderType::Comp,
-                                         log};
+
     if (use_hwrt_) {
-        sh_trace_secondary_rays_[1] = Shader{"Trace Secondary Rays HWRT",
-                                             ctx_.get(),
-                                             internal_shaders_trace_secondary_rays_hwrt_comp_spv,
-                                             internal_shaders_trace_secondary_rays_hwrt_comp_spv_size,
-                                             eShaderType::Comp,
-                                             log};
+        sh_intersect_scene_secondary_ =
+            Shader{"Intersect Scene (Secondary) (HWRT)",
+                   ctx_.get(),
+                   use_bindless_ ? internal_shaders_output_intersect_scene_secondary_hwrt_bindless_comp_spv
+                                 : internal_shaders_output_intersect_scene_secondary_hwrt_atlas_comp_spv,
+                   use_bindless_ ? int(internal_shaders_output_intersect_scene_secondary_hwrt_bindless_comp_spv_size)
+                                 : int(internal_shaders_output_intersect_scene_secondary_hwrt_atlas_comp_spv_size),
+                   eShaderType::Comp,
+                   log};
+    } else {
+        sh_intersect_scene_secondary_ =
+            Shader{"Intersect Scene (Secondary) (SWRT)",
+                   ctx_.get(),
+                   use_bindless_ ? internal_shaders_output_intersect_scene_secondary_swrt_bindless_comp_spv
+                                 : internal_shaders_output_intersect_scene_secondary_swrt_atlas_comp_spv,
+                   use_bindless_ ? int(internal_shaders_output_intersect_scene_secondary_swrt_bindless_comp_spv_size)
+                                 : int(internal_shaders_output_intersect_scene_secondary_swrt_atlas_comp_spv_size),
+                   eShaderType::Comp,
+                   log};
     }
+
     sh_intersect_area_lights_ = Shader{"Intersect Area Lights",
                                        ctx_.get(),
-                                       internal_shaders_intersect_area_lights_comp_spv,
-                                       internal_shaders_intersect_area_lights_comp_spv_size,
+                                       internal_shaders_output_intersect_area_lights_comp_spv,
+                                       internal_shaders_output_intersect_area_lights_comp_spv_size,
                                        eShaderType::Comp,
                                        log};
-    sh_shade_primary_hits_[0] = Shader{"Shade Primary Hits (Atlas)",
-                                       ctx_.get(),
-                                       internal_shaders_shade_primary_hits_atlas_comp_spv,
-                                       internal_shaders_shade_primary_hits_atlas_comp_spv_size,
-                                       eShaderType::Comp,
-                                       log};
-    if (use_bindless_) {
-        sh_shade_primary_hits_[1] = Shader{"Shade Primary Hits (Bindless)",
-                                           ctx_.get(),
-                                           internal_shaders_shade_primary_hits_bindless_comp_spv,
-                                           internal_shaders_shade_primary_hits_bindless_comp_spv_size,
-                                           eShaderType::Comp,
-                                           log};
-    }
-    sh_shade_secondary_hits_[0] = Shader{"Shade Secondary Hits (Atlas)",
-                                         ctx_.get(),
-                                         internal_shaders_shade_secondary_hits_atlas_comp_spv,
-                                         internal_shaders_shade_secondary_hits_atlas_comp_spv_size,
-                                         eShaderType::Comp,
-                                         log};
-    if (use_bindless_) {
-        sh_shade_secondary_hits_[1] = Shader{"Shade Secondary Hits (Bindless)",
-                                             ctx_.get(),
-                                             internal_shaders_shade_secondary_hits_bindless_comp_spv,
-                                             internal_shaders_shade_secondary_hits_bindless_comp_spv_size,
-                                             eShaderType::Comp,
-                                             log};
-    }
-    sh_trace_shadow_swrt_[0] = Shader{"Trace Shadow SWRT (Atlas)",
-                                      ctx_.get(),
-                                      internal_shaders_trace_shadow_swrt_atlas_comp_spv,
-                                      internal_shaders_trace_shadow_swrt_atlas_comp_spv_size,
-                                      eShaderType::Comp,
-                                      log};
-    if (use_bindless_) {
-        sh_trace_shadow_swrt_[1] = Shader{"Trace Shadow SWRT (Bindless)",
-                                          ctx_.get(),
-                                          internal_shaders_trace_shadow_swrt_bindless_comp_spv,
-                                          internal_shaders_trace_shadow_swrt_bindless_comp_spv_size,
-                                          eShaderType::Comp,
-                                          log};
-    }
+    sh_shade_primary_ = Shader{"Shade (Primary)",
+                               ctx_.get(),
+                               use_bindless_ ? internal_shaders_output_shade_primary_bindless_comp_spv
+                                             : internal_shaders_output_shade_primary_atlas_comp_spv,
+                               use_bindless_ ? int(internal_shaders_output_shade_primary_bindless_comp_spv_size)
+                                             : int(internal_shaders_output_shade_primary_atlas_comp_spv_size),
+                               eShaderType::Comp,
+                               log};
+    sh_shade_secondary_ = Shader{"Shade (Secondary)",
+                                 ctx_.get(),
+                                 use_bindless_ ? internal_shaders_output_shade_secondary_bindless_comp_spv
+                                               : internal_shaders_output_shade_secondary_atlas_comp_spv,
+                                 use_bindless_ ? int(internal_shaders_output_shade_secondary_bindless_comp_spv_size)
+                                               : int(internal_shaders_output_shade_secondary_atlas_comp_spv_size),
+                                 eShaderType::Comp,
+                                 log};
+
     if (use_hwrt_) {
-        sh_trace_shadow_hwrt_[0] = Shader{"Trace Shadow HWRT (Atlas)",
-                                          ctx_.get(),
-                                          internal_shaders_trace_shadow_hwrt_atlas_comp_spv,
-                                          internal_shaders_trace_shadow_hwrt_atlas_comp_spv_size,
-                                          eShaderType::Comp,
-                                          log};
-        if (use_bindless_) {
-            sh_trace_shadow_hwrt_[1] = Shader{"Trace Shadow HWRT (Bindless)",
-                                              ctx_.get(),
-                                              internal_shaders_trace_shadow_hwrt_bindless_comp_spv,
-                                              internal_shaders_trace_shadow_hwrt_bindless_comp_spv_size,
-                                              eShaderType::Comp,
-                                              log};
-        }
+        sh_intersect_scene_shadow_ =
+            Shader{"Intersect Scene (Shadow) (HWRT)",
+                   ctx_.get(),
+                   use_bindless_ ? internal_shaders_output_intersect_scene_shadow_hwrt_bindless_comp_spv
+                                 : internal_shaders_output_intersect_scene_shadow_hwrt_atlas_comp_spv,
+                   use_bindless_ ? int(internal_shaders_output_intersect_scene_shadow_hwrt_bindless_comp_spv_size)
+                                 : int(internal_shaders_output_intersect_scene_shadow_hwrt_atlas_comp_spv_size),
+                   eShaderType::Comp,
+                   log};
+    } else {
+        sh_intersect_scene_shadow_ =
+            Shader{"Intersect Scene (Shadow) (SWRT)",
+                   ctx_.get(),
+                   use_bindless_ ? internal_shaders_output_intersect_scene_shadow_swrt_bindless_comp_spv
+                                 : internal_shaders_output_intersect_scene_shadow_swrt_atlas_comp_spv,
+                   use_bindless_ ? int(internal_shaders_output_intersect_scene_shadow_swrt_bindless_comp_spv_size)
+                                 : int(internal_shaders_output_intersect_scene_shadow_swrt_atlas_comp_spv_size),
+                   eShaderType::Comp,
+                   log};
     }
     sh_prepare_indir_args_ = Shader{"Prepare Indir Args",
                                     ctx_.get(),
-                                    internal_shaders_prepare_indir_args_comp_spv,
-                                    internal_shaders_prepare_indir_args_comp_spv_size,
+                                    internal_shaders_output_prepare_indir_args_comp_spv,
+                                    internal_shaders_output_prepare_indir_args_comp_spv_size,
                                     eShaderType::Comp,
                                     log};
     sh_mix_incremental_ = Shader{"Mix Incremental",
                                  ctx_.get(),
-                                 internal_shaders_mix_incremental_comp_spv,
-                                 internal_shaders_mix_incremental_comp_spv_size,
+                                 internal_shaders_output_mix_incremental_comp_spv,
+                                 internal_shaders_output_mix_incremental_comp_spv_size,
                                  eShaderType::Comp,
                                  log};
     sh_postprocess_ = Shader{"Postprocess",
                              ctx_.get(),
-                             internal_shaders_postprocess_comp_spv,
-                             internal_shaders_postprocess_comp_spv_size,
+                             internal_shaders_output_postprocess_comp_spv,
+                             internal_shaders_output_postprocess_comp_spv_size,
                              eShaderType::Comp,
                              log};
     if (use_hwrt_) {
-        sh_debug_rt_ = Shader{
-            "Debug RT",        ctx_.get(), internal_shaders_debug_rt_comp_spv, internal_shaders_debug_rt_comp_spv_size,
-            eShaderType::Comp, log};
+        sh_debug_rt_ = Shader{"Debug RT",
+                              ctx_.get(),
+                              internal_shaders_output_debug_rt_comp_spv,
+                              internal_shaders_output_debug_rt_comp_spv_size,
+                              eShaderType::Comp,
+                              log};
     }
 
     prog_prim_rays_gen_ = Program{"Primary Raygen", ctx_.get(), &sh_prim_rays_gen_, log};
-    prog_trace_primary_rays_[0] = Program{"Trace Primary Rays SWRT", ctx_.get(), &sh_trace_primary_rays_[0], log};
-    prog_trace_primary_rays_[1] = Program{"Trace Primary Rays HWRT", ctx_.get(), &sh_trace_primary_rays_[1], log};
-    prog_trace_secondary_rays_[0] = Program{"Trace Secondary Rays SWRT", ctx_.get(), &sh_trace_secondary_rays_[0], log};
-    prog_trace_secondary_rays_[1] = Program{"Trace Secondary Rays HWRT", ctx_.get(), &sh_trace_secondary_rays_[1], log};
+    prog_intersect_scene_primary_ = Program{"Intersect Scene (Primary)", ctx_.get(), &sh_intersect_scene_primary_, log};
+    prog_intersect_scene_secondary_ =
+        Program{"Intersect Scene (Secondary)", ctx_.get(), &sh_intersect_scene_secondary_, log};
     prog_intersect_area_lights_ = Program{"Intersect Area Lights", ctx_.get(), &sh_intersect_area_lights_, log};
-    prog_shade_primary_hits_[0] = Program{"Shade Primary Hits (Atlas)", ctx_.get(), &sh_shade_primary_hits_[0], log};
-    prog_shade_primary_hits_[1] = Program{"Shade Primary Hits (Bindless)", ctx_.get(), &sh_shade_primary_hits_[1], log};
-    prog_shade_secondary_hits_[0] =
-        Program{"Shade Secondary Hits (Atlas)", ctx_.get(), &sh_shade_secondary_hits_[0], log};
-    prog_shade_secondary_hits_[1] =
-        Program{"Shade Secondary Hits (Bindless)", ctx_.get(), &sh_shade_secondary_hits_[1], log};
-    prog_trace_shadow_swrt_[0] = Program{"Trace Shadow SWRT (Atlas)", ctx_.get(), &sh_trace_shadow_swrt_[0], log};
-    prog_trace_shadow_swrt_[1] = Program{"Trace Shadow SWRT (Bindless)", ctx_.get(), &sh_trace_shadow_swrt_[1], log};
-    prog_trace_shadow_hwrt_[0] = Program{"Trace Shadow HWRT (Atlas)", ctx_.get(), &sh_trace_shadow_hwrt_[0], log};
-    prog_trace_shadow_hwrt_[1] = Program{"Trace Shadow HWRT (Bindless)", ctx_.get(), &sh_trace_shadow_hwrt_[1], log};
+    prog_shade_primary_ = Program{"Shade (Primary)", ctx_.get(), &sh_shade_primary_, log};
+    prog_shade_secondary_ = Program{"Shade (Secondary)", ctx_.get(), &sh_shade_secondary_, log};
+    prog_intersect_scene_shadow_ = Program{"Intersect Scene (Shadow)", ctx_.get(), &sh_intersect_scene_shadow_, log};
     prog_prepare_indir_args_ = Program{"Prepare Indir Args", ctx_.get(), &sh_prepare_indir_args_, log};
     prog_mix_incremental_ = Program{"Mix Incremental", ctx_.get(), &sh_mix_incremental_, log};
     prog_postprocess_ = Program{"Postprocess", ctx_.get(), &sh_postprocess_, log};
     prog_debug_rt_ = Program{"Debug RT", ctx_.get(), &sh_debug_rt_, log};
 
     if (!pi_prim_rays_gen_.Init(ctx_.get(), &prog_prim_rays_gen_, log) ||
-        !pi_trace_primary_rays_[0].Init(ctx_.get(), &prog_trace_primary_rays_[0], log) ||
-        (use_hwrt_ && !pi_trace_primary_rays_[1].Init(ctx_.get(), &prog_trace_primary_rays_[1], log)) ||
-        !pi_trace_secondary_rays_[0].Init(ctx_.get(), &prog_trace_secondary_rays_[0], log) ||
-        (use_hwrt_ && !pi_trace_secondary_rays_[1].Init(ctx_.get(), &prog_trace_secondary_rays_[1], log)) ||
+        !pi_intersect_scene_primary_.Init(ctx_.get(), &prog_intersect_scene_primary_, log) ||
+        !pi_intersect_scene_secondary_.Init(ctx_.get(), &prog_intersect_scene_secondary_, log) ||
         !pi_intersect_area_lights_.Init(ctx_.get(), &prog_intersect_area_lights_, log) ||
-        !pi_shade_primary_hits_[0].Init(ctx_.get(), &prog_shade_primary_hits_[0], log) ||
-        (use_bindless_ && !pi_shade_primary_hits_[1].Init(ctx_.get(), &prog_shade_primary_hits_[1], log)) ||
-        !pi_shade_secondary_hits_[0].Init(ctx_.get(), &prog_shade_secondary_hits_[0], log) ||
-        (use_bindless_ && !pi_shade_secondary_hits_[1].Init(ctx_.get(), &prog_shade_secondary_hits_[1], log)) ||
-        !pi_trace_shadow_swrt_[0].Init(ctx_.get(), &prog_trace_shadow_swrt_[0], log) ||
-        (use_bindless_ && !pi_trace_shadow_swrt_[1].Init(ctx_.get(), &prog_trace_shadow_swrt_[1], log)) ||
-        (use_hwrt_ && !pi_trace_shadow_hwrt_[0].Init(ctx_.get(), &prog_trace_shadow_hwrt_[0], log)) ||
-        (use_hwrt_ && use_bindless_ && !pi_trace_shadow_hwrt_[1].Init(ctx_.get(), &prog_trace_shadow_hwrt_[1], log)) ||
+        !pi_shade_primary_.Init(ctx_.get(), &prog_shade_primary_, log) ||
+        !pi_shade_secondary_.Init(ctx_.get(), &prog_shade_secondary_, log) ||
+        !pi_intersect_scene_shadow_.Init(ctx_.get(), &prog_intersect_scene_shadow_, log) ||
         !pi_prepare_indir_args_.Init(ctx_.get(), &prog_prepare_indir_args_, log) ||
         !pi_mix_incremental_.Init(ctx_.get(), &prog_mix_incremental_, log) ||
         !pi_postprocess_.Init(ctx_.get(), &prog_postprocess_, log) ||
@@ -248,7 +234,7 @@ Ray::Vk::Renderer::Renderer(const settings_t &s, ILog *log) : loaded_halton_(-1)
         VkCommandBuffer cmd_buf = BegSingleTimeCommands(ctx_->device(), ctx_->temp_command_pool());
 
         const uint32_t zeros[4] = {};
-        counters_buf_.UpdateImmediate(0, 4 * sizeof(uint32_t), &zeros, cmd_buf);
+        counters_buf_.UpdateImmediate(0, 4 * sizeof(uint32_t), zeros, cmd_buf);
 
         EndSingleTimeCommands(ctx_->device(), ctx_->graphics_queue(), cmd_buf, ctx_->temp_command_pool());
     }
@@ -352,7 +338,7 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
         loaded_halton_ = region.iteration;
     }
 
-    const Ray::camera_t &cam = s->cams_[s->current_cam()].cam;
+    const Ray::camera_t &cam = s->cams_[s->current_cam()._index].cam;
 
     scene_data_t sc_data = {&s->env_,
                             s->mesh_instances_.gpu_buf(),
@@ -372,6 +358,8 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
                             int(s->li_indices_.size()),
                             s->visible_lights_.buf(),
                             int(s->visible_lights_.size()),
+                            s->blocker_lights_.buf(),
+                            int(s->blocker_lights_.size()),
                             s->rt_tlas_,
                             s->env_map_qtree_.tex,
                             int(s->env_map_qtree_.mips.size())};
@@ -381,8 +369,40 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
     vkResetFences(ctx_->device(), 1, &ctx_->in_flight_fence(ctx_->backend_frame));
 #endif
 
+    ctx_->ReadbackTimestampQueries(ctx_->backend_frame);
     ctx_->DestroyDeferredResources(ctx_->backend_frame);
     ctx_->default_descr_alloc()->Reset();
+
+    stats_.time_primary_ray_gen_us = ctx_->GetTimestampIntervalDurationUs(
+        timestamps_[ctx_->backend_frame].primary_ray_gen[0], timestamps_[ctx_->backend_frame].primary_ray_gen[1]);
+    stats_.time_primary_trace_us = ctx_->GetTimestampIntervalDurationUs(
+        timestamps_[ctx_->backend_frame].primary_trace[0], timestamps_[ctx_->backend_frame].primary_trace[1]);
+    stats_.time_primary_shade_us = ctx_->GetTimestampIntervalDurationUs(
+        timestamps_[ctx_->backend_frame].primary_shade[0], timestamps_[ctx_->backend_frame].primary_shade[1]);
+    stats_.time_primary_shadow_us = ctx_->GetTimestampIntervalDurationUs(
+        timestamps_[ctx_->backend_frame].primary_shadow[0], timestamps_[ctx_->backend_frame].primary_shadow[1]);
+
+    stats_.time_secondary_sort_us = 0; // no sorting for now
+    stats_.time_secondary_trace_us = 0;
+    for (int i = 0; i < int(timestamps_[ctx_->backend_frame].secondary_trace.size()); i += 2) {
+        stats_.time_secondary_trace_us +=
+            ctx_->GetTimestampIntervalDurationUs(timestamps_[ctx_->backend_frame].secondary_trace[i + 0],
+                                                 timestamps_[ctx_->backend_frame].secondary_trace[i + 1]);
+    }
+
+    stats_.time_secondary_shade_us = 0;
+    for (int i = 0; i < int(timestamps_[ctx_->backend_frame].secondary_shade.size()); i += 2) {
+        stats_.time_secondary_shade_us +=
+            ctx_->GetTimestampIntervalDurationUs(timestamps_[ctx_->backend_frame].secondary_shade[i + 0],
+                                                 timestamps_[ctx_->backend_frame].secondary_shade[i + 1]);
+    }
+
+    stats_.time_secondary_shadow_us = 0;
+    for (int i = 0; i < int(timestamps_[ctx_->backend_frame].secondary_shadow.size()); i += 2) {
+        stats_.time_secondary_shadow_us +=
+            ctx_->GetTimestampIntervalDurationUs(timestamps_[ctx_->backend_frame].secondary_shadow[i + 0],
+                                                 timestamps_[ctx_->backend_frame].secondary_shadow[i + 1]);
+    }
 
 #if RUN_IN_LOCKSTEP
     VkCommandBuffer cmd_buf = BegSingleTimeCommands(ctx_->device(), ctx_->temp_command_pool());
@@ -394,14 +414,9 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
     VkCommandBuffer cmd_buf = ctx_->draw_cmd_buf(ctx_->backend_frame);
 #endif
 
+    vkCmdResetQueryPool(cmd_buf, ctx_->query_pool(ctx_->backend_frame), 0, MaxTimestampQueries);
+
     //////////////////////////////////////////////////////////////////////////////////
-
-    pass_info_t pass_info = {};
-
-    pass_info.iteration = region.iteration;
-    pass_info.bounce = 0;
-    pass_info.settings = cam.pass_settings;
-    pass_info.settings.max_total_depth = std::min(pass_info.settings.max_total_depth, uint8_t(MAX_BOUNCES));
 
     const int hi = (region.iteration & (HALTON_SEQ_LEN - 1)) * HALTON_COUNT;
 
@@ -465,7 +480,9 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
 
     { // generate primary rays
         DebugMarker _(cmd_buf, "GeneratePrimaryRays");
+        timestamps_[ctx_->backend_frame].primary_ray_gen[0] = ctx_->WriteTimestamp(true);
         kernel_GeneratePrimaryRays(cmd_buf, cam, hi, region.rect(), halton_seq_buf_, prim_rays_buf_);
+        timestamps_[ctx_->backend_frame].primary_ray_gen[1] = ctx_->WriteTimestamp(false);
     }
 
 #if DEBUG_HWRT
@@ -475,16 +492,22 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
     }
 #else
     { // trace primary rays
-        DebugMarker _(cmd_buf, "TracePrimaryRays");
-        kernel_TracePrimaryRays(cmd_buf, sc_data, macro_tree_root, cam.clip_end, prim_rays_buf_, prim_hits_buf_);
+        DebugMarker _(cmd_buf, "IntersectScenePrimary");
+        timestamps_[ctx_->backend_frame].primary_trace[0] = ctx_->WriteTimestamp(true);
+        kernel_IntersectScenePrimary(cmd_buf, cam.pass_settings, sc_data, halton_seq_buf_, hi + RAND_DIM_BASE_COUNT,
+                                     macro_tree_root, cam.clip_end, s->tex_atlases_, s->bindless_tex_data_.descr_set,
+                                     prim_rays_buf_, prim_hits_buf_);
+        timestamps_[ctx_->backend_frame].primary_trace[1] = ctx_->WriteTimestamp(false);
     }
 
     { // shade primary hits
         DebugMarker _(cmd_buf, "ShadePrimaryHits");
-        kernel_ShadePrimaryHits(cmd_buf, pass_info.settings, s->env_, prim_hits_buf_, prim_rays_buf_, sc_data,
+        timestamps_[ctx_->backend_frame].primary_shade[0] = ctx_->WriteTimestamp(true);
+        kernel_ShadePrimaryHits(cmd_buf, cam.pass_settings, s->env_, prim_hits_buf_, prim_rays_buf_, sc_data,
                                 halton_seq_buf_, hi + RAND_DIM_BASE_COUNT, s->tex_atlases_,
                                 s->bindless_tex_data_.descr_set, temp_buf_, secondary_rays_buf_, shadow_rays_buf_,
                                 counters_buf_);
+        timestamps_[ctx_->backend_frame].primary_shade[1] = ctx_->WriteTimestamp(false);
     }
 
     { // prepare indirect args
@@ -494,18 +517,24 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
 
     { // trace shadow rays
         DebugMarker _(cmd_buf, "TraceShadow");
-        kernel_TraceShadow(cmd_buf, indir_args_buf_, counters_buf_, sc_data, macro_tree_root,
-                           region.halton_seq[hi + RAND_DIM_BASE_COUNT + RAND_DIM_BSDF_PICK], s->tex_atlases_,
-                           s->bindless_tex_data_.descr_set, shadow_rays_buf_, temp_buf_);
+        timestamps_[ctx_->backend_frame].primary_shadow[0] = ctx_->WriteTimestamp(true);
+        kernel_IntersectSceneShadow(cmd_buf, cam.pass_settings, indir_args_buf_, counters_buf_, sc_data,
+                                    macro_tree_root, s->tex_atlases_, s->bindless_tex_data_.descr_set, shadow_rays_buf_,
+                                    temp_buf_);
+        timestamps_[ctx_->backend_frame].primary_shadow[1] = ctx_->WriteTimestamp(false);
     }
 
-    for (int bounce = 1;
-         bounce <= pass_info.settings.max_total_depth && !(pass_info.settings.flags & SkipIndirectLight); ++bounce) {
+    timestamps_[ctx_->backend_frame].secondary_trace.clear();
+    timestamps_[ctx_->backend_frame].secondary_shade.clear();
+    timestamps_[ctx_->backend_frame].secondary_shadow.clear();
 
+    for (int bounce = 1; bounce <= cam.pass_settings.max_total_depth; ++bounce) {
+        timestamps_[ctx_->backend_frame].secondary_trace.push_back(ctx_->WriteTimestamp(true));
         { // trace secondary rays
-            DebugMarker _(cmd_buf, "TraceSecondaryRays");
-            kernel_TraceSecondaryRays(cmd_buf, indir_args_buf_, counters_buf_, sc_data, macro_tree_root,
-                                      secondary_rays_buf_, prim_hits_buf_);
+            DebugMarker _(cmd_buf, "IntersectSceneSecondary");
+            kernel_IntersectSceneSecondary(cmd_buf, indir_args_buf_, counters_buf_, cam.pass_settings, sc_data,
+                                           halton_seq_buf_, hi + RAND_DIM_BASE_COUNT, macro_tree_root, s->tex_atlases_,
+                                           s->bindless_tex_data_.descr_set, secondary_rays_buf_, prim_hits_buf_);
         }
 
         if (sc_data.visible_lights_count) {
@@ -514,12 +543,16 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
                                        prim_hits_buf_);
         }
 
+        timestamps_[ctx_->backend_frame].secondary_trace.push_back(ctx_->WriteTimestamp(false));
+
         { // shade secondary hits
             DebugMarker _(cmd_buf, "ShadeSecondaryHits");
-            kernel_ShadeSecondaryHits(
-                cmd_buf, pass_info.settings, s->env_, indir_args_buf_, prim_hits_buf_, secondary_rays_buf_, sc_data,
-                halton_seq_buf_, hi + RAND_DIM_BASE_COUNT + bounce * RAND_DIM_BOUNCE_COUNT, s->tex_atlases_,
-                s->bindless_tex_data_.descr_set, temp_buf_, prim_rays_buf_, shadow_rays_buf_, counters_buf_);
+            timestamps_[ctx_->backend_frame].secondary_shade.push_back(ctx_->WriteTimestamp(true));
+            kernel_ShadeSecondaryHits(cmd_buf, cam.pass_settings, s->env_, indir_args_buf_, prim_hits_buf_,
+                                      secondary_rays_buf_, sc_data, halton_seq_buf_, hi + RAND_DIM_BASE_COUNT,
+                                      s->tex_atlases_, s->bindless_tex_data_.descr_set, temp_buf_, prim_rays_buf_,
+                                      shadow_rays_buf_, counters_buf_);
+            timestamps_[ctx_->backend_frame].secondary_shade.push_back(ctx_->WriteTimestamp(false));
         }
 
         { // prepare indirect args
@@ -529,10 +562,11 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
 
         { // trace shadow rays
             DebugMarker _(cmd_buf, "TraceShadow");
-            kernel_TraceShadow(
-                cmd_buf, indir_args_buf_, counters_buf_, sc_data, macro_tree_root,
-                region.halton_seq[hi + RAND_DIM_BASE_COUNT + bounce * RAND_DIM_BOUNCE_COUNT + RAND_DIM_BSDF_PICK],
-                s->tex_atlases_, s->bindless_tex_data_.descr_set, shadow_rays_buf_, temp_buf_);
+            timestamps_[ctx_->backend_frame].secondary_shadow.push_back(ctx_->WriteTimestamp(true));
+            kernel_IntersectSceneShadow(cmd_buf, cam.pass_settings, indir_args_buf_, counters_buf_, sc_data,
+                                        macro_tree_root, s->tex_atlases_, s->bindless_tex_data_.descr_set,
+                                        shadow_rays_buf_, temp_buf_);
+            timestamps_[ctx_->backend_frame].secondary_shadow.push_back(ctx_->WriteTimestamp(false));
         }
 
         // std::swap(final_buf_, temp_buf_);
@@ -550,6 +584,7 @@ void Ray::Vk::Renderer::RenderScene(const SceneBase *_s, RegionContext &region) 
 
         postprocess_params_.clamp = (cam.pass_settings.flags & Clamp) ? 1 : 0;
         postprocess_params_.srgb = (cam.dtype == SRGB) ? 1 : 0;
+        postprocess_params_.exposure = cam.exposure;
         postprocess_params_.gamma = (1.0f / cam.gamma);
     }
 
@@ -613,8 +648,8 @@ const Ray::pixel_color_t *Ray::Vk::Renderer::get_pixels_ref() const {
         { // postprocess
             DebugMarker _(cmd_buf, "Postprocess frame");
 
-            kernel_Postprocess(cmd_buf, clean_buf_, postprocess_params_.gamma, postprocess_params_.clamp,
-                               postprocess_params_.srgb, final_buf_);
+            kernel_Postprocess(cmd_buf, clean_buf_, postprocess_params_.exposure, postprocess_params_.gamma,
+                               postprocess_params_.clamp, postprocess_params_.srgb, final_buf_);
         }
 
         { // download result

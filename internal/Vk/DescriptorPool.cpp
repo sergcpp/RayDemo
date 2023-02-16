@@ -1,6 +1,7 @@
 #include "DescriptorPool.h"
 
 #include "Context.h"
+#include "../../Log.h"
 
 namespace Ray {
 namespace Vk {
@@ -77,7 +78,10 @@ VkDescriptorSet Ray::Vk::DescrPool::Alloc(const VkDescriptorSetLayout layout) {
 
     VkDescriptorSet descr_set = VK_NULL_HANDLE;
     const VkResult res = vkAllocateDescriptorSets(ctx_->device(), &alloc_info, &descr_set);
-    assert(res == VK_SUCCESS);
+    if (res != VK_SUCCESS) {
+        ctx_->log()->Error("Failed to allocated descriptor set!");
+        return VK_NULL_HANDLE;
+    }
 
     ++next_free_;
 

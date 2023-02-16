@@ -30,10 +30,10 @@ template <int S> struct PassData {
     PassData() = default;
 
     PassData(const PassData &rhs) = delete;
-    PassData(PassData &&rhs) { *this = std::move(rhs); }
+    PassData(PassData &&rhs) noexcept { *this = std::move(rhs); }
 
     PassData &operator=(const PassData &rhs) = delete;
-    PassData &operator=(PassData &&rhs) {
+    PassData &operator=(PassData &&rhs) noexcept {
         primary_rays = std::move(rhs.primary_rays);
         primary_masks = std::move(rhs.primary_masks);
         secondary_rays = std::move(rhs.secondary_rays);
@@ -54,8 +54,7 @@ template <int DimX, int DimY> class RendererSIMD : public RendererBase {
     ILog *log_;
     Ref::Framebuffer clean_buf_, final_buf_, temp_buf_;
 
-    std::mutex pass_cache_mtx_;
-    std::vector<PassData<DimX * DimY>> pass_cache_;
+    std::mutex mtx_;
 
     bool use_wide_bvh_;
     stats_t stats_ = {0};
@@ -90,8 +89,40 @@ template <int DimX, int DimY> class RendererSIMD : public RendererBase {
     SceneBase *CreateScene() override;
     void RenderScene(const SceneBase *scene, RegionContext &region) override;
 
-    virtual void GetStats(stats_t &st) override { st = stats_; }
-    virtual void ResetStats() override { stats_ = {0}; }
+    void GetStats(stats_t &st) override { st = stats_; }
+    void ResetStats() override { stats_ = {0}; }
+};
+
+template <int S> Ray::NS::PassData<S> &get_per_thread_pass_data() {
+    static thread_local Ray::NS::PassData<S> per_thread_pass_data;
+    return per_thread_pass_data;
+}
+
+pixel_color_t clamp_and_gamma_correct(const pixel_color_t &p, const camera_t &cam) {
+    auto c = simd_fvec4{&p.r};
+
+    if (cam.exposure != 0.0f) {
+        c *= std::pow(2.0f, cam.exposure);
+    }
+
+    if (cam.dtype == SRGB) {
+        UNROLLED_FOR(i, 3, {
+            if (c.get<i>() < 0.0031308f) {
+                c.set<i>(12.92f * c.get<i>());
+            } else {
+                c.set<i>(1.055f * std::pow(c.get<i>(), (1.0f / 2.4f)) - 0.055f);
+            }
+        })
+    }
+
+    if (cam.gamma != 1.0f) {
+        c = pow(c, simd_fvec4{1.0f / cam.gamma});
+    }
+
+    if (cam.pass_settings.flags & Clamp) {
+        c = clamp(c, 0.0f, 1.0f);
+    }
+    return pixel_color_t{c[0], c[1], c[2], c[3]};
 };
 } // namespace NS
 } // namespace Ray
@@ -104,7 +135,9 @@ template <int DimX, int DimY> class RendererSIMD : public RendererBase {
 template <int DimX, int DimY>
 Ray::NS::RendererSIMD<DimX, DimY>::RendererSIMD(const settings_t &s, ILog *log)
     : log_(log), clean_buf_(s.w, s.h), final_buf_(s.w, s.h), temp_buf_(s.w, s.h), use_wide_bvh_(s.use_wide_bvh) {
-    auto rand_func = std::bind(UniformIntDistribution<uint32_t>(), std::mt19937(0));
+    auto mt = std::mt19937(0);
+    auto dist = UniformIntDistribution<uint32_t>{};
+    auto rand_func = [&]() { return dist(mt); };
     permutations_ = Ray::ComputeRadicalInversePermutations(g_primes, PrimesCount, rand_func);
 }
 
@@ -113,35 +146,34 @@ template <int DimX, int DimY> Ray::SceneBase *Ray::NS::RendererSIMD<DimX, DimY>:
 }
 
 template <int DimX, int DimY>
-void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionContext &region) {
+void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *scene, RegionContext &region) {
     const int S = DimX * DimY;
 
-    const auto s = dynamic_cast<const Ref::Scene *>(_s);
+    const auto s = dynamic_cast<const Ref::Scene *>(scene);
     if (!s) {
         return;
     }
 
-    const camera_t &cam = s->cams_[s->current_cam()].cam;
+    const camera_t &cam = s->cams_[s->current_cam()._index].cam;
 
-    scene_data_t sc_data;
-
-    sc_data.env = &s->env_;
-    sc_data.mesh_instances = s->mesh_instances_.empty() ? nullptr : &s->mesh_instances_[0];
-    sc_data.mi_indices = s->mi_indices_.empty() ? nullptr : &s->mi_indices_[0];
-    sc_data.meshes = s->meshes_.empty() ? nullptr : &s->meshes_[0];
-    sc_data.transforms = s->transforms_.empty() ? nullptr : &s->transforms_[0];
-    sc_data.vtx_indices = s->vtx_indices_.empty() ? nullptr : &s->vtx_indices_[0];
-    sc_data.vertices = s->vertices_.empty() ? nullptr : &s->vertices_[0];
-    sc_data.nodes = s->nodes_.empty() ? nullptr : &s->nodes_[0];
-    sc_data.mnodes = s->mnodes_.empty() ? nullptr : &s->mnodes_[0];
-    sc_data.tris = s->tris_.empty() ? nullptr : &s->tris_[0];
-    sc_data.tri_indices = s->tri_indices_.empty() ? nullptr : &s->tri_indices_[0];
-    sc_data.mtris = s->mtris_.data();
-    sc_data.tri_materials = s->tri_materials_.empty() ? nullptr : &s->tri_materials_[0];
-    sc_data.materials = s->materials_.empty() ? nullptr : &s->materials_[0];
-    sc_data.lights = s->lights_.empty() ? nullptr : &s->lights_[0];
-    sc_data.li_indices = {s->li_indices_.data(), s->li_indices_.size()};
-    sc_data.visible_lights = {s->visible_lights_.data(), s->visible_lights_.size()};
+    const scene_data_t sc_data = {s->env_,
+                                  s->mesh_instances_.data(),
+                                  s->mi_indices_.empty() ? nullptr : &s->mi_indices_[0],
+                                  s->meshes_.empty() ? nullptr : &s->meshes_[0],
+                                  s->transforms_.empty() ? nullptr : &s->transforms_[0],
+                                  s->vtx_indices_.empty() ? nullptr : &s->vtx_indices_[0],
+                                  s->vertices_.empty() ? nullptr : &s->vertices_[0],
+                                  s->nodes_.empty() ? nullptr : &s->nodes_[0],
+                                  s->mnodes_.empty() ? nullptr : &s->mnodes_[0],
+                                  s->tris_.empty() ? nullptr : &s->tris_[0],
+                                  s->tri_indices_.empty() ? nullptr : &s->tri_indices_[0],
+                                  s->mtris_.data(),
+                                  s->tri_materials_.empty() ? nullptr : &s->tri_materials_[0],
+                                  s->materials_.empty() ? nullptr : &s->materials_[0],
+                                  s->lights_.empty() ? nullptr : &s->lights_[0],
+                                  {s->li_indices_},
+                                  {s->visible_lights_},
+                                  {s->blocker_lights_}};
 
     const uint32_t macro_tree_root = s->macro_nodes_root_;
 
@@ -156,26 +188,32 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionC
             root_max[0] = root_max[1] = root_max[2] = -MAX_DIST;
 
             if (root_node.child[0] & LEAF_NODE_BIT) {
-                ITERATE_3({ root_min[i] = root_node.bbox_min[i][0]; })
-                ITERATE_3({ root_max[i] = root_node.bbox_max[i][0]; })
+                UNROLLED_FOR(i, 3, {
+                    root_min[i] = root_node.bbox_min[i][0];
+                    root_max[i] = root_node.bbox_max[i][0];
+                })
             } else {
                 for (int j = 0; j < 8; j++) {
                     if (root_node.child[j] == 0x7fffffff) {
                         continue;
                     }
 
-                    ITERATE_3({ root_min[i] = root_node.bbox_min[i][j]; })
-                    ITERATE_3({ root_max[i] = root_node.bbox_max[i][j]; })
+                    UNROLLED_FOR(i, 3, {
+                        root_min[i] = root_node.bbox_min[i][j];
+                        root_max[i] = root_node.bbox_max[i][j];
+                    })
                 }
             }
         } else {
             const bvh_node_t &root_node = sc_data.nodes[macro_tree_root];
 
-            ITERATE_3({ root_min[i] = root_node.bbox_min[i]; })
-            ITERATE_3({ root_max[i] = root_node.bbox_max[i]; })
+            UNROLLED_FOR(i, 3, {
+                root_min[i] = root_node.bbox_min[i];
+                root_max[i] = root_node.bbox_max[i];
+            })
         }
 
-        ITERATE_3({ cell_size[i] = (root_max[i] - root_min[i]) / 255; })
+        UNROLLED_FOR(i, 3, { cell_size[i] = (root_max[i] - root_min[i]) / 255; })
     }
 
     const int w = final_buf_.w(), h = final_buf_.h();
@@ -190,28 +228,15 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionC
         UpdateHaltonSequence(region.iteration, region.halton_seq);
     }
 
-    PassData<S> p;
+    PassData<S> &p = get_per_thread_pass_data<S>();
 
-    {
-        std::lock_guard<std::mutex> _(pass_cache_mtx_);
-        if (!pass_cache_.empty()) {
-            p = std::move(pass_cache_.back());
-            pass_cache_.pop_back();
-        }
+    // allocate sh data on demand
+    if (cam.pass_settings.flags & OutputSH) {
+        std::lock_guard<std::mutex> _(mtx_);
 
-        // allocate sh data on demand
-        if (cam.pass_settings.flags & OutputSH) {
-            temp_buf_.Resize(w, h, true);
-            clean_buf_.Resize(w, h, true);
-        }
+        temp_buf_.Resize(w, h, true);
+        clean_buf_.Resize(w, h, true);
     }
-
-    pass_info_t pass_info;
-
-    pass_info.iteration = region.iteration;
-    pass_info.bounce = 0;
-    pass_info.settings = cam.pass_settings;
-    pass_info.settings.max_total_depth = std::min(pass_info.settings.max_total_depth, (uint8_t)MAX_BOUNCES);
 
     const auto time_start = std::chrono::high_resolution_clock::now();
     std::chrono::time_point<std::chrono::high_resolution_clock> time_after_ray_gen;
@@ -227,23 +252,16 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionC
         p.intersections.resize(p.primary_rays.size());
 
         for (size_t i = 0; i < p.primary_rays.size(); i++) {
-            const ray_data_t<S> &r = p.primary_rays[i];
+            ray_data_t<S> &r = p.primary_rays[i];
+
             hit_data_t<S> &inter = p.intersections[i];
             inter = {};
             inter.t = cam.clip_end;
 
             if (macro_tree_root != 0xffffffff) {
-                if (sc_data.mnodes) {
-                    NS::Traverse_MacroTree_WithStack_ClosestHit(r.o, r.d, p.primary_masks[i], sc_data.mnodes,
-                                                                macro_tree_root, sc_data.mesh_instances,
-                                                                sc_data.mi_indices, sc_data.meshes, sc_data.transforms,
-                                                                sc_data.mtris, sc_data.tri_indices, inter);
-                } else {
-                    NS::Traverse_MacroTree_WithStack_ClosestHit(r.o, r.d, p.primary_masks[i], sc_data.nodes,
-                                                                macro_tree_root, sc_data.mesh_instances,
-                                                                sc_data.mi_indices, sc_data.meshes, sc_data.transforms,
-                                                                sc_data.tris, sc_data.tri_indices, inter);
-                }
+                NS::IntersectScene(r, p.primary_masks[i], cam.pass_settings.min_transp_depth,
+                                   cam.pass_settings.max_transp_depth, &region.halton_seq[hi + RAND_DIM_BASE_COUNT],
+                                   sc_data, macro_tree_root, s->tex_storages_, inter);
             }
             // NS::IntersectAreaLights(r, {-1}, sc_data.lights, sc_data.visible_lights, sc_data.transforms, inter);
         }
@@ -267,50 +285,55 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionC
     p.shadow_masks.resize(p.primary_rays.size());
     int secondary_rays_count = 0, shadow_rays_count = 0;
 
-    for (size_t i = 0; i < p.intersections.size(); i++) {
-        const ray_data_t<S> &r = p.primary_rays[i];
-        const hit_data_t<S> &inter = p.intersections[i];
+    for (size_t ri = 0; ri < p.intersections.size(); ri++) {
+        const ray_data_t<S> &r = p.primary_rays[ri];
+        const hit_data_t<S> &inter = p.intersections[ri];
 
         const simd_ivec<S> x = r.xy >> 16, y = r.xy & 0x0000FFFF;
-        const simd_ivec<S> px_index = y * w + x;
 
-        p.secondary_masks[i] = {0};
+        p.secondary_masks[ri] = {0};
 
         simd_fvec<S> out_rgba[4] = {0.0f};
-        NS::ShadeSurface(px_index, pass_info, &region.halton_seq[hi + RAND_DIM_BASE_COUNT], inter, r, sc_data,
+        NS::ShadeSurface(cam.pass_settings, &region.halton_seq[hi + RAND_DIM_BASE_COUNT], inter, r, sc_data,
                          macro_tree_root, s->tex_storages_, out_rgba, p.secondary_masks.data(), p.secondary_rays.data(),
                          &secondary_rays_count, p.shadow_masks.data(), p.shadow_rays.data(), &shadow_rays_count);
-        for (int j = 0; j < S; j++) {
-            if (!p.primary_masks[i][j]) {
-                continue;
+
+        // TODO: vectorize this
+        UNROLLED_FOR_S(i, S, {
+            if (p.primary_masks[ri].template get<i>()) {
+                temp_buf_.SetPixel(x.template get<i>(), y.template get<i>(),
+                                   {out_rgba[0].template get<i>(), out_rgba[1].template get<i>(),
+                                    out_rgba[2].template get<i>(), out_rgba[3].template get<i>()});
             }
-            temp_buf_.SetPixel(x[j], y[j], {out_rgba[0][j], out_rgba[1][j], out_rgba[2][j], out_rgba[3][j]});
-        }
-    }
-
-    for (int i = 0; i < shadow_rays_count; ++i) {
-        const shadow_ray_t<S> &sh_r = p.shadow_rays[i];
-
-        const simd_ivec<S> x = sh_r.xy >> 16, y = sh_r.xy & 0x0000FFFF;
-        const simd_ivec<S> px_index = y * w + x;
-
-        const simd_fvec<S> visibility =
-            ComputeVisibility(sh_r.o, sh_r.d, sh_r.dist, p.shadow_masks[i],
-                              region.halton_seq[hi + RAND_DIM_BASE_COUNT + RAND_DIM_BSDF_PICK], hash(px_index), sc_data,
-                              macro_tree_root, s->tex_storages_);
-
-        for (int j = 0; j < S; j++) {
-            if (!p.shadow_masks[i][j]) {
-                continue;
-            }
-            temp_buf_.AddPixel(
-                x[j], y[j],
-                {visibility[j] * sh_r.c[0][j], visibility[j] * sh_r.c[1][j], visibility[j] * sh_r.c[2][j], 0.0f});
-        }
+        })
     }
 
     const auto time_after_prim_shade = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::micro> secondary_sort_time{}, secondary_trace_time{}, secondary_shade_time{};
+
+    for (int ri = 0; ri < shadow_rays_count; ++ri) {
+        const shadow_ray_t<S> &sh_r = p.shadow_rays[ri];
+
+        const simd_ivec<S> x = sh_r.xy >> 16, y = sh_r.xy & 0x0000FFFF;
+
+        simd_fvec<S> rc[3];
+        NS::IntersectScene(sh_r, p.shadow_masks[ri], cam.pass_settings.max_transp_depth, sc_data, macro_tree_root,
+                           s->tex_storages_, rc);
+        const simd_fvec<S> k = NS::IntersectAreaLights(sh_r, p.shadow_masks[ri], sc_data.lights, sc_data.blocker_lights,
+                                                       sc_data.transforms);
+        UNROLLED_FOR(i, 3, { rc[i] *= k; })
+
+        // TODO: vectorize this
+        UNROLLED_FOR_S(i, S, {
+            if (p.shadow_masks[ri].template get<i>()) {
+                temp_buf_.AddPixel(x.template get<i>(), y.template get<i>(),
+                                   {rc[0].template get<i>(), rc[1].template get<i>(), rc[2].template get<i>(), 0.0f});
+            }
+        })
+    }
+
+    const auto time_after_prim_shadow = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::micro> secondary_sort_time{}, secondary_trace_time{}, secondary_shade_time{},
+        secondary_shadow_time{};
 
     p.hash_values.resize(p.primary_rays.size());
     // p.head_flags.resize(p.primary_rays.size() * S);
@@ -334,9 +357,7 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionC
         }
     }
 
-    for (int bounce = 1; bounce <= pass_info.settings.max_total_depth && secondary_rays_count &&
-                         !(pass_info.settings.flags & SkipIndirectLight);
-         bounce++) {
+    for (int bounce = 1; bounce <= cam.pass_settings.max_total_depth && secondary_rays_count; bounce++) {
         auto time_secondary_sort_start = std::chrono::high_resolution_clock::now();
 
         SortRays_CPU(&p.secondary_rays[0], &p.secondary_masks[0], secondary_rays_count, root_min, cell_size,
@@ -345,20 +366,16 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionC
         auto time_secondary_trace_start = std::chrono::high_resolution_clock::now();
 
         for (int i = 0; i < secondary_rays_count; i++) {
-            const ray_data_t<S> &r = p.secondary_rays[i];
+            ray_data_t<S> &r = p.secondary_rays[i];
+
             hit_data_t<S> &inter = p.intersections[i];
             inter = {};
 
-            if (sc_data.mnodes) {
-                NS::Traverse_MacroTree_WithStack_ClosestHit(
-                    r.o, r.d, p.secondary_masks[i], sc_data.mnodes, macro_tree_root, sc_data.mesh_instances,
-                    sc_data.mi_indices, sc_data.meshes, sc_data.transforms, sc_data.mtris, sc_data.tri_indices, inter);
-            } else {
-                NS::Traverse_MacroTree_WithStack_ClosestHit(
-                    r.o, r.d, p.secondary_masks[i], sc_data.nodes, macro_tree_root, sc_data.mesh_instances,
-                    sc_data.mi_indices, sc_data.meshes, sc_data.transforms, sc_data.tris, sc_data.tri_indices, inter);
-            }
-            const simd_ivec<S> not_only_transparency_ray = (r.ray_depth & 0x00ffffff) != 0;
+            NS::IntersectScene(r, p.secondary_masks[i], cam.pass_settings.min_transp_depth,
+                               cam.pass_settings.max_transp_depth, &region.halton_seq[hi + RAND_DIM_BASE_COUNT],
+                               sc_data, macro_tree_root, s->tex_storages_, inter);
+
+            const simd_ivec<S> not_only_transparency_ray = (r.depth & 0x00ffffff) != 0;
             NS::IntersectAreaLights(r, p.secondary_masks[i] & not_only_transparency_ray, sc_data.lights,
                                     sc_data.visible_lights, sc_data.transforms, inter);
         }
@@ -371,64 +388,65 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionC
         std::swap(p.primary_rays, p.secondary_rays);
         std::swap(p.primary_masks, p.secondary_masks);
 
-        pass_info.bounce = bounce;
-
-        for (int i = 0; i < rays_count; i++) {
-            const ray_data_t<S> &r = p.primary_rays[i];
-            const hit_data_t<S> &inter = p.intersections[i];
+        for (int ri = 0; ri < rays_count; ri++) {
+            const ray_data_t<S> &r = p.primary_rays[ri];
+            const hit_data_t<S> &inter = p.intersections[ri];
 
             const simd_ivec<S> x = r.xy >> 16, y = r.xy & 0x0000FFFF;
-            const simd_ivec<S> index = y * w + x;
 
             simd_fvec<S> out_rgba[4] = {0.0f};
-            NS::ShadeSurface(index, pass_info,
-                             &region.halton_seq[hi + RAND_DIM_BASE_COUNT + bounce * RAND_DIM_BOUNCE_COUNT], inter, r,
-                             sc_data, macro_tree_root, s->tex_storages_, out_rgba, p.secondary_masks.data(),
+            NS::ShadeSurface(cam.pass_settings, &region.halton_seq[hi + RAND_DIM_BASE_COUNT], inter, r, sc_data,
+                             macro_tree_root, s->tex_storages_, out_rgba, p.secondary_masks.data(),
                              p.secondary_rays.data(), &secondary_rays_count, p.shadow_masks.data(),
                              p.shadow_rays.data(), &shadow_rays_count);
-            out_rgba[3] = 0.0f;
 
-            for (int j = 0; j < S; j++) {
-                if (!p.primary_masks[i][j]) {
-                    continue;
+            // TODO: vectorize this
+            UNROLLED_FOR_S(i, S, {
+                if (p.primary_masks[ri].template get<i>()) {
+                    temp_buf_.AddPixel(x.template get<i>(), y.template get<i>(),
+                                       {out_rgba[0].template get<i>(), out_rgba[1].template get<i>(),
+                                        out_rgba[2].template get<i>(), out_rgba[3].template get<i>()});
                 }
-                temp_buf_.AddPixel(x[j], y[j], {out_rgba[0][j], out_rgba[1][j], out_rgba[2][j], out_rgba[3][j]});
-            }
+            })
         }
 
-        for (int i = 0; i < shadow_rays_count; ++i) {
-            const shadow_ray_t<S> &sh_r = p.shadow_rays[i];
+        auto time_secondary_shadow_start = std::chrono::high_resolution_clock::now();
+
+        for (int ri = 0; ri < shadow_rays_count; ++ri) {
+            const shadow_ray_t<S> &sh_r = p.shadow_rays[ri];
 
             const simd_ivec<S> x = sh_r.xy >> 16, y = sh_r.xy & 0x0000FFFF;
-            const simd_ivec<S> px_index = y * w + x;
 
-            const simd_fvec<S> visibility = ComputeVisibility(
-                sh_r.o, sh_r.d, sh_r.dist, p.shadow_masks[i],
-                region.halton_seq[hi + RAND_DIM_BASE_COUNT + bounce * RAND_DIM_BOUNCE_COUNT + RAND_DIM_BSDF_PICK],
-                hash(px_index), sc_data, macro_tree_root, s->tex_storages_);
+            simd_fvec<S> rc[3];
+            IntersectScene(sh_r, p.shadow_masks[ri], cam.pass_settings.max_transp_depth, sc_data, macro_tree_root,
+                           s->tex_storages_, rc);
+            const simd_fvec<S> k = NS::IntersectAreaLights(sh_r, p.shadow_masks[ri], sc_data.lights,
+                                                           sc_data.blocker_lights, sc_data.transforms);
+            UNROLLED_FOR(i, 3, { rc[i] *= k; })
 
-            for (int j = 0; j < S; j++) {
-                if (!p.shadow_masks[i][j]) {
-                    continue;
+            // TODO: vectorize this
+            UNROLLED_FOR_S(i, S, {
+                if (p.shadow_masks[ri].template get<i>()) {
+                    temp_buf_.AddPixel(
+                        x.template get<i>(), y.template get<i>(),
+                        {rc[0].template get<i>(), rc[1].template get<i>(), rc[2].template get<i>(), 0.0f});
                 }
-                temp_buf_.AddPixel(
-                    x[j], y[j],
-                    {visibility[j] * sh_r.c[0][j], visibility[j] * sh_r.c[1][j], visibility[j] * sh_r.c[2][j], 0.0f});
-            }
+            })
         }
 
-        auto time_secondary_shade_end = std::chrono::high_resolution_clock::now();
+        auto time_secondary_shadow_end = std::chrono::high_resolution_clock::now();
         secondary_sort_time +=
             std::chrono::duration<double, std::micro>{time_secondary_trace_start - time_secondary_sort_start};
         secondary_trace_time +=
             std::chrono::duration<double, std::micro>{time_secondary_shade_start - time_secondary_trace_start};
         secondary_shade_time +=
-            std::chrono::duration<double, std::micro>{time_secondary_shade_end - time_secondary_shade_start};
+            std::chrono::duration<double, std::micro>{time_secondary_shadow_start - time_secondary_shade_start};
+        secondary_shadow_time +=
+            std::chrono::duration<double, std::micro>{time_secondary_shadow_end - time_secondary_shadow_start};
     }
 
     {
-        std::lock_guard<std::mutex> _(pass_cache_mtx_);
-        pass_cache_.emplace_back(std::move(p));
+        std::lock_guard<std::mutex> _(mtx_);
 
         stats_.time_primary_ray_gen_us +=
             (unsigned long long)std::chrono::duration<double, std::micro>{time_after_ray_gen - time_start}.count();
@@ -438,13 +456,18 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionC
         stats_.time_primary_shade_us +=
             (unsigned long long)std::chrono::duration<double, std::micro>{time_after_prim_shade - time_after_prim_trace}
                 .count();
+        stats_.time_primary_shadow_us +=
+            (unsigned long long)std::chrono::duration<double, std::micro>{time_after_prim_shadow -
+                                                                          time_after_prim_shade}
+                .count();
         stats_.time_secondary_sort_us += (unsigned long long)secondary_sort_time.count();
         stats_.time_secondary_trace_us += (unsigned long long)secondary_trace_time.count();
         stats_.time_secondary_shade_us += (unsigned long long)secondary_shade_time.count();
+        stats_.time_secondary_shadow_us += (unsigned long long)secondary_shadow_time.count();
     }
 
     // factor used to compute incremental average
-    const float mix_factor = 1.0f / region.iteration;
+    const float mix_factor = 1.0f / float(region.iteration);
 
     clean_buf_.MixWith(temp_buf_, rect, mix_factor);
     if (cam.pass_settings.flags & OutputSH) {
@@ -452,30 +475,9 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const SceneBase *_s, RegionC
         clean_buf_.MixWith_SH(temp_buf_, rect, mix_factor);
     }
 
-    auto clamp_and_gamma_correct = [&cam](const pixel_color_t &p) {
-        auto c = simd_fvec4{&p.r};
+    auto _clamp_and_gamma_correct = [&cam](const pixel_color_t &p) { return clamp_and_gamma_correct(p, cam); };
 
-        if (cam.dtype == SRGB) {
-            ITERATE_3({
-                if (c[i] < 0.0031308f) {
-                    c[i] = 12.92f * c[i];
-                } else {
-                    c[i] = 1.055f * std::pow(c[i], (1.0f / 2.4f)) - 0.055f;
-                }
-            })
-        }
-
-        if (cam.gamma != 1.0f) {
-            c = pow(c, simd_fvec4{1.0f / cam.gamma});
-        }
-
-        if (cam.pass_settings.flags & Clamp) {
-            c = clamp(c, 0.0f, 1.0f);
-        }
-        return pixel_color_t{c[0], c[1], c[2], c[3]};
-    };
-
-    final_buf_.CopyFrom(clean_buf_, rect, clamp_and_gamma_correct);
+    final_buf_.CopyFrom(clean_buf_, rect, _clamp_and_gamma_correct);
 }
 
 template <int DimX, int DimY>
