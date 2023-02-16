@@ -7,18 +7,37 @@
 #include "../Types.h"
 #include "Span.h"
 
-// #define USE_RAY_DIFFERENTIALS
-
 #ifdef __GNUC__
 #define force_inline __attribute__((always_inline)) inline
+#define assume_aligned(ptr, sz) (__builtin_assume_aligned((const void *)ptr, sz))
+#define vectorcall
 #endif
 #ifdef _MSC_VER
 #define force_inline __forceinline
+#define vectorcall __vectorcall
+#define assume_aligned(ptr, sz) (__assume((((const char *)ptr) - ((const char *)0)) % (sz) == 0), (ptr))
 
 #include <intrin.h>
 
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_bittestandcomplement)
+
+#ifdef _M_IX86
+// Win32 doesn't have _BitScanForward64 so emulate it with two 32 bit calls
+force_inline unsigned char _BitScanForward64(unsigned long *Index, unsigned __int64 Mask) {
+    // Scan the Low Word
+    if (_BitScanForward(Index, static_cast<unsigned long>(Mask))) {
+        return 1;
+    }
+    // Scan the High Word
+    if (_BitScanForward(Index, static_cast<unsigned long>(Mask >> 32))) {
+        *Index += 32; // Create a bit offset from the LSB
+        return 1;
+    }
+    return 0;
+}
+#endif
+
 #endif
 
 #define unused(x) ((void)x)
@@ -54,7 +73,7 @@ const float PI = 3.141592653589793238463f;
 
 const float MAX_DIST = 3.402823466e+30F; // 3.402823466e+38F
 
-const int MAX_BOUNCES = 16;
+const int MAX_BOUNCES = 32;
 
 const float LIGHT_ATTEN_CUTOFF = 0.001f;
 
@@ -134,7 +153,6 @@ const int MATERIAL_INDEX_BITS = 0b0011111111111111;
 
 const uint32_t MAT_FLAG_MULT_IMPORTANCE = (1u << 0u);
 const uint32_t MAT_FLAG_MIX_ADD = (1u << 1u);
-const uint32_t MAT_FLAG_SKY_PORTAL = (1u << 2u);
 
 struct material_t {
     uint32_t textures[MAX_MATERIAL_TEXTURES];
@@ -151,8 +169,7 @@ struct material_t {
     };
     uint16_t roughness_unorm;
     uint16_t anisotropic_unorm;
-    float int_ior;
-    float ext_ior;
+    float ior;
     uint16_t sheen_unorm;
     uint16_t sheen_tint_unorm;
     uint16_t tint_unorm;
@@ -166,7 +183,7 @@ struct material_t {
     uint16_t normal_map_strength_unorm;
     uint16_t _pad;
 };
-static_assert(sizeof(material_t) == 80, "!");
+static_assert(sizeof(material_t) == 76, "!");
 
 const int LIGHT_TYPE_SPHERE = 0;
 const int LIGHT_TYPE_SPOT = 1;
@@ -187,8 +204,8 @@ struct light_t {
     union {
         struct {
             float pos[3], area;
-            float radius;
-            float _unused[5];
+            float dir[3], radius;
+            float spot, blend, _unused[2];
         } sph;
         struct {
             float pos[3], area;
@@ -227,7 +244,8 @@ struct bvh_settings_t {
     int min_primitives_in_leaf = 8;
 };
 
-template <typename T> using aligned_vector = std::vector<T, aligned_allocator<T, alignof(T)>>;
+template <typename T, size_t Alignment = alignof(T)>
+using aligned_vector = std::vector<T, aligned_allocator<T, Alignment>>;
 
 // bit scan forward
 force_inline long GetFirstBit(long mask) {
@@ -306,8 +324,9 @@ uint32_t FlattenBVH_Recursive(const bvh_node_t *nodes, uint32_t node_index, uint
 bool NaiivePluckerTest(const float p[9], const float o[3], const float d[3]);
 
 void ConstructCamera(eCamType type, eFilterType filter, eDeviceType dtype, const float origin[3], const float fwd[3],
-                     const float up[3], float fov, float sensor_height, float gamma, float focus_distance, float fstop,
-                     float lens_rotation, float lens_ratio, int lens_blades, float clip_start, float clip_end, camera_t *cam);
+                     const float up[3], const float shift[2], float fov, float sensor_height, float exposure,
+                     float gamma, float focus_distance, float fstop, float lens_rotation, float lens_ratio,
+                     int lens_blades, float clip_start, float clip_end, camera_t *cam);
 
 // Applies 4x4 matrix matrix transform to bounding box
 void TransformBoundingBox(const float bbox_min[3], const float bbox_max[3], const float *xform, float out_bbox_min[3],
@@ -316,7 +335,7 @@ void TransformBoundingBox(const float bbox_min[3], const float bbox_max[3], cons
 void InverseMatrix(const float mat[16], float out_mat[16]);
 
 // Arrays of prime numbers, used to generate halton sequence for sampling
-const int PrimesCount = 128;
+const int PrimesCount = 228;
 extern const int g_primes[];
 
 const int HALTON_COUNT = PrimesCount;
@@ -371,6 +390,10 @@ static_assert(sizeof(mesh_instance_t) == 32, "!");
 struct environment_t {
     float env_col[3];
     uint32_t env_map;
+    float back_col[3];
+    uint32_t back_map;
+    float env_map_rotation;
+    float back_map_rotation;
     const float *qtree_mips[16];
     int qtree_levels;
     bool multiple_importance;
@@ -378,7 +401,11 @@ struct environment_t {
 
 force_inline float to_norm_float(uint8_t v) {
     uint32_t val = 0x3f800000 + v * 0x8080 + (v + 1) / 2;
-    return (float &)val - 1;
+    union {
+        uint32_t i;
+        float f;
+    } ret = {val};
+    return ret.f - 1.0f;
 }
 
 force_inline void rgbe_to_rgb(const uint8_t rgbe[4], float out_rgb[3]) {
@@ -400,13 +427,11 @@ extern const char omega_table[];
 extern const float phi_step;
 extern const char phi_table[][17];
 
-extern const int ray_packet_pixel_layout[];
-
 struct ray_chunk_t {
     uint32_t hash, base, size;
 };
 
-struct pass_info_t {
+/*struct pass_info_t {
     int iteration, bounce;
     pass_settings_t settings;
 
@@ -427,10 +452,10 @@ struct pass_info_t {
         return ((settings.flags & OutputSH) && bounce <= 2);
     }
 };
-static_assert(sizeof(pass_info_t) == 20, "!");
+static_assert(sizeof(pass_info_t) == 20, "!");*/
 
 struct scene_data_t {
-    const environment_t *env;
+    const environment_t &env;
     const mesh_instance_t *mesh_instances;
     const uint32_t *mi_indices;
     const mesh_t *meshes;
@@ -447,6 +472,7 @@ struct scene_data_t {
     const light_t *lights;
     Span<const uint32_t> li_indices;
     Span<const uint32_t> visible_lights;
+    Span<const uint32_t> blocker_lights;
 };
 
 } // namespace Ray

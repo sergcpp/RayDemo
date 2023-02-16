@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include <deque>
+#include <limits>
 #include <vector>
 
 #include "BVHSplit.h"
@@ -118,8 +119,8 @@ void sort_mort_codes(uint32_t *morton_codes, size_t prims_count, uint32_t *out_i
     std::vector<prim_chunk_t> run_chunks;
     run_chunks.reserve(prims_count);
 
-    for (uint32_t start = 0, end = 1; end <= (uint32_t)prims_count; end++) {
-        if (end == (uint32_t)prims_count || (morton_codes[start] != morton_codes[end])) {
+    for (uint32_t start = 0, end = 1; end <= uint32_t(prims_count); end++) {
+        if (end == uint32_t(prims_count) || (morton_codes[start] != morton_codes[end])) {
 
             run_chunks.push_back({morton_codes[start], start, end - start});
 
@@ -229,18 +230,6 @@ const char Ray::phi_table[][17] = {{ 2,  2,  2,  2,  2,  3,  3,  3,  4,  4,  4, 
                                    { 14, 14, 14, 13, 13, 13, 12, 12, 12, 11, 11, 10, 10, 10, 10, 9,  9  },
                                    { 14, 14, 13, 13, 13, 13, 12, 12, 12, 11, 11, 10, 10, 10, 10, 10, 9  },
                                    { 14, 13, 13, 13, 13, 12, 12, 12, 12, 11, 11, 11, 10, 10, 10, 10, 10 }};
-
-const int Ray::ray_packet_pixel_layout[] = {
-    0, 1, 2, 3,   1, 2, 3, 0,
-    2, 3, 0, 1,   3, 0, 1, 2,
-    1, 2, 3, 0,   2, 1, 0, 3,
-    3, 0, 1, 2,   0, 3, 2, 1,
-
-    2, 3, 0, 1,   1, 0, 3, 2,
-    0, 1, 2, 3,   0, 3, 2, 1,
-    3, 2, 1, 0,   3, 2, 1, 0,
-    1, 0, 3, 2,   2, 1, 0, 3
-};
 // clang-format on
 
 bool Ray::PreprocessTri(const float *p, int stride, tri_accel_t *out_acc) {
@@ -314,12 +303,12 @@ uint32_t Ray::PreprocessMesh(const float *attrs, Span<const uint32_t> vtx_indice
         const uint32_t i0 = vtx_indices[j + 0] + base_vertex, i1 = vtx_indices[j + 1] + base_vertex,
                        i2 = vtx_indices[j + 2] + base_vertex;
 
-        memcpy(&p[0][0], &positions[i0 * attr_stride], 3 * sizeof(float));
-        memcpy(&p[1][0], &positions[i1 * attr_stride], 3 * sizeof(float));
-        memcpy(&p[2][0], &positions[i2 * attr_stride], 3 * sizeof(float));
+        memcpy(value_ptr(p[0]), &positions[i0 * attr_stride], 3 * sizeof(float));
+        memcpy(value_ptr(p[1]), &positions[i1 * attr_stride], 3 * sizeof(float));
+        memcpy(value_ptr(p[2]), &positions[i2 * attr_stride], 3 * sizeof(float));
 
         tri_accel_t tri = {};
-        if (PreprocessTri(&p[0][0], 4, &tri)) {
+        if (PreprocessTri(value_ptr(p[0]), 4, &tri)) {
             real_indices.push_back(uint32_t(j / 3));
             triangles.push_back(tri);
         } else {
@@ -385,8 +374,8 @@ uint32_t Ray::EmitLBVH_Recursive(const prim_t *prims, const uint32_t *indices, c
         node.prim_index = LEAF_NODE_BIT + prim_index + index_offset;
         node.prim_count = prim_count;
 
-        memcpy(&node.bbox_min[0], &bbox_min[0], 3 * sizeof(float));
-        memcpy(&node.bbox_max[0], &bbox_max[0], 3 * sizeof(float));
+        memcpy(&node.bbox_min[0], value_ptr(bbox_min), 3 * sizeof(float));
+        memcpy(&node.bbox_max[0], value_ptr(bbox_max), 3 * sizeof(float));
 
         return node_index;
     } else {
@@ -468,8 +457,8 @@ uint32_t Ray::EmitLBVH_NonRecursive(const prim_t *prims, const uint32_t *indices
             node.prim_index = LEAF_NODE_BIT + cur.prim_index + index_offset;
             node.prim_count = cur.prim_count;
 
-            memcpy(&node.bbox_min[0], &bbox_min[0], 3 * sizeof(float));
-            memcpy(&node.bbox_max[0], &bbox_max[0], 3 * sizeof(float));
+            memcpy(&node.bbox_min[0], value_ptr(bbox_min), 3 * sizeof(float));
+            memcpy(&node.bbox_max[0], value_ptr(bbox_max), 3 * sizeof(float));
         } else {
             if (cur.split_offset == 0xffffffff) {
                 const uint32_t mask = (1u << cur.bit_index);
@@ -572,8 +561,8 @@ uint32_t Ray::PreprocessPrims_SAH(Span<const prim_t> prims, const float *positio
 
             n.prim_index = LEAF_NODE_BIT + uint32_t(out_indices.size());
             n.prim_count = uint32_t(split_data.left_indices.size());
-            memcpy(&n.bbox_min[0], &bbox_min[0], 3 * sizeof(float));
-            memcpy(&n.bbox_max[0], &bbox_max[0], 3 * sizeof(float));
+            memcpy(&n.bbox_min[0], value_ptr(bbox_min), 3 * sizeof(float));
+            memcpy(&n.bbox_max[0], value_ptr(bbox_max), 3 * sizeof(float));
             out_indices.insert(out_indices.end(), split_data.left_indices.begin(), split_data.left_indices.end());
         } else {
             const auto index = uint32_t(num_nodes);
@@ -584,9 +573,9 @@ uint32_t Ray::PreprocessPrims_SAH(Span<const prim_t> prims, const float *positio
 
             const Ref::simd_fvec4 dist = abs(c_left - c_right);
 
-            if (dist[0] > dist[1] && dist[0] > dist[2]) {
+            if (dist.get<0>() > dist.get<1>() && dist.get<0>() > dist.get<2>()) {
                 space_axis = 0;
-            } else if (dist[1] > dist[0] && dist[1] > dist[2]) {
+            } else if (dist.get<1>() > dist.get<0>() && dist.get<1>() > dist.get<2>()) {
                 space_axis = 1;
             } else {
                 space_axis = 2;
@@ -599,8 +588,8 @@ uint32_t Ray::PreprocessPrims_SAH(Span<const prim_t> prims, const float *positio
             bvh_node_t &n = out_nodes.back();
             n.left_child = index + 1;
             n.right_child = (space_axis << 30) + index + 2;
-            memcpy(&n.bbox_min[0], &bbox_min[0], 3 * sizeof(float));
-            memcpy(&n.bbox_max[0], &bbox_max[0], 3 * sizeof(float));
+            memcpy(&n.bbox_min[0], value_ptr(bbox_min), 3 * sizeof(float));
+            memcpy(&n.bbox_max[0], value_ptr(bbox_max), 3 * sizeof(float));
             prim_lists.emplace_front(std::move(split_data.left_indices), split_data.left_bounds[0],
                                      split_data.left_bounds[1]);
             prim_lists.emplace_front(std::move(split_data.right_indices), split_data.right_bounds[0],
@@ -625,7 +614,7 @@ uint32_t Ray::PreprocessPrims_HLBVH(Span<const prim_t> prims, std::vector<bvh_no
     const auto indices_start = uint32_t(out_indices.size());
     out_indices.reserve(out_indices.size() + prims.size());
 
-    for (uint32_t j = 0; j < prims.size(); j++) {
+    for (uint32_t j = 0; j < uint32_t(prims.size()); j++) {
         whole_min = min(whole_min, prims[j].bbox_min);
         whole_max = max(whole_max, prims[j].bbox_max);
 
@@ -642,7 +631,7 @@ uint32_t Ray::PreprocessPrims_HLBVH(Span<const prim_t> prims, std::vector<bvh_no
         const Ref::simd_fvec4 center = 0.5f * (prims[i].bbox_min + prims[i].bbox_max);
         const Ref::simd_fvec4 code = (center - whole_min) * scale;
 
-        const auto x = uint32_t(code[0]), y = uint32_t(code[1]), z = uint32_t(code[2]);
+        const auto x = uint32_t(code.get<0>()), y = uint32_t(code.get<1>()), z = uint32_t(code.get<2>());
 
         morton_codes[i] = EncodeMorton3(x, y, z);
     }
@@ -658,9 +647,9 @@ uint32_t Ray::PreprocessPrims_HLBVH(Span<const prim_t> prims, std::vector<bvh_no
     treelets.reserve(1 << 12); // Top-level bvh can have up to 4096 items
 
     // Use upper 12 bits to extract treelets
-    for (uint32_t start = 0, end = 1; end <= (uint32_t)morton_codes.size(); end++) {
+    for (uint32_t start = 0, end = 1; end <= uint32_t(morton_codes.size()); end++) {
         uint32_t mask = 0b00111111111111000000000000000000;
-        if (end == (uint32_t)morton_codes.size() || ((morton_codes[start] & mask) != (morton_codes[end] & mask))) {
+        if (end == uint32_t(morton_codes.size()) || ((morton_codes[start] & mask) != (morton_codes[end] & mask))) {
 
             treelets.push_back({start, end - start});
 
@@ -683,8 +672,8 @@ uint32_t Ray::PreprocessPrims_HLBVH(Span<const prim_t> prims, std::vector<bvh_no
 
         top_prims.emplace_back();
         prim_t &p = top_prims.back();
-        memcpy(&p.bbox_min[0], node.bbox_min, 3 * sizeof(float));
-        memcpy(&p.bbox_max[0], node.bbox_max, 3 * sizeof(float));
+        memcpy(value_ptr(p.bbox_min), node.bbox_min, 3 * sizeof(float));
+        memcpy(value_ptr(p.bbox_max), node.bbox_max, 3 * sizeof(float));
     }
 
     const auto top_nodes_start = uint32_t(out_nodes.size());
@@ -705,7 +694,7 @@ uint32_t Ray::PreprocessPrims_HLBVH(Span<const prim_t> prims, std::vector<bvh_no
     auto bottom_nodes_start = uint32_t(out_nodes.size());
 
     // Replace leaf nodes of top-level bvh with bottom level nodes
-    for (uint32_t i = top_nodes_start; i < (uint32_t)out_nodes.size(); i++) {
+    for (uint32_t i = top_nodes_start; i < uint32_t(out_nodes.size()); i++) {
         bvh_node_t &n = out_nodes[i];
         if (!(n.prim_index & LEAF_NODE_BIT)) {
             bvh_node_t &left = out_nodes[n.left_child], &right = out_nodes[n.right_child & RIGHT_CHILD_BITS];
@@ -940,8 +929,9 @@ bool Ray::NaiivePluckerTest(const float p[9], const float o[3], const float d[3]
 }
 
 void Ray::ConstructCamera(const eCamType type, const eFilterType filter, eDeviceType dtype, const float origin[3],
-                          const float fwd[3], const float up[3], const float fov, const float sensor_height,
-                          const float gamma, const float focus_distance, const float fstop, const float lens_rotation,
+                          const float fwd[3], const float up[3], const float shift[2], const float fov,
+                          const float sensor_height, const float exposure, const float gamma,
+                          const float focus_distance, const float fstop, const float lens_rotation,
                           const float lens_ratio, const int lens_blades, const float clip_start, const float clip_end,
                           camera_t *cam) {
     if (type == Persp) {
@@ -963,9 +953,10 @@ void Ray::ConstructCamera(const eCamType type, const eFilterType filter, eDevice
         cam->dtype = dtype;
         cam->ltype = eLensUnits::FOV;
         cam->fov = fov;
+        cam->exposure = exposure;
         cam->gamma = gamma;
         cam->sensor_height = sensor_height;
-        cam->focus_distance = focus_distance;
+        cam->focus_distance = std::max(focus_distance, 0.0f);
         cam->focal_length = 0.5f * sensor_height / std::tan(0.5f * fov * PI / 180.0f);
         cam->fstop = fstop;
         cam->lens_rotation = lens_rotation;
@@ -973,10 +964,11 @@ void Ray::ConstructCamera(const eCamType type, const eFilterType filter, eDevice
         cam->lens_blades = lens_blades;
         cam->clip_start = clip_start;
         cam->clip_end = clip_end;
-        memcpy(&cam->origin[0], &o[0], 3 * sizeof(float));
-        memcpy(&cam->fwd[0], &f[0], 3 * sizeof(float));
-        memcpy(&cam->side[0], &s[0], 3 * sizeof(float));
-        memcpy(&cam->up[0], &u[0], 3 * sizeof(float));
+        memcpy(&cam->origin[0], value_ptr(o), 3 * sizeof(float));
+        memcpy(&cam->fwd[0], value_ptr(f), 3 * sizeof(float));
+        memcpy(&cam->side[0], value_ptr(s), 3 * sizeof(float));
+        memcpy(&cam->up[0], value_ptr(u), 3 * sizeof(float));
+        memcpy(&cam->shift[0], shift, 2 * sizeof(float));
     } else if (type == Ortho) {
         // TODO!
     }

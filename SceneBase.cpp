@@ -5,32 +5,34 @@
 
 #include "internal/Core.h"
 
-uint32_t Ray::SceneBase::AddCamera(const camera_desc_t &c) {
-    uint32_t i;
-    if (cam_first_free_ == -1) {
-        i = uint32_t(cams_.size());
+Ray::CameraHandle Ray::SceneBase::AddCamera(const camera_desc_t &c) {
+    CameraHandle i;
+    if (cam_first_free_ == InvalidCameraHandle) {
+        i = CameraHandle{uint32_t(cams_.size())};
         cams_.emplace_back();
     } else {
         i = cam_first_free_;
-        cam_first_free_ = cams_[i].next_free;
+        cam_first_free_ = cams_[i._index].next_free;
     }
     SetCamera(i, c);
-    if (current_cam_ == 0xffffffff) {
+    if (current_cam_ == InvalidCameraHandle) {
         current_cam_ = i;
     }
     return i;
 }
 
-void Ray::SceneBase::GetCamera(const uint32_t i, camera_desc_t &c) const {
-    const camera_t &cam = cams_[i].cam;
+void Ray::SceneBase::GetCamera(const CameraHandle i, camera_desc_t &c) const {
+    const camera_t &cam = cams_[i._index].cam;
     c.type = cam.type;
     c.dtype = cam.dtype;
+    c.exposure = cam.exposure;
     c.gamma = cam.gamma;
     if (c.type != Geo) {
         c.filter = cam.filter;
         memcpy(&c.origin[0], &cam.origin[0], 3 * sizeof(float));
         memcpy(&c.fwd[0], &cam.fwd[0], 3 * sizeof(float));
         memcpy(&c.up[0], &cam.up[0], 3 * sizeof(float));
+        memcpy(&c.shift[0], &cam.shift[0], 2 * sizeof(float));
         c.fov = cam.fov;
         c.focus_distance = cam.focus_distance;
         c.focal_length = cam.focal_length;
@@ -58,21 +60,23 @@ void Ray::SceneBase::GetCamera(const uint32_t i, camera_desc_t &c) const {
     c.max_refr_depth = cam.pass_settings.max_refr_depth;
     c.max_transp_depth = cam.pass_settings.max_transp_depth;
     c.max_total_depth = cam.pass_settings.max_total_depth;
-    c.termination_start_depth = cam.pass_settings.termination_start_depth;
+    c.min_total_depth = cam.pass_settings.min_total_depth;
+    c.min_transp_depth = cam.pass_settings.min_transp_depth;
 }
 
-void Ray::SceneBase::SetCamera(const uint32_t i, const camera_desc_t &c) {
-    assert(i < uint32_t(cams_.size()));
-    camera_t &cam = cams_[i].cam;
+void Ray::SceneBase::SetCamera(const CameraHandle i, const camera_desc_t &c) {
+    assert(i._index < uint32_t(cams_.size()));
+    camera_t &cam = cams_[i._index].cam;
     if (c.type != Geo) {
         if (c.ltype == eLensUnits::FOV) {
-            ConstructCamera(c.type, c.filter, c.dtype, c.origin, c.fwd, c.up, c.fov, c.sensor_height, c.gamma,
-                            c.focus_distance, c.fstop, c.lens_rotation, c.lens_ratio, c.lens_blades, c.clip_start,
-                            c.clip_end, &cam);
+            ConstructCamera(c.type, c.filter, c.dtype, c.origin, c.fwd, c.up, c.shift, c.fov, c.sensor_height,
+                            c.exposure, c.gamma, c.focus_distance, c.fstop, c.lens_rotation, c.lens_ratio,
+                            c.lens_blades, c.clip_start, c.clip_end, &cam);
         } else if (c.ltype == eLensUnits::FLength) {
         }
     } else {
         cam.type = Geo;
+        cam.exposure = c.exposure;
         cam.gamma = c.gamma;
         cam.mi_index = c.mi_index;
         cam.uv_index = c.uv_index;
@@ -103,11 +107,18 @@ void Ray::SceneBase::SetCamera(const uint32_t i, const camera_desc_t &c) {
     cam.pass_settings.max_refr_depth = c.max_refr_depth;
     cam.pass_settings.max_transp_depth = c.max_transp_depth;
     cam.pass_settings.max_total_depth = c.max_total_depth;
-    cam.pass_settings.termination_start_depth = c.termination_start_depth;
+    cam.pass_settings.min_total_depth = c.min_total_depth;
+    cam.pass_settings.min_transp_depth = c.min_transp_depth;
+
+    // make sure to not exceed allowed bounces
+    while (cam.pass_settings.max_transp_depth + cam.pass_settings.max_total_depth > MAX_BOUNCES) {
+        cam.pass_settings.max_transp_depth = std::max(cam.pass_settings.max_transp_depth - 1, 0);
+        cam.pass_settings.max_total_depth = std::max(cam.pass_settings.max_total_depth - 1, 0);
+    }
 }
 
-void Ray::SceneBase::RemoveCamera(const uint32_t i) {
-    assert(i < uint32_t(cams_.size()));
-    cams_[i].next_free = cam_first_free_;
+void Ray::SceneBase::RemoveCamera(const CameraHandle i) {
+    assert(i._index < uint32_t(cams_.size()));
+    cams_[i._index].next_free = cam_first_free_;
     cam_first_free_ = i;
 }

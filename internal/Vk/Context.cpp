@@ -13,7 +13,7 @@ namespace Ray {
 namespace Vk {
 bool ignore_optick_errors = false;
 
-VKAPI_ATTR VkBool32 VKAPI_ATTR DebugReportCallback(const VkDebugReportFlagsEXT flags,
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(const VkDebugReportFlagsEXT flags,
                                                    const VkDebugReportObjectTypeEXT objectType, const uint64_t object,
                                                    const size_t location, const int32_t messageCode,
                                                    const char *pLayerPrefix, const char *pMessage, void *pUserData) {
@@ -321,7 +321,7 @@ bool Ray::Vk::Context::ChooseVkPhysicalDevice(VkPhysicalDevice &physical_device,
     SmallVector<VkPhysicalDevice, 4> physical_devices(physical_device_count);
     vkEnumeratePhysicalDevices(instance, &physical_device_count, &physical_devices[0]);
 
-    int best_device = -1, best_score = 0;
+    int best_score = 0;
 
     for (uint32_t i = 0; i < physical_device_count; i++) {
         VkPhysicalDeviceProperties device_properties = {};
@@ -399,7 +399,6 @@ bool Ray::Vk::Context::ChooseVkPhysicalDevice(VkPhysicalDevice &physical_device,
             }
 
             if (score > best_score) {
-                best_device = int(i);
                 best_score = score;
 
                 physical_device = physical_devices[i];
@@ -668,6 +667,37 @@ void Ray::Vk::EndSingleTimeCommands(VkDevice device, VkQueue cmd_queue, VkComman
     vkQueueWaitIdle(cmd_queue);
 
     vkFreeCommandBuffers(device, temp_command_pool, 1, &command_buf);
+}
+
+int Ray::Vk::Context::WriteTimestamp(const bool start) {
+    VkCommandBuffer cmd_buf = draw_cmd_bufs_[backend_frame];
+
+    vkCmdWriteTimestamp(cmd_buf, start ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                        query_pools_[backend_frame], query_counts_[backend_frame]);
+
+    const uint32_t query_index = query_counts_[backend_frame]++;
+    assert(query_counts_[backend_frame] < MaxTimestampQueries);
+    return int(query_index);
+}
+
+uint64_t Ray::Vk::Context::GetTimestampIntervalDurationUs(const int query_beg, const int query_end) const {
+    return (query_results_[backend_frame][query_end] - query_results_[backend_frame][query_beg]) / 1000;
+}
+
+bool Ray::Vk::Context::ReadbackTimestampQueries(const int i) {
+    VkQueryPool query_pool = query_pools_[i];
+    const uint32_t query_count = uint32_t(query_counts_[i]);
+    if (!query_count) {
+        // nothing to readback
+        return true;
+    }
+
+    const VkResult res =
+        vkGetQueryPoolResults(device_, query_pool, 0, query_count, query_count * sizeof(uint64_t), query_results_[i],
+                              sizeof(uint64_t), VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT);
+    query_counts_[i] = 0;
+
+    return (res == VK_SUCCESS);
 }
 
 void Ray::Vk::Context::DestroyDeferredResources(const int i) {

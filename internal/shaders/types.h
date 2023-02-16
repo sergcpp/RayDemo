@@ -82,7 +82,6 @@ const int PrincipledNode = 6;
 
 const UINT_TYPE MAT_FLAG_MULT_IMPORTANCE = (1u << 0u);
 const UINT_TYPE MAT_FLAG_MIX_ADD = (1u << 1u);
-const UINT_TYPE MAT_FLAG_SKY_PORTAL = (1u << 2u);
 
 const int NUM_MIP_LEVELS = 14;
 const int MAX_MIP_LEVEL = NUM_MIP_LEVELS - 1;
@@ -109,18 +108,19 @@ const int FILTER_TENT = 1;
 struct ray_data_t {
 	float o[3], d[3], pdf;
 	float c[3];
-#ifdef USE_RAY_DIFFERENTIALS
-
-#else
+    float ior[4];
 	float cone_width, cone_spread;
-#endif
 	int xy;
-	int ray_depth;
+	int depth;
 };
 
 struct shadow_ray_t {
-    // origin and direction
-    float o[3], d[3], dist;
+    // origin
+    float o[3];
+    // four 8-bit ray depth counters
+    int depth;
+    // direction and distance
+    float d[3], dist;
     // throughput color of ray
     float c[3];
     // 16-bit pixel coordinates of ray ((x << 16) | y)
@@ -174,7 +174,10 @@ struct light_t {
 
 #define SPH_POS param1.xyz
 #define SPH_AREA param1.w
-#define SPH_RADIUS param2.x
+#define SPH_DIR param2.xyz
+#define SPH_RADIUS param2.w
+#define SPH_SPOT param3.x
+#define SPH_BLEND param3.y
 
 #define RECT_POS param1.xyz
 #define RECT_AREA param1.w
@@ -206,8 +209,7 @@ struct material_t {
     UINT_TYPE type;
     float tangent_rotation_or_strength;
     UINT_TYPE roughness_and_anisotropic;
-    float int_ior;
-    float ext_ior;
+    float ior;
     UINT_TYPE sheen_and_sheen_tint;
     UINT_TYPE tint_and_metallic;
     UINT_TYPE transmission_and_transmission_roughness;
