@@ -46,7 +46,7 @@ stages:
     - copy build/src/Ray/tests/RelWithDebInfo/test_Ray-dev.exe windows-x86_64
     - copy build/src/Ren/tests/RelWithDebInfo/test_Ren.exe windows-x86_64
     - copy build/src/Ren/SW/tests/RelWithDebInfo/test_SW.exe windows-x86_64
-    - copy build/src/Sys/tests/RelWithDebInfo/test_Sys.exe windows-x86_64
+    - copy build/src/Sys/tests/RelWithDebInfo/test_Sys-dev.exe windows-x86_64
     - copy DemoApp-dev.exe windows-x86_64
   artifacts:
     name: windows-x86_64
@@ -71,7 +71,7 @@ stages:
     - copy build/src/Ray/tests/Debug/test_Ray-dbg.exe windows-x86_64
     - copy build/src/Ren/tests/Debug/test_Ren.exe windows-x86_64
     - copy build/src/Ren/SW/tests/Debug/test_SW.exe windows-x86_64
-    - copy build/src/Sys/tests/Debug/test_Sys.exe windows-x86_64
+    - copy build/src/Sys/tests/Debug/test_Sys-dbg.exe windows-x86_64
     - copy DemoApp-dbg.exe windows-x86_64
   artifacts:
     name: windows-x86_64
