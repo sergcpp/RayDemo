@@ -6,9 +6,9 @@ DemoApp-dbg.exe
 DemoApp-dev.exe
 DemoApp-asan.exe
 DemoApp
-DemoLib.dll
-DemoLib_.dll
-DemoLib.dylib
+DemoApp-dbg
+DemoApp-dev
+DemoApp-asan
 cmake-build-*
 *.blend1
 *.blend2
@@ -21,3 +21,4 @@ cmake-build-*
 *.blend9
 .DS_Store
 errors.txt
+.idea
