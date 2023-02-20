@@ -591,19 +591,19 @@ windows-x86_64-gpu-amd-test-img-job:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
-#windows-x86_64-gpu-xe-test-img-job:
-#  variables:
-#    BIN_DIR: windows-x86_64
-#    AUX_TEST_ARGS: '-d Xe --nocpu'
-#  extends:
-#    - .windows-gpu-test-img-job
-#  needs:
-#    - windows-x86_64-build-rel-job
-#    - windows-x86_64-build-shaders-job
-#  tags:
-#    - windows,x86_64,xe
-#  rules:
-#    - if: $CI_PIPELINE_SOURCE == "schedule"
+windows-x86_64-gpu-xe-test-img-job:
+  variables:
+    BIN_DIR: windows-x86_64
+    AUX_TEST_ARGS: '-d Xe --nocpu'
+  extends:
+    - .windows-gpu-test-img-job
+  needs:
+    - windows-x86_64-build-rel-job
+    - windows-x86_64-build-shaders-job
+  tags:
+    - windows,x86_64,xe
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
 
 windows-x86_64-gpu-arc-test-img-job:
   variables:
