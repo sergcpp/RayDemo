@@ -72,10 +72,7 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
         std::shared_ptr<Ray::RendererBase> ray_renderer;
 
         if (gpu_mode == 0) {
-            ray_renderer = std::shared_ptr<Ray::RendererBase>(
-                Ray::CreateRenderer(s, log.get(),
-                                    Ray::RendererRef | Ray::RendererSSE2 | Ray::RendererSSE41 | Ray::RendererAVX |
-                                        Ray::RendererAVX2 | Ray::RendererNEON));
+            ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get(), Ray::RendererCPU));
         } else {
             s.use_hwrt = (gpu_mode == 2);
             s.use_bindless = !nobindless;
