@@ -46,15 +46,11 @@ list(APPEND ALL_SOURCE_FILES ${LOAD_SOURCES})
 source_group("src\\load" FILES ${LOAD_SOURCES})
 
 list(APPEND ALL_SOURCE_FILES ${STATES_SOURCES})
-set_source_files_properties(${STATES_SOURCES} PROPERTIES HEADER_FILE_ONLY TRUE)
 source_group("src\\states" FILES ${STATES_SOURCES})
 
 list(APPEND ALL_SOURCE_FILES ${UI_SOURCES})
 set_source_files_properties(${UI_SOURCES} PROPERTIES HEADER_FILE_ONLY TRUE)
 source_group("src\\ui" FILES ${UI_SOURCES})
-
-list(APPEND ALL_SOURCE_FILES states/_states.cpp)
-source_group("src\\states" FILES states/_states.cpp)
 
 add_library(DemoLib STATIC ${ALL_SOURCE_FILES})
 target_link_libraries(DemoLib Eng Ray ${LIBS})

@@ -18,6 +18,7 @@
 #include <Ray/internal/Core.h>
 #include <Ray/internal/Halton.h>
 
+#include "GSCreate.h"
 #include "../Viewer.h"
 #include "../ui/FontStorage.h"
 

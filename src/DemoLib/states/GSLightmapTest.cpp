@@ -78,7 +78,7 @@ void GSLightmapTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
 void GSLightmapTest::Enter() {
     using namespace Ren;
 
-    max_fwd_speed_ = GSRayTestInternal::FORWARD_SPEED;
+    max_fwd_speed_ = GSLightmapTestInternal::FORWARD_SPEED;
 
     auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
 

@@ -21,9 +21,12 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_PKM
 #include <Ren/SOIL2/stb_image.h>
+#undef STBI_NO_PKM
+#undef STB_IMAGE_IMPLEMENTATION
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <Ren/SOIL2/stb_image_write.h>
+#undef STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include <turbojpeg.h>
 
