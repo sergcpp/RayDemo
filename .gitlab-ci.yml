@@ -12,7 +12,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - cmake --build build --target ALL_BUILD --config Release --parallel 16
     - echo "Compile complete."
@@ -37,7 +37,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - cmake --build build --target ALL_BUILD --config RelWithDebInfo --parallel 16
     - echo "Compile complete."
@@ -62,7 +62,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - cmake --build build --target ALL_BUILD --config Debug --parallel 16
     - echo "Compile complete."
@@ -98,7 +98,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A x64 -T ClangCL -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -T ClangCL -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - cmake --build build --target ALL_BUILD --config Release --parallel 16
     - cmake --build build --target ALL_BUILD --config Debug --parallel 16
@@ -125,7 +125,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config Release --parallel 16
     - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config Debug --parallel 16
@@ -163,15 +163,15 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - mkdir build_dbg
     - cd build_dbg
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - mkdir build_dev
     - cd build_dev
-    - cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - cmake --build build --target all --parallel 16
     - cmake --build build_dbg --target all --parallel 16
@@ -213,15 +213,15 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - mkdir build_dbg
     - cd build_dbg
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - mkdir build_dev
     - cd build_dev
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
     - cmake --build build_dbg --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
@@ -247,15 +247,15 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - mkdir build_dbg
     - cd build_dbg
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - mkdir build_dev
     - cd build_dev
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DENABLE_UNITYBUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
     - cmake --build build_dbg --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
