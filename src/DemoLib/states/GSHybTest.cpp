@@ -137,13 +137,13 @@ void GSHybTest::Enter() {
         for (size_t i = 0; i < gpu_tracers_.size(); i++) {
             events.push_back(threads_->Enqueue(
                 [this, &js_scene, app_params](size_t i) {
-                    gpu_scenes_[i] = LoadScene(gpu_tracers_[i].get(), js_scene, app_params->max_tex_res);
+                    gpu_scenes_[i] = LoadScene(gpu_tracers_[i].get(), js_scene, app_params->max_tex_res, threads_.get());
                 },
                 i));
         }
 
         auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
-        cpu_scene_ = LoadScene(cpu_tracer_.get(), js_scene, app_params->max_tex_res);
+        cpu_scene_ = LoadScene(cpu_tracer_.get(), js_scene, app_params->max_tex_res, threads_.get());
 
         for (auto &e : events) {
             e.wait();

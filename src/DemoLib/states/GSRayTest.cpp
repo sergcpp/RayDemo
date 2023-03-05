@@ -99,7 +99,7 @@ void GSRayTest::Enter() {
     if (js_scene.Size()) {
         try {
             const uint64_t t1 = Sys::GetTimeMs();
-            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res);
+            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res, threads_.get());
             const uint64_t t2 = Sys::GetTimeMs();
             LOGI("Scene loaded in %.1fs", (t2 - t1) * 0.001f);
         } catch (std::exception &e) {
@@ -305,7 +305,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         const int DiffThres = 32;
 
         int ref_w, ref_h;
-        auto ref_data = Load_stb_image(app_params->ref_name, ref_w, ref_h);
+        auto ref_data = Load_stb_image(app_params->ref_name.c_str(), ref_w, ref_h);
         if (!ref_data.empty() && ref_w == w && ref_h == h) {
             int error_pixels = 0;
             double mse = 0.0f;

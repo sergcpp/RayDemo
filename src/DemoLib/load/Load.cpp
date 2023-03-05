@@ -10,13 +10,15 @@
 #include <map>
 #include <sstream>
 
+#include <Ray/Log.h>
+#include <Ray/RendererBase.h>
 #include <Ren/MMat.h>
 #include <Ren/SmallVector.h>
 #include <Ren/Texture.h>
 #include <Ren/Utils.h>
 #include <Sys/AssetFile.h>
-#include <Sys/Log.h>
 #include <Sys/Time_.h>
+#include <Sys/ThreadPool.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_PKM
@@ -34,7 +36,17 @@
 
 #define DUMP_BIN_FILES 1
 
-std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res) {
+namespace {
+bool ends_with(const std::string &value, const std::string &ending) {
+    if (ending.size() > value.size()) {
+        return false;
+    }
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+} // namespace
+
+std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res,
+                                          Sys::ThreadPool *threads) {
     auto new_scene = std::shared_ptr<Ray::SceneBase>(r->CreateScene());
 
     std::vector<Ray::CameraHandle> cameras;
@@ -42,155 +54,162 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     std::map<std::string, Ray::MaterialHandle> materials;
     std::map<std::string, Ray::MeshHandle> meshes;
 
-    auto jpg_decompressor = std::unique_ptr<void, int (*)(tjhandle)>(tjInitDecompress(), &tjDestroy);
+    // auto jpg_decompressor = std::unique_ptr<void, int (*)(tjhandle)>(tjInitDecompress(), &tjDestroy);
 
-    auto ends_with = [](const std::string &value, const std::string &ending) -> bool {
-        if (ending.size() > value.size())
-            return false;
-        return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+    thread_local std::unique_ptr<void, int (*)(tjhandle)> jpg_decompressor(nullptr, &tjDestroy);
+
+    auto load_texture = [max_tex_res, &new_scene](const std::string &name, const bool srgb, const bool normalmap,
+                                                  const bool gen_mipmaps) -> Ray::TextureHandle {
+        if (!jpg_decompressor) {
+            jpg_decompressor.reset(tjInitDecompress());
+        }
+
+        int w, h, channels;
+        uint8_t *img_data = nullptr;
+        bool force_no_compression = false;
+        if (ends_with(name, ".hdr")) {
+            const std::vector<Ray::color_rgba8_t> temp = LoadHDR(name.c_str(), w, h);
+
+            channels = 4;
+            img_data = (uint8_t *)STBI_MALLOC(w * h * 4);
+            force_no_compression = true;
+
+            memcpy(img_data, &temp[0].v[0], w * h * sizeof(Ray::color_rgba8_t));
+        } else {
+            int channel_to_extract = -1;
+            std::string _name = name;
+            if (ends_with(_name, "@red")) {
+                channel_to_extract = 0;
+                _name.resize(_name.size() - 4);
+            } else if (ends_with(_name, "@green")) {
+                channel_to_extract = 1;
+                _name.resize(_name.size() - 6);
+            } else if (ends_with(_name, "@blue")) {
+                channel_to_extract = 2;
+                _name.resize(_name.size() - 5);
+            }
+
+            if (ends_with(_name, ".jpg") || ends_with(_name, ".jpeg") || ends_with(_name, ".JPG") ||
+                ends_with(_name, ".JPEG")) {
+                std::ifstream in_file(_name, std::ios::binary | std::ios::ate);
+                const auto in_file_size = (unsigned long)(in_file.tellg());
+                in_file.seekg(0, std::ios::beg);
+
+                std::unique_ptr<uint8_t[]> in_file_buf(new uint8_t[in_file_size]);
+                in_file.read((char *)&in_file_buf[0], in_file_size);
+
+                const int res =
+                    tjDecompressHeader((tjhandle)jpg_decompressor.get(), &in_file_buf[0], in_file_size, &w, &h);
+                if (res == 0) {
+                    img_data = (uint8_t *)STBI_MALLOC(w * h * 3);
+                    const int res2 = tjDecompress((tjhandle)jpg_decompressor.get(), &in_file_buf[0], in_file_size,
+                                                  img_data, w, 0, h, 3, TJXOP_VFLIP);
+                    if (res2 == 0) {
+                        channels = 3;
+                    } else {
+                        stbi_image_free(img_data);
+                        img_data = nullptr;
+                        fprintf(stderr, "tjDecompress error %i\n", res2);
+                        return Ray::InvalidTextureHandle;
+                    }
+                } else {
+                    fprintf(stderr, "tjDecompressHeader error %i\n", res);
+                    return Ray::InvalidTextureHandle;
+                }
+            } else {
+                stbi_set_flip_vertically_on_load(1);
+                img_data = stbi_load(_name.c_str(), &w, &h, &channels, 0);
+            }
+
+            if (channel_to_extract == -1) {
+                // Try to detect single channel texture
+                bool is_grey = true, is_1px_texture = true;
+                for (int i = 0; i < w * h && (is_grey || is_1px_texture); ++i) {
+                    for (int j = 1; j < channels; ++j) {
+                        is_grey &= (img_data[i * channels + 0] == img_data[i * channels + j]);
+                    }
+                    for (int j = 0; j < channels; ++j) {
+                        is_1px_texture &= (img_data[j] == img_data[i * channels + j]);
+                    }
+                }
+
+                if (is_1px_texture) {
+                    w = h = 1;
+                }
+
+                if (is_grey) {
+                    // Use only red channel
+                    channel_to_extract = 0;
+                }
+            }
+
+            if (channel_to_extract != -1) {
+                for (int i = 0; i < w * h; ++i) {
+                    for (int j = 0; j < channels; ++j) {
+                        img_data[i + j] = img_data[i * channels + channel_to_extract];
+                    }
+                }
+                channels = 1;
+            }
+        }
+        if (!img_data) {
+            throw std::runtime_error("Cannot load image!");
+        }
+
+        while (max_tex_res != -1 && (w > max_tex_res || h > max_tex_res)) {
+            const int new_w = (w / 2), new_h = (h / 2);
+            auto new_img_data = (uint8_t *)STBI_MALLOC(new_w * new_h * channels);
+
+            for (int y = 0; y < h - 1; y += 2) {
+                for (int x = 0; x < w - 1; x += 2) {
+                    for (int k = 0; k < channels; ++k) {
+                        const uint8_t c00 = img_data[channels * ((y + 0) * w + (x + 0)) + k];
+                        const uint8_t c01 = img_data[channels * ((y + 0) * w + (x + 1)) + k];
+                        const uint8_t c10 = img_data[channels * ((y + 1) * w + (x + 0)) + k];
+                        const uint8_t c11 = img_data[channels * ((y + 1) * w + (x + 1)) + k];
+
+                        new_img_data[channels * ((y / 2) * (w / 2) + (x / 2)) + k] = (c00 + c01 + c10 + c11) / 4;
+                    }
+                }
+            }
+
+            stbi_image_free(img_data);
+            img_data = new_img_data;
+            w = new_w;
+            h = new_h;
+        }
+
+        Ray::tex_desc_t tex_desc;
+        if (channels == 4) {
+            tex_desc.format = Ray::eTextureFormat::RGBA8888;
+        } else if (channels == 3) {
+            tex_desc.format = Ray::eTextureFormat::RGB888;
+        } else if (channels == 2) {
+            tex_desc.format = Ray::eTextureFormat::RG88;
+        } else if (channels == 1) {
+            tex_desc.format = Ray::eTextureFormat::R8;
+        }
+        tex_desc.name = name.c_str();
+        tex_desc.data = &img_data[0];
+        tex_desc.w = w;
+        tex_desc.h = h;
+        tex_desc.is_srgb = srgb;
+        tex_desc.is_normalmap = normalmap;
+        tex_desc.force_no_compression = force_no_compression;
+        tex_desc.generate_mipmaps = gen_mipmaps;
+
+        const Ray::TextureHandle tex_handle = new_scene->AddTexture(tex_desc);
+
+        stbi_image_free(img_data);
+
+        return tex_handle;
     };
 
     auto get_texture = [&](const std::string &name, const bool srgb, const bool normalmap, const bool gen_mipmaps) {
         auto it = textures.find(name);
         if (it == textures.end()) {
-            int w, h, channels;
-            uint8_t *img_data = nullptr;
-            bool force_no_compression = false;
-            if (ends_with(name, ".hdr")) {
-                const std::vector<Ray::color_rgba8_t> temp = LoadHDR(name, w, h);
-
-                channels = 4;
-                img_data = (uint8_t *)STBI_MALLOC(w * h * 4);
-                force_no_compression = true;
-
-                memcpy(img_data, &temp[0].v[0], w * h * sizeof(Ray::color_rgba8_t));
-            } else {
-                int channel_to_extract = -1;
-                std::string _name = name;
-                if (ends_with(_name, "@red")) {
-                    channel_to_extract = 0;
-                    _name.resize(_name.size() - 4);
-                } else if (ends_with(_name, "@green")) {
-                    channel_to_extract = 1;
-                    _name.resize(_name.size() - 6);
-                } else if (ends_with(_name, "@blue")) {
-                    channel_to_extract = 2;
-                    _name.resize(_name.size() - 5);
-                }
-
-                if (ends_with(_name, ".jpg") || ends_with(_name, ".jpeg") || ends_with(_name, ".JPG") ||
-                    ends_with(_name, ".JPEG")) {
-                    std::ifstream in_file(_name, std::ios::binary | std::ios::ate);
-                    const auto in_file_size = (unsigned long)(in_file.tellg());
-                    in_file.seekg(0, std::ios::beg);
-
-                    std::unique_ptr<uint8_t[]> in_file_buf(new uint8_t[in_file_size]);
-                    in_file.read((char *)&in_file_buf[0], in_file_size);
-
-                    const int res =
-                        tjDecompressHeader((tjhandle)jpg_decompressor.get(), &in_file_buf[0], in_file_size, &w, &h);
-                    if (res == 0) {
-                        img_data = (uint8_t *)STBI_MALLOC(w * h * 3);
-                        const int res2 = tjDecompress((tjhandle)jpg_decompressor.get(), &in_file_buf[0], in_file_size,
-                                                      img_data, w, 0, h, 3, TJXOP_VFLIP);
-                        if (res2 == 0) {
-                            channels = 3;
-                        } else {
-                            stbi_image_free(img_data);
-                            img_data = nullptr;
-                            fprintf(stderr, "tjDecompress error %i\n", res2);
-                            return Ray::InvalidTextureHandle;
-                        }
-                    } else {
-                        fprintf(stderr, "tjDecompressHeader error %i\n", res);
-                        return Ray::InvalidTextureHandle;
-                    }
-                } else {
-                    stbi_set_flip_vertically_on_load(1);
-                    img_data = stbi_load(_name.c_str(), &w, &h, &channels, 0);
-                }
-
-                if (channel_to_extract == -1) {
-                    // Try to detect single channel texture
-                    bool is_grey = true, is_1px_texture = true;
-                    for (int i = 0; i < w * h && (is_grey || is_1px_texture); ++i) {
-                        for (int j = 1; j < channels; ++j) {
-                            is_grey &= (img_data[i * channels + 0] == img_data[i * channels + j]);
-                        }
-                        for (int j = 0; j < channels; ++j) {
-                            is_1px_texture &= (img_data[j] == img_data[i * channels + j]);
-                        }
-                    }
-
-                    if (is_1px_texture) {
-                        w = h = 1;
-                    }
-
-                    if (is_grey) {
-                        // Use only red channel
-                        channel_to_extract = 0;
-                    }
-                }
-
-                if (channel_to_extract != -1) {
-                    for (int i = 0; i < w * h; ++i) {
-                        for (int j = 0; j < channels; ++j) {
-                            img_data[i + j] = img_data[i * channels + channel_to_extract];
-                        }
-                    }
-                    channels = 1;
-                }
-            }
-            if (!img_data) {
-                throw std::runtime_error("Cannot load image!");
-            }
-
-            while (max_tex_res != -1 && (w > max_tex_res || h > max_tex_res)) {
-                const int new_w = (w / 2), new_h = (h / 2);
-                auto new_img_data = (uint8_t *)STBI_MALLOC(new_w * new_h * channels);
-
-                for (int y = 0; y < h - 1; y += 2) {
-                    for (int x = 0; x < w - 1; x += 2) {
-                        for (int k = 0; k < channels; ++k) {
-                            const uint8_t c00 = img_data[channels * ((y + 0) * w + (x + 0)) + k];
-                            const uint8_t c01 = img_data[channels * ((y + 0) * w + (x + 1)) + k];
-                            const uint8_t c10 = img_data[channels * ((y + 1) * w + (x + 0)) + k];
-                            const uint8_t c11 = img_data[channels * ((y + 1) * w + (x + 1)) + k];
-
-                            new_img_data[channels * ((y / 2) * (w / 2) + (x / 2)) + k] = (c00 + c01 + c10 + c11) / 4;
-                        }
-                    }
-                }
-
-                stbi_image_free(img_data);
-                img_data = new_img_data;
-                w = new_w;
-                h = new_h;
-            }
-
-            Ray::tex_desc_t tex_desc;
-            if (channels == 4) {
-                tex_desc.format = Ray::eTextureFormat::RGBA8888;
-            } else if (channels == 3) {
-                tex_desc.format = Ray::eTextureFormat::RGB888;
-            } else if (channels == 2) {
-                tex_desc.format = Ray::eTextureFormat::RG88;
-            } else if (channels == 1) {
-                tex_desc.format = Ray::eTextureFormat::R8;
-            }
-            tex_desc.name = name.c_str();
-            tex_desc.data = &img_data[0];
-            tex_desc.w = w;
-            tex_desc.h = h;
-            tex_desc.is_srgb = srgb;
-            tex_desc.is_normalmap = normalmap;
-            tex_desc.force_no_compression = force_no_compression;
-            tex_desc.generate_mipmaps = gen_mipmaps;
-
-            const Ray::TextureHandle tex_handle = new_scene->AddTexture(tex_desc);
+            const Ray::TextureHandle tex_handle = load_texture(name, srgb, normalmap, gen_mipmaps);
             textures[name] = tex_handle;
-
-            stbi_image_free(img_data);
 
             return tex_handle;
         } else {
@@ -550,6 +569,90 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             }
         }
 
+        if (threads) {
+            struct texture_to_load_t {
+                bool srgb = false;
+                bool normalmap = false;
+                bool mips = false;
+            };
+
+            std::map<std::string, texture_to_load_t> textures_to_load;
+
+            const JsObject &js_materials = js_scene.at("materials").as_obj();
+            for (const auto &js_mat : js_materials.elements) {
+                const std::string &js_mat_name = js_mat.first;
+                const JsObject &js_mat_obj = js_mat.second.as_obj();
+                const JsString &js_type = js_mat_obj.at("type").as_str();
+                if (js_type.val == "principled") {
+                    if (js_mat_obj.Has("base_texture")) {
+                        const JsString &js_base_tex = js_mat_obj.at("base_texture").as_str();
+                        textures_to_load[js_base_tex.val] = {true /* srgb */, false /* normalmap */, true /* mips */};
+                    }
+
+                    if (js_mat_obj.Has("specular_texture")) {
+                        const JsString &js_specular_tex = js_mat_obj.at("specular_texture").as_str();
+                        textures_to_load[js_specular_tex.val] = {true /* srgb */, false /* normalmap */,
+                                                                 true /* mips */};
+                    }
+
+                    if (js_mat_obj.Has("metallic_texture")) {
+                        const JsString &js_metallic_tex = js_mat_obj.at("metallic_texture").as_str();
+                        textures_to_load[js_metallic_tex.val] = {false /* srgb */, false /* normalmap */,
+                                                                 true /* mips */};
+                    }
+
+                    if (js_mat_obj.Has("normal_map")) {
+                        const JsString &js_normal_map = js_mat_obj.at("normal_map").as_str();
+                        textures_to_load[js_normal_map.val] = {false /* srgb */, true /* normalmap */,
+                                                               false /* mips */};
+                    }
+
+                    if (js_mat_obj.Has("roughness_texture")) {
+                        const JsString &js_roughness_tex = js_mat_obj.at("roughness_texture").as_str();
+                        const bool is_srgb =
+                            js_mat_obj.Has("roughness_texture_srgb") &&
+                            js_mat_obj.at("roughness_texture_srgb").as_lit().val == JsLiteralType::True;
+                        textures_to_load[js_roughness_tex.val] = {is_srgb, false /* normalmap */, true /* mips */};
+                    }
+
+                    if (js_mat_obj.Has("emission_texture")) {
+                        const JsString &js_emission_tex = js_mat_obj.at("emission_texture").as_str();
+                        textures_to_load[js_emission_tex.val] = {true /* srgb */, false /* normalmap */,
+                                                                 true /* mips */};
+                    }
+
+                    if (js_mat_obj.Has("alpha_texture")) {
+                        const JsString &js_alpha_tex = js_mat_obj.at("alpha_texture").as_str();
+                        textures_to_load[js_alpha_tex.val] = {false /* srgb */, false /* normalmap */,
+                                                              false /* mips */};
+                    }
+                } else {
+                    if (js_mat_obj.Has("base_texture")) {
+                        const JsString &js_base_tex = js_mat_obj.at("base_texture").as_str();
+                        textures_to_load[js_base_tex.val] = {js_type.val != "mix", false /* normalmap */,
+                                                             js_type.val != "mix"};
+                    }
+
+                    if (js_mat_obj.Has("normal_map")) {
+                        const JsString &js_normal_map = js_mat_obj.at("normal_map").as_str();
+                        textures_to_load[js_normal_map.val] = {false /* srgb */, true /* normalmap */, false};
+                    }
+                }
+            }
+
+            std::vector<std::future<Ray::TextureHandle>> tex_load_events;
+
+            for (const auto &t : textures_to_load) {
+                tex_load_events.emplace_back(
+                    threads->Enqueue(load_texture, t.first, t.second.srgb, t.second.normalmap, t.second.mips));
+            }
+
+            int index = 0;
+            for (const auto &t : textures_to_load) {
+                textures[t.first] = tex_load_events[index++].get();
+            }
+        }
+
         const JsObject &js_materials = js_scene.at("materials").as_obj();
         for (const auto &js_mat : js_materials.elements) {
             const std::string &js_mat_name = js_mat.first;
@@ -776,63 +879,82 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             }
         }
 
+        std::vector<std::future<Ray::MeshHandle>> mesh_load_events;
+
         const JsObject &js_meshes = js_scene.at("meshes").as_obj();
         for (const auto &js_mesh : js_meshes.elements) {
-            const std::string &js_mesh_name = js_mesh.first;
-            const JsObject &js_mesh_obj = js_mesh.second.as_obj();
+            auto load_mesh_job = [&js_mesh, &global_settings, &materials, &new_scene, r]() -> Ray::MeshHandle {
+                const std::string &js_mesh_name = js_mesh.first;
+                const JsObject &js_mesh_obj = js_mesh.second.as_obj();
 
-            std::vector<float> attrs;
-            std::vector<unsigned> indices, groups;
+                std::vector<float> attrs;
+                std::vector<unsigned> indices, groups;
 
-            const JsString &js_vtx_data = js_mesh_obj.at("vertex_data").as_str();
-            if (js_vtx_data.val.find(".obj") != std::string::npos) {
-                const uint64_t t1 = Sys::GetTimeUs();
-                std::tie(attrs, indices, groups) = LoadOBJ(js_vtx_data.val);
-                const uint64_t t2 = Sys::GetTimeUs();
+                const JsString &js_vtx_data = js_mesh_obj.at("vertex_data").as_str();
+                if (js_vtx_data.val.find(".obj") != std::string::npos) {
+                    const uint64_t t1 = Sys::GetTimeUs();
+                    std::tie(attrs, indices, groups) = LoadOBJ(js_vtx_data.val.c_str());
+                    const uint64_t t2 = Sys::GetTimeUs();
 
-                LOGI("OBJ loaded in %.2fms", double(t2 - t1) / 1000.0);
-            } else if (js_vtx_data.val.find(".bin") != std::string::npos) {
-                std::tie(attrs, indices, groups) = LoadBIN(js_vtx_data.val);
-            } else {
-                throw std::runtime_error("unknown mesh type");
-            }
+                    r->log()->Info("OBJ loaded in %.2fms", double(t2 - t1) / 1000.0);
+                } else if (js_vtx_data.val.find(".bin") != std::string::npos) {
+                    std::tie(attrs, indices, groups) = LoadBIN(js_vtx_data.val.c_str());
+                } else {
+                    throw std::runtime_error("unknown mesh type");
+                }
 
 #if !defined(NDEBUG) && defined(_WIN32)
-            for (int i = 0; i < int(attrs.size()); ++i) {
-                if (attrs[i] > 1.0e+30F) {
-                    __debugbreak();
+                for (int i = 0; i < int(attrs.size()); ++i) {
+                    if (attrs[i] > 1.0e+30F) {
+                        __debugbreak();
+                    }
                 }
-            }
 #endif
 
-            const JsArray &js_materials = js_mesh_obj.at("materials").as_arr();
+                const JsArray &js_materials = js_mesh_obj.at("materials").as_arr();
 
-            Ray::mesh_desc_t mesh_desc;
-            mesh_desc.prim_type = Ray::TriangleList;
-            mesh_desc.layout = Ray::PxyzNxyzTuv;
-            mesh_desc.vtx_attrs = &attrs[0];
-            mesh_desc.vtx_attrs_count = attrs.size() / 8;
-            mesh_desc.vtx_indices = &indices[0];
-            mesh_desc.vtx_indices_count = indices.size();
-            mesh_desc.use_fast_bvh_build = global_settings.use_fast_bvh_build;
+                Ray::mesh_desc_t mesh_desc;
+                mesh_desc.prim_type = Ray::TriangleList;
+                mesh_desc.layout = Ray::PxyzNxyzTuv;
+                mesh_desc.vtx_attrs = &attrs[0];
+                mesh_desc.vtx_attrs_count = attrs.size() / 8;
+                mesh_desc.vtx_indices = &indices[0];
+                mesh_desc.vtx_indices_count = indices.size();
+                mesh_desc.use_fast_bvh_build = global_settings.use_fast_bvh_build;
 
-            for (size_t i = 0; i < groups.size(); i += 2) {
-                const JsString &js_mat_name = js_materials.at(i / 2).as_str();
-                const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
-                mesh_desc.shapes.push_back({mat_handle, mat_handle, groups[i], groups[i + 1]});
+                for (size_t i = 0; i < groups.size(); i += 2) {
+                    const JsString &js_mat_name = js_materials.at(i / 2).as_str();
+                    const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
+                    mesh_desc.shapes.push_back({mat_handle, mat_handle, groups[i], groups[i + 1]});
+                }
+
+                if (js_mesh_obj.Has("allow_spatial_splits")) {
+                    JsLiteral splits = js_mesh_obj.at("allow_spatial_splits").as_lit();
+                    mesh_desc.allow_spatial_splits = (splits.val == JsLiteralType::True);
+                }
+
+                if (js_mesh_obj.Has("use_fast_bvh_build")) {
+                    JsLiteral use_fast = js_mesh_obj.at("use_fast_bvh_build").as_lit();
+                    mesh_desc.use_fast_bvh_build = (use_fast.val == JsLiteralType::True);
+                }
+
+                return new_scene->AddMesh(mesh_desc);
+            };
+
+            if (threads) {
+                mesh_load_events.push_back(threads->Enqueue(load_mesh_job));
+            } else {
+                const std::string &js_mesh_name = js_mesh.first;
+                meshes[js_mesh_name] = load_mesh_job();
             }
+        }
 
-            if (js_mesh_obj.Has("allow_spatial_splits")) {
-                JsLiteral splits = js_mesh_obj.at("allow_spatial_splits").as_lit();
-                mesh_desc.allow_spatial_splits = (splits.val == JsLiteralType::True);
+        if (!mesh_load_events.empty()) {
+            int index = 0;
+            for (const auto &js_mesh : js_meshes.elements) {
+                const std::string &js_mesh_name = js_mesh.first;
+                meshes[js_mesh_name] = mesh_load_events[index++].get();
             }
-
-            if (js_mesh_obj.Has("use_fast_bvh_build")) {
-                JsLiteral use_fast = js_mesh_obj.at("use_fast_bvh_build").as_lit();
-                mesh_desc.use_fast_bvh_build = (use_fast.val == JsLiteralType::True);
-            }
-
-            meshes[js_mesh_name] = new_scene->AddMesh(mesh_desc);
         }
 
         if (js_scene.Has("lights")) {
@@ -1116,7 +1238,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             new_scene->AddMeshInstance(mesh_handle, Ren::ValuePtr(transform));
         }
     } catch (std::runtime_error &e) {
-        LOGE("Error in parsing json file! %s", e.what());
+        r->log()->Error("Error in parsing json file! %s", e.what());
         return nullptr;
     }
 
@@ -1125,7 +1247,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     return new_scene;
 }
 
-std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadOBJ(const std::string &file_name) {
+std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadOBJ(const char *file_name) {
     std::vector<float> attrs;
     std::vector<unsigned> indices;
     std::vector<unsigned> groups;
@@ -1320,7 +1442,7 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
     return std::make_tuple(std::move(attrs), std::move(indices), std::move(groups));
 }
 
-std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadBIN(const std::string &file_name) {
+std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadBIN(const char *file_name) {
     std::ifstream in_file(file_name, std::ios::binary);
     uint32_t num_attrs;
     in_file.read((char *)&num_attrs, 4);
@@ -1344,47 +1466,46 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
     return std::make_tuple(std::move(attrs), std::move(indices), std::move(groups));
 }
 
-std::vector<Ray::color_rgba8_t> LoadTGA(const std::string &name, int &w, int &h) {
+std::vector<Ray::color_rgba8_t> LoadTGA(const char *name, int &w, int &h) {
     std::vector<Ray::color_rgba8_t> tex_data;
 
-    {
-        std::ifstream in_file(name, std::ios::binary);
-        if (!in_file)
-            return {};
+    std::ifstream in_file(name, std::ios::binary);
+    if (!in_file) {
+        return {};
+    }
 
-        in_file.seekg(0, std::ios::end);
-        size_t in_file_size = (size_t)in_file.tellg();
-        in_file.seekg(0, std::ios::beg);
+    in_file.seekg(0, std::ios::end);
+    size_t in_file_size = (size_t)in_file.tellg();
+    in_file.seekg(0, std::ios::beg);
 
-        std::vector<char> in_file_data(in_file_size);
-        in_file.read(&in_file_data[0], in_file_size);
+    std::vector<char> in_file_data(in_file_size);
+    in_file.read(&in_file_data[0], in_file_size);
 
-        Ren::eTexColorFormat format;
-        auto pixels = Ren::ReadTGAFile(&in_file_data[0], w, h, format);
+    Ren::eTexColorFormat format;
+    auto pixels = Ren::ReadTGAFile(&in_file_data[0], w, h, format);
 
-        if (format == Ren::RawRGB888) {
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    tex_data.push_back(
-                        {pixels[3 * (y * w + x)], pixels[3 * (y * w + x) + 1], pixels[3 * (y * w + x) + 2], 255});
-                }
+    if (format == Ren::RawRGB888) {
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                tex_data.push_back(
+                    {pixels[3 * (y * w + x)], pixels[3 * (y * w + x) + 1], pixels[3 * (y * w + x) + 2], 255});
             }
-        } else if (format == Ren::RawRGBA8888) {
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    tex_data.push_back({pixels[4 * (y * w + x)], pixels[4 * (y * w + x) + 1],
-                                        pixels[4 * (y * w + x) + 2], pixels[4 * (y * w + x) + 3]});
-                }
-            }
-        } else {
-            assert(false);
         }
+    } else if (format == Ren::RawRGBA8888) {
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                tex_data.push_back({pixels[4 * (y * w + x)], pixels[4 * (y * w + x) + 1], pixels[4 * (y * w + x) + 2],
+                                    pixels[4 * (y * w + x) + 3]});
+            }
+        }
+    } else {
+        assert(false);
     }
 
     return tex_data;
 }
 
-std::vector<Ray::color_rgba8_t> LoadHDR(const std::string &name, int &out_w, int &out_h) {
+std::vector<Ray::color_rgba8_t> LoadHDR(const char *name, int &out_w, int &out_h) {
     std::ifstream in_file(name, std::ios::binary);
 
     std::string line;
@@ -1396,8 +1517,9 @@ std::vector<Ray::color_rgba8_t> LoadHDR(const std::string &name, int &out_w, int
     std::string format;
 
     while (std::getline(in_file, line)) {
-        if (line.empty())
+        if (line.empty()) {
             break;
+        }
 
         if (!line.compare(0, 6, "FORMAT")) {
             format = line.substr(7);
@@ -1526,11 +1648,11 @@ std::vector<Ray::color_rgba8_t> LoadHDR(const std::string &name, int &out_w, int
     return data;
 }
 
-std::vector<Ray::color_rgba8_t> Load_stb_image(const std::string &name, int &w, int &h) {
+std::vector<Ray::color_rgba8_t> Load_stb_image(const char *name, int &w, int &h) {
     stbi_set_flip_vertically_on_load(1);
 
     int channels;
-    uint8_t *img_data = stbi_load(name.c_str(), &w, &h, &channels, 4);
+    uint8_t *img_data = stbi_load(name, &w, &h, &channels, 4);
     if (!img_data) {
         return {};
     }

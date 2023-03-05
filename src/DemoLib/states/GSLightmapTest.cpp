@@ -93,7 +93,7 @@ void GSLightmapTest::Enter() {
 
     if (js_scene.Size()) {
         try {
-            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res);
+            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res, threads_.get());
         } catch (std::exception &e) {
             LOGE("%s", e.what());
         }

@@ -208,7 +208,7 @@ void GSRayBucketTest::Enter() {
     }
 
     if (js_scene.Size()) {
-        ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res);
+        ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res, threads_.get());
 
         if (js_scene.Has("camera")) {
             const JsObject &js_cam = js_scene.at("camera").as_obj();
