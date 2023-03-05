@@ -29,21 +29,30 @@ void TimedOutput(FILE *dst, const char *fmt, va_list args) {
 void LogStdout::Info(const char *fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
-    EngInternal::TimedOutput(stdout, fmt, vl);
+    { //
+        std::lock_guard<std::mutex> lock(mtx_);
+        EngInternal::TimedOutput(stdout, fmt, vl);
+    }
     va_end(vl);
 }
 
 void LogStdout::Warning(const char *fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
-    EngInternal::TimedOutput(stdout, fmt, vl);
+    { //
+        std::lock_guard<std::mutex> lock(mtx_);
+        EngInternal::TimedOutput(stdout, fmt, vl);
+    }
     va_end(vl);
 }
 
 void LogStdout::Error(const char *fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
-    EngInternal::TimedOutput(stderr, fmt, vl);
+    { //
+        std::lock_guard<std::mutex> lock(mtx_);
+        EngInternal::TimedOutput(stderr, fmt, vl);
+    }
     va_end(vl);
 }
 
@@ -54,21 +63,30 @@ LogAndroid::LogAndroid(const char *log_tag) { strcpy(log_tag_, log_tag); }
 void LogAndroid::Info(const char *fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
-    __android_log_vprint(ANDROID_LOG_INFO, log_tag_, fmt, vl);
+    { //
+        std::lock_guard<std::mutex> lock(mtx_);
+        __android_log_vprint(ANDROID_LOG_INFO, log_tag_, fmt, vl);
+    }
     va_end(vl);
 }
 
 void LogAndroid::Warning(const char *fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
-    __android_log_vprint(ANDROID_LOG_INFO, log_tag_, fmt, vl);
+    { //
+        std::lock_guard<std::mutex> lock(mtx_);
+        __android_log_vprint(ANDROID_LOG_INFO, log_tag_, fmt, vl);
+    }
     va_end(vl);
 }
 
 void LogAndroid::Error(const char *fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
-    __android_log_vprint(ANDROID_LOG_ERROR, log_tag_, fmt, vl);
+    { //
+        std::lock_guard<std::mutex> lock(mtx_);
+        __android_log_vprint(ANDROID_LOG_ERROR, log_tag_, fmt, vl);
+    }
     va_end(vl);
 }
 
