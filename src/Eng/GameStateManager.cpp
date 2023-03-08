@@ -2,8 +2,6 @@
 
 #include <stdexcept>
 
-#include <Sys/Log.h>
-
 GameStateManager::~GameStateManager() {
     Clear();
 }

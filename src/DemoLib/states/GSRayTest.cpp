@@ -12,8 +12,8 @@
 
 #include <Eng/GameStateManager.h>
 #include <Gui/Renderer.h>
+#include <Ray/Log.h>
 #include <Sys/Json.h>
-#include <Sys/Log.h>
 #include <Sys/ThreadPool.h>
 #include <Sys/Time_.h>
 
@@ -92,7 +92,7 @@ void GSRayTest::Enter() {
     {
         std::ifstream in_file(app_params->scene_name, std::ios::binary);
         if (!js_scene.Read(in_file)) {
-            LOGE("Failed to parse scene file!");
+            ray_renderer_->log()->Error("Failed to parse scene file!");
         }
     }
 
@@ -101,9 +101,9 @@ void GSRayTest::Enter() {
             const uint64_t t1 = Sys::GetTimeMs();
             ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res, threads_.get());
             const uint64_t t2 = Sys::GetTimeMs();
-            LOGI("Scene loaded in %.1fs", (t2 - t1) * 0.001f);
+            ray_renderer_->log()->Info("Scene loaded in %.1fs", (t2 - t1) * 0.001f);
         } catch (std::exception &e) {
-            LOGE("%s", e.what());
+            ray_renderer_->log()->Error("%s", e.what());
         }
 
         // TODO: do not rely on handle being the index!
@@ -297,7 +297,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         }
 
         WritePNG(pixel_data, w, h, 3, false /* flip */, (base_name + ".png").c_str());
-        LOGI("Written: %s (%i samples)", (base_name + ".png").c_str(), region_contexts_[0].iteration);
+        ray_renderer_->log()->Info("Written: %s (%i samples)", (base_name + ".png").c_str(), region_contexts_[0].iteration);
     }
 
     const bool should_compare_result = write_output && !app_params->ref_name.empty();
@@ -313,9 +313,9 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                 for (int i = 0; i < ref_w; ++i) {
                     const Ray::pixel_color_t &p = pixel_data[j * ref_w + i];
 
-                    const uint8_t r = uint8_t(p.r * 255);
-                    const uint8_t g = uint8_t(p.g * 255);
-                    const uint8_t b = uint8_t(p.b * 255);
+                    const auto r = uint8_t(p.r * 255);
+                    const auto g = uint8_t(p.g * 255);
+                    const auto b = uint8_t(p.b * 255);
 
                     const uint8_t diff_r = std::abs(r - ref_data[(ref_h - j - 1) * ref_w + i].v[0]);
                     const uint8_t diff_g = std::abs(g - ref_data[(ref_h - j - 1) * ref_w + i].v[1]);
@@ -337,17 +337,17 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             double psnr = -10.0 * std::log10(mse / (255.0f * 255.0f));
             psnr = std::floor(psnr * 100.0) / 100.0;
 
-            LOGI("PSNR: %.2f dB, Fireflies: %i (%i samples)", psnr, error_pixels, region_contexts_[0].iteration);
+            ray_renderer_->log()->Info("PSNR: %.2f dB, Fireflies: %i (%i samples)", psnr, error_pixels, region_contexts_[0].iteration);
             fflush(stdout);
 
             if (app_params->threshold != -1 && region_contexts_[0].iteration >= app_params->samples) {
-                LOGI("Elapsed time: %.2fm", double(Sys::GetTimeMs() - test_start_time_) / 60000.0);
+                ray_renderer_->log()->Info("Elapsed time: %.2fm", double(Sys::GetTimeMs() - test_start_time_) / 60000.0);
                 if (psnr < app_params->psnr || error_pixels > app_params->threshold) {
-                    LOGI("Test failed: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr, app_params->psnr, error_pixels,
+                    ray_renderer_->log()->Info("Test failed: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr, app_params->psnr, error_pixels,
                          app_params->threshold);
                     game_->return_code = -1;
                 } else {
-                    LOGI("Test success: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr, app_params->psnr, error_pixels,
+                    ray_renderer_->log()->Info("Test success: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr, app_params->psnr, error_pixels,
                          app_params->threshold);
                 }
                 game_->terminated = true;
@@ -743,7 +743,7 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
         break;
     case InputManager::RAW_INPUT_MOUSE_WHEEL:
         focal_distance_ += 0.1f * evt.move.dy;
-        LOGI("focal distance = %f", focal_distance_);
+        ray_renderer_->log()->Info("focal distance = %f", focal_distance_);
         invalidate_preview_ = true;
         invalidate_timeout_ = 100;
         break;

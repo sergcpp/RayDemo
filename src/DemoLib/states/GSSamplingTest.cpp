@@ -10,7 +10,6 @@
 #include <Eng/Random.h>
 #include <Ren/Context.h>
 #include <Sys/Json.h>
-#include <Sys/Log.h>
 #include <Gui/Renderer.h>
 
 #include <Ray/internal/Core.h>
@@ -93,8 +92,6 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
     if (iteration_ == 1) {
         std::fill(pixels_.begin(), pixels_.end(), 0.0f);
     }
-
-    LOGI("%i", int(iteration_));
 
     uint32_t nsamplesx = 4, nsamplesy = 1;
 

@@ -16,8 +16,6 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 set(SOURCE_FILES Config.h
-                 FlowControl.h
-                 FlowControl.cpp
                  FrameInfo.h
                  GameBase.h
                  GameBase.cpp

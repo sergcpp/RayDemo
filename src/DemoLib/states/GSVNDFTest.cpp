@@ -12,7 +12,6 @@
 #include <Ren/Context.h>
 #include <Ren/Program.h>
 #include <Sys/Json.h>
-#include <Sys/Log.h>
 
 #include <Ray/internal/Core.h>
 #include <Ray/internal/Halton.h>
