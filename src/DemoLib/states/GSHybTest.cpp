@@ -7,7 +7,6 @@
 #include <Ren/SW/SWframebuffer.h>
 #endif
 
-#include <Gui/Renderer.h>
 #include <Ray/RendererFactory.h>
 #include <Sys/Json.h>
 #include <Sys/ThreadPool.h>
@@ -16,7 +15,8 @@
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
 #include "../load/Load.h"
-#include "../ui/FontStorage.h"
+#include "../gui/FontStorage.h"
+#include "../gui/Renderer.h"
 
 namespace GSHybTestInternal {
 const float FORWARD_SPEED = 0.5f;

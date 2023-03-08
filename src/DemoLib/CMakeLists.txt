@@ -42,15 +42,15 @@ set(STATES_SOURCES  states/GSCreate.h
                     states/GSVNDFTest.h
                     states/GSVNDFTest.cpp)
 
-set(UI_SOURCES  ui/FontStorage.h)
-
-if(${RENDERER} STREQUAL "GL")
-    set(RENDERER_SOURCES ${RENDERER_SOURCES}
-                         renderer/RendererGL.cpp)
-elseif(${RENDERER} STREQUAL "SW")
-    set(RENDERER_SOURCES ${RENDERER_SOURCES}
-                         renderer/RendererSW.cpp)
-endif()
+set(GUI_SOURCES gui/BaseElement.h
+		        gui/BaseElement.cpp
+		        gui/BitmapFont.h
+		        gui/BitmapFont.cpp
+		        gui/FontStorage.h
+		        gui/Renderer.h
+		        gui/RendererSW.cpp
+		        gui/Utils.h
+		        gui/Utils.cpp)
 
 list(APPEND ALL_SOURCE_FILES ${SOURCE_FILES})
 source_group("src" FILES ${SOURCE_FILES})
@@ -64,10 +64,9 @@ source_group("src\\load" FILES ${LOAD_SOURCES})
 list(APPEND ALL_SOURCE_FILES ${STATES_SOURCES})
 source_group("src\\states" FILES ${STATES_SOURCES})
 
-list(APPEND ALL_SOURCE_FILES ${UI_SOURCES})
-set_source_files_properties(${UI_SOURCES} PROPERTIES HEADER_FILE_ONLY TRUE)
-source_group("src\\ui" FILES ${UI_SOURCES})
+list(APPEND ALL_SOURCE_FILES ${GUI_SOURCES})
+source_group("src\\ui" FILES ${GUI_SOURCES})
 
 add_library(DemoLib STATIC ${ALL_SOURCE_FILES})
-target_link_libraries(DemoLib Gui Ray Ren Sys ${LIBS})
+target_link_libraries(DemoLib Ray Ren Sys ${LIBS})
 

@@ -7,7 +7,6 @@
 #include <Ren/SW/SW.h>
 #endif
 
-#include <Gui/Renderer.h>
 #include <Ren/Context.h>
 #include <Ren/MMat.h>
 #include <Sys/AssetFile.h>
@@ -17,7 +16,8 @@
 #include "../eng/GameStateManager.h"
 #include "../eng/Random.h"
 #include "../load/Load.h"
-#include "../ui/FontStorage.h"
+#include "../gui/FontStorage.h"
+#include "../gui/Renderer.h"
 
 namespace GSHDRTestInternal {
 const double Pi = 3.1415926535897932384626433832795;

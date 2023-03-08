@@ -10,7 +10,6 @@
 
 #include <Ren/SOIL2/stb_image_write.h>
 
-#include <Gui/Renderer.h>
 #include <Ray/Log.h>
 #include <Sys/Json.h>
 #include <Sys/ThreadPool.h>
@@ -19,9 +18,9 @@
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
 #include "../load/Load.h"
-#include "../ui/FontStorage.h"
-
-#include <Gui/BaseElement.h>
+#include "../gui/BaseElement.h"
+#include "../gui/FontStorage.h"
+#include "../gui/Renderer.h"
 
 namespace GSRayTestInternal {
 const float FORWARD_SPEED = 8.0f;
