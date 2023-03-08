@@ -10,7 +10,7 @@
 
 #include "eng/GameStateManager.h"
 #include "states/GSCreate.h"
-#include "ui/FontStorage.h"
+#include "gui/FontStorage.h"
 
 Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams &_app_params, const int gpu_mode,
                const bool nobindless, const bool nocompression)

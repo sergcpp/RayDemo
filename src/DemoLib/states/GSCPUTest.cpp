@@ -10,7 +10,6 @@
 #include <Ren/Context.h>
 #include <Sys/Json.h>
 #include <Sys/ThreadPool.h>
-#include <Gui/Renderer.h>
 
 #include <Ray/internal/Core.h>
 #include <Ray/internal/Halton.h>
@@ -19,7 +18,8 @@
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
 #include "../eng/Random.h"
-#include "../ui/FontStorage.h"
+#include "../gui/FontStorage.h"
+#include "../gui/Renderer.h"
 
 namespace GSCPUTestInternal {
 }

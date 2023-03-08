@@ -7,16 +7,8 @@
 namespace Gui {
 // forward declare everything
 class BitmapFont;
-class ButtonBase;
-class ButtonImage;
-class ButtonText;
-class Cursor;
-class EditBox;
-class Frame;
 class Image;
-class LinearLayout;
 class Renderer;
-class TypeMesh;
 
 using Ren::Vec2f;
 using Ren::Vec2i;

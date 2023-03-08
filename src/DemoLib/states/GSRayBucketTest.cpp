@@ -14,12 +14,12 @@
 #include <Sys/Json.h>
 #include <Sys/Time_.h>
 #include <Sys/ThreadPool.h>
-#include <Gui/Renderer.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
 #include "../load/Load.h"
-#include "../ui/FontStorage.h"
+#include "../gui/FontStorage.h"
+#include "../gui/Renderer.h"
 
 namespace GSRayBucketTestInternal {
 const float FORWARD_SPEED = 8.0f;

@@ -3,8 +3,6 @@
 #include <random>
 #include <thread>
 
-#include <Gui/BaseElement.h>
-#include <Gui/Renderer.h>
 #include <Ren/Context.h>
 #include <Sys/AssetFileIO.h>
 #include <Sys/Json.h>
@@ -14,6 +12,8 @@
 #include "GameStateManager.h"
 #include "Log.h"
 #include "Random.h"
+#include "../gui/BaseElement.h"
+#include "../gui/Renderer.h"
 
 GameBase::GameBase(const int w, const int h, const char * /*local_dir*/) : width(w), height(h) {
     terminated = false;
