@@ -24,23 +24,13 @@ set(SOURCE_FILES Config.h
                  GameStateManager.cpp
                  Log.h
                  Log.cpp
-                 ObjectPool.h
                  Random.h
                  Random.cpp
                  TimedInput.h
                  TimedInput.cpp)
 
-set(GO_SOURCE_FILES go/Go.h
-                    go/Go.cpp
-                    go/GoAlloc.h
-                    go/GoComponent.h
-                    go/GoID.h)
-
 list(APPEND ALL_SOURCE_FILES ${SOURCE_FILES})
 source_group("src" FILES ${SOURCE_FILES})
-
-list(APPEND ALL_SOURCE_FILES ${GO_SOURCE_FILES})
-source_group("src\\go" FILES ${GO_SOURCE_FILES})
 
 add_library(Eng STATIC ${ALL_SOURCE_FILES})
 target_link_libraries(Eng Gui Ren Sys ${ITT_LIB})

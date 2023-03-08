@@ -3,7 +3,6 @@
 #include <atomic>
 
 #include <Eng/GameState.h>
-#include <Eng/go/Go.h>
 #include <Ren/Camera.h>
 #include <Ren/Program.h>
 #include <Ren/Texture.h>
