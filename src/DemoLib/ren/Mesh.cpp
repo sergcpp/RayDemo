@@ -2,11 +2,9 @@
 
 #include <ctime>
 
-#if defined(USE_GL_RENDER)
-#include "GL.h"
-#elif defined(USE_SW_RENDER)
-#include "SW/SW.h"
-#endif
+#include <istream>
+
+#include <SW/SW.h>
 
 #ifdef _MSC_VER
 #pragma warning(push)

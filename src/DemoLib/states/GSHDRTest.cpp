@@ -3,14 +3,9 @@
 #include <fstream>
 #include <random>
 
-#if defined(USE_SW_RENDER)
-#include <Ren/SW/SW.h>
-#endif
-
-#include <Ren/Context.h>
-#include <Ren/MMat.h>
 #include <Sys/AssetFile.h>
 #include <Sys/Json.h>
+#include <SW/SW.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
@@ -18,6 +13,8 @@
 #include "../load/Load.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
+#include "../ren/Context.h"
+#include "../ren/MMat.h"
 
 namespace GSHDRTestInternal {
 const double Pi = 3.1415926535897932384626433832795;
@@ -224,10 +221,9 @@ GSHDRTest::GSHDRTest(GameBase *game) : game_(game) {
 }
 
 void GSHDRTest::Enter() {
-#if defined(USE_SW_RENDER)
     swEnable(SW_FAST_PERSPECTIVE_CORRECTION);
     swEnable(SW_DEPTH_TEST);
-#endif
+
     using namespace GSHDRTestInternal;
 
     img_ = LoadHDR("src/Ray/tests/test_data/textures/studio_small_03_2k.hdr", img_w_, img_h_);
@@ -582,26 +578,7 @@ void GSHDRTest::Draw(uint64_t dt_us) {
         pixels_[4 * (py * width + px) + 3] = 1.0f;
     }
 
-#if defined(USE_SW_RENDER)
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, width, height, &pixels_[0], 1);
-#endif
-
-#if 0
-    {
-        // ui draw
-        ui_renderer_->BeginDraw();
-
-        float font_height = font_->height(ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), "regular", { 0.25f, 1 - font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), "random", { 0.25f, 1 - 2 * 0.25f - font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), "jittered", { 0.25f, 1 - 2 * 0.5f - font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), "halton", { 0.25f, 1 - 2 * 0.75f - font_height }, ui_root_.get());
-
-        ui_renderer_->EndDraw();
-    }
-#endif
-
-    ctx_->ProcessTasks();
 }
 
 void GSHDRTest::Update(uint64_t dt_us) {}

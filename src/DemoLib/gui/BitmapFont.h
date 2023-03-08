@@ -2,10 +2,9 @@
 
 #include <vector>
 
-#include <Ren/Context.h>
-#include <Ren/Texture.h>
-
-#include <Ren/MVec.h>
+#include "../ren/Context.h"
+#include "../ren/Texture.h"
+#include "../ren/MVec.h"
 
 namespace Gui {
 class BaseElement;
@@ -15,7 +14,7 @@ using Ren::Vec2f;
 
 class BitmapFont {
 public:
-    BitmapFont(const char *name = nullptr, Ren::Context *ctx = nullptr);
+    explicit BitmapFont(const char *name = nullptr, Ren::Context *ctx = nullptr);
 
     float height(const BaseElement *parent) const;
 

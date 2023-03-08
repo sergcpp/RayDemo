@@ -2,10 +2,9 @@
 
 #include <vector>
 
-#include <Ren/Program.h>
-#include <Ren/Texture.h>
-
-#include <Ren/MVec.h>
+#include "../ren/Program.h"
+#include "../ren/Texture.h"
+#include "../ren/MVec.h"
 
 template <typename Alloc> struct JsObjectT;
 using JsObject = JsObjectT<std::allocator<char>>;
@@ -76,10 +75,6 @@ class Renderer {
   private:
     Ren::Context &ctx_;
     Ren::ProgramRef ui_program_;
-#if defined(USE_GL_RENDER)
-    uint32_t main_vao_;
-    uint32_t attribs_buf_id_, indices_buf_id_;
-#endif
     std::vector<DrawParams> params_;
 
     void ApplyParams(Ren::ProgramRef &p, const DrawParams &params);

@@ -3,9 +3,10 @@
 #pragma warning(push)
 #pragma warning(disable : 4505)
 
-#include <Ren/Context.h>
-#include <Ren/SW/SW.h>
 #include <Sys/Json.h>
+#include <SW/SW.h>
+
+#include "../ren/Context.h"
 
 namespace UIRendererConstants {
 enum {

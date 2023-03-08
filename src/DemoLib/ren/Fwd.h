@@ -17,8 +17,4 @@ typedef StorageRef<Material> MaterialRef;
 typedef StorageRef<Mesh> MeshRef;
 typedef StorageRef<Program> ProgramRef;
 typedef StorageRef<Texture2D> Texture2DRef;
-
-#if defined(USE_GL_RENDER)
-void CheckError(const char *op = "undefined");
-#endif
 }

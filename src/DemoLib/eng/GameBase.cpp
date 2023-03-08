@@ -3,7 +3,6 @@
 #include <random>
 #include <thread>
 
-#include <Ren/Context.h>
 #include <Sys/AssetFileIO.h>
 #include <Sys/Json.h>
 #include <Sys/Time_.h>
@@ -14,6 +13,7 @@
 #include "Random.h"
 #include "../gui/BaseElement.h"
 #include "../gui/Renderer.h"
+#include "../ren/Context.h"
 
 GameBase::GameBase(const int w, const int h, const char * /*local_dir*/) : width(w), height(h) {
     terminated = false;
@@ -59,7 +59,6 @@ GameBase::GameBase(const int w, const int h, const char * /*local_dir*/) : width
 GameBase::~GameBase() {
     // context should be deleted last
     auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
-    while (ctx->ProcessTasks());
     components_.clear();
 
     //Sys::StopWorker();

@@ -22,9 +22,7 @@ class Buffer : public RefCounter {
     uint32_t size_ = 0;
     std::vector<Node> nodes_;
 
-#if defined(USE_GL_RENDER) || defined(USE_SW_RENDER)
     uint32_t buf_id_ = 0xffffffff;
-#endif
 
     int Alloc_Recursive(int i, uint32_t req_size);
     int Find_Recursive(int i, uint32_t offset) const;
@@ -44,11 +42,9 @@ public:
 
     uint32_t size() const { return size_; }
 
-#if defined(USE_GL_RENDER) || defined(USE_SW_RENDER)
     uint32_t buf_id() const {
         return buf_id_;
     }
-#endif
 
     uint32_t Alloc(uint32_t size, const void *init_data = nullptr);
     bool Free(uint32_t offset);

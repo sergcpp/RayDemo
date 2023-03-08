@@ -3,15 +3,12 @@
 #include <fstream>
 #include <iomanip>
 
-#if defined(USE_SW_RENDER)
-#include <Ren/SW/SW.h>
-#include <Ren/SW/SWframebuffer.h>
-#endif
-
 #include <Ray/Log.h>
 #include <Sys/Json.h>
 #include <Sys/ThreadPool.h>
 #include <Sys/Time_.h>
+#include <SW/SW.h>
+#include <SW/SWframebuffer.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
@@ -255,7 +252,6 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     std::tie(w, h) = ray_renderer_->size();
     // const auto *pixel_data = ray_renderer_->get_pixels_ref();
 
-#if defined(USE_SW_RENDER)
 #if 0
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 #else
@@ -377,7 +373,6 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     uint8_t hor_line[128][3];
     memset(&hor_line[0][0], 255, sizeof(hor_line));
     swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
-#endif
 
     int dt_ms = int(Sys::GetTimeMs() - t1);
     time_acc_ += dt_ms;
@@ -435,8 +430,6 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
 
         ui_renderer_->EndDraw();
     }
-
-    ctx_->ProcessTasks();
 }
 
 void GSLightmapTest::Update(uint64_t dt_ms) {

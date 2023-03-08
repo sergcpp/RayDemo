@@ -2,22 +2,18 @@
 
 #include <fstream>
 
-#if defined(USE_SW_RENDER)
-#include <Ren/SW/SW.h>
-#endif
-
-#include <Ren/Context.h>
-#include <Ren/Program.h>
-#include <Sys/Json.h>
-
 #include <Ray/internal/Core.h>
 #include <Ray/internal/Halton.h>
+#include <Sys/Json.h>
+#include <SW/SW.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
 #include "../eng/Random.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
+#include "../ren/Context.h"
+#include "../ren/Program.h"
 
 namespace GSVNDFTestInternal {
 enum { A_POS, A_COL };
@@ -56,7 +52,7 @@ Ren::Vec3f SampleGGX_NDF(const float rgh, const float r1, const float r2) {
     const float sinPhi = std::sin(phi);
     const float cosPhi = std::cos(phi);
 
-    return Ren::Vec3f(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
+    return {sinTheta * cosPhi, sinTheta * sinPhi, cosTheta};
 }
 
 Ren::Vec3f SampleGGX_VNDF(const Ren::Vec3f &Ve, float alpha_x, float alpha_y, float U1, float U2) {
@@ -160,10 +156,9 @@ GSVNDFTest::GSVNDFTest(GameBase *game) : game_(game) {
 }
 
 void GSVNDFTest::Enter() {
-#if defined(USE_SW_RENDER)
     swEnable(SW_FAST_PERSPECTIVE_CORRECTION);
     swEnable(SW_DEPTH_TEST);
-#endif
+
     using namespace GSVNDFTestInternal;
 
     radical_inv_perms = Ray::ComputeRadicalInversePermutations(Ray::g_primes, Ray::PrimesCount, ::rand);
@@ -266,8 +261,6 @@ void GSVNDFTest::Draw(uint64_t dt_us) {
             swDrawArrays(SW_LINE_STRIP, 0, 2);
         }
     }
-
-    ctx_->ProcessTasks();
 }
 
 void GSVNDFTest::Update(uint64_t dt_us) {}

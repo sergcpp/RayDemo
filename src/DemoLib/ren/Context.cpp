@@ -1,6 +1,7 @@
 #include "Context.h"
 
 #include <algorithm>
+#include <istream>
 
 Ren::MeshRef Ren::Context::LoadMesh(const char *name, std::istream &data, material_load_callback on_mat_load) {
     return LoadMesh(name, data, on_mat_load, default_vertex_buf_, default_indices_buf_);
@@ -70,9 +71,7 @@ void Ren::Context::ReleasePrograms() {
     if (!programs_.Size()) return;
     fprintf(stderr, "---------REMAINING PROGRAMS--------\n");
     for (const auto &p : programs_) {
-#if defined(USE_GL_RENDER) || defined(USE_SW_RENDER)
         fprintf(stderr, "%s %i\n", p.name(), (int)p.prog_id());
-#endif
     }
     fprintf(stderr, "-----------------------------------\n");
     programs_.Clear();
