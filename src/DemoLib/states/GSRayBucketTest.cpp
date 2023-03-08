@@ -2,24 +2,21 @@
 
 #include <fstream>
 
-#if defined(USE_SW_RENDER)
-#include <Ren/SW/SW.h>
-#include <Ren/SW/SWframebuffer.h>
-#endif
-
 #include <Ray/Log.h>
-#include <Ren/Context.h>
-#include <Ren/Utils.h>
 #include <Sys/AssetFile.h>
 #include <Sys/Json.h>
 #include <Sys/Time_.h>
 #include <Sys/ThreadPool.h>
+#include <SW/SW.h>
+#include <SW/SWframebuffer.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
 #include "../load/Load.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
+#include "../ren/Context.h"
+#include "../ren/Utils.h"
 
 namespace GSRayBucketTestInternal {
 const float FORWARD_SPEED = 8.0f;
@@ -270,7 +267,6 @@ void GSRayBucketTest::Draw(uint64_t dt_us) {
     std::tie(w, h) = ray_renderer_->size();
     const auto *pixel_data = ray_renderer_->get_pixels_ref();
 
-#if defined(USE_SW_RENDER)
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 
     float pix_row[BUCKET_SIZE][4];
@@ -306,7 +302,6 @@ void GSRayBucketTest::Draw(uint64_t dt_us) {
         swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 3, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
         swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 4, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
     }
-#endif
 
     bool ready = true;
 
@@ -336,45 +331,6 @@ void GSRayBucketTest::Draw(uint64_t dt_us) {
         time_acc_ = 0;
         time_counter_ = 0;
     }
-
-#if 0
-    {
-        // ui draw
-        ui_renderer_->BeginDraw();
-
-        Ray::RendererBase::stats_t st = {};
-        ray_renderer_->GetStats(st);
-
-        float font_height = font_->height(ui_root_.get());
-
-        std::string stats1;
-        stats1 += "res:   ";
-        stats1 += std::to_string(ray_renderer_->size().first);
-        stats1 += "x";
-        stats1 += std::to_string(ray_renderer_->size().second);
-
-        std::string stats2;
-        stats2 += "tris:  ";
-        stats2 += std::to_string(ray_scene_->triangle_count());
-
-        std::string stats3;
-        stats3 += "nodes: ";
-        stats3 += std::to_string(ray_scene_->node_count());
-
-        std::string stats4;
-        stats4 += "pass:  ";
-        stats4 += std::to_string(region_contexts_[0].iteration);
-
-        font_->DrawText(ui_renderer_.get(), stats1.c_str(), { -1, 1 - 1 * font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats2.c_str(), { -1, 1 - 2 * font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats3.c_str(), { -1, 1 - 3 * font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats4.c_str(), { -1, 1 - 4 * font_height }, ui_root_.get());
-
-        ui_renderer_->EndDraw();
-    }
-#endif
-
-    ctx_->ProcessTasks();
 }
 
 void GSRayBucketTest::Update(uint64_t dt_us) {

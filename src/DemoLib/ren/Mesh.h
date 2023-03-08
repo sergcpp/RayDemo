@@ -78,14 +78,12 @@ public:
     uint32_t flags() const {
         return flags_;
     }
-#if defined(USE_GL_RENDER) || defined(USE_SW_RENDER)
     uint32_t attribs_buf_id() const {
         return attribs_buf_->buf_id();
     }
     uint32_t indices_buf_id() const {
         return indices_buf_->buf_id();
     }
-#endif
     const void *attribs() const {
         return attribs_.get();
     }

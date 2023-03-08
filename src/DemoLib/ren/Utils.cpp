@@ -1,7 +1,12 @@
 #include "Utils.h"
 
+#include <cmath>
+
+#include <algorithm>
+#include <array>
 #include <deque>
 
+#include "MVec.h"
 #include "Texture.h"
 
 namespace Ren {

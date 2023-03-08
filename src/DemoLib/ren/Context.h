@@ -5,13 +5,12 @@
 #include "Material.h"
 #include "Mesh.h"
 #include "Program.h"
-#include "RenderThread.h"
 #include "Texture.h"
 
 struct SWcontext;
 
 namespace Ren {
-class Context : public RenderThread {
+class Context {
 protected:
     int w_ = 0, h_ = 0;
 
@@ -24,13 +23,8 @@ protected:
 
     BufferRef       default_vertex_buf_, default_indices_buf_;
 
-#if defined(USE_SW_RENDER)
     SWcontext       *sw_ctx_;
-#endif
 
-#if defined(USE_GL_RENDER)
-    std::string glsl_defines_;
-#endif
 public:
     ~Context();
 
@@ -60,13 +54,8 @@ public:
     void ReleaseMaterials();
 
     /*** Program ***/
-#if defined(USE_GL_RENDER)
-    ProgramRef LoadProgramGLSL(const char *name, const char *vs_source, const char *fs_source, eProgLoadStatus *load_status);
-    ProgramRef LoadProgramGLSL(const char *name, const char *cs_source, eProgLoadStatus *load_status);
-#elif defined(USE_SW_RENDER)
     ProgramRef LoadProgramSW(const char *name, void *vs_shader, void *fs_shader, int num_fvars,
                              const Attribute *attrs, const Uniform *unifs, eProgLoadStatus *load_status);
-#endif
     int NumProgramsNotReady();
     void ReleasePrograms();
 
@@ -88,16 +77,7 @@ public:
 
     void ReleaseAll();
 
-#if defined(USE_GL_RENDER)
-    float anisotropy = 0;
     int max_uniform_vec4 = 0;
-    bool IsExtensionSupported(const char *ext);
-#elif defined(USE_SW_RENDER)
-    int max_uniform_vec4 = 0;
-#endif
 };
 
-#if defined(USE_GL_RENDER)
-void CheckError(const char *op);
-#endif
 }

@@ -119,11 +119,7 @@ bool Gui::BitmapFont::Load(const char *fname, Ren::Context &ctx) {
     // Tex creation params are dependent on BPP
     switch (render_style_) {
     case BFG_RS_ALPHA:
-#if !defined(USE_SW_RENDER)
-        p.format = Ren::RawLUM8;
-#else
         assert(false);
-#endif
         break;
     case BFG_RS_RGB:
         p.format = Ren::RawRGB888;

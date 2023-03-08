@@ -3,13 +3,9 @@
 #include <fstream>
 #include <iostream>
 
-#if defined(USE_SW_RENDER)
-#include <Ren/SW/SW.h>
-#endif
-
-#include <Ren/Context.h>
 #include <Sys/Json.h>
 #include <Sys/ThreadPool.h>
+#include <SW/SW.h>
 
 #include <Ray/internal/Core.h>
 #include <Ray/internal/Halton.h>
@@ -20,6 +16,7 @@
 #include "../eng/Random.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
+#include "../ren/Context.h"
 
 namespace GSCPUTestInternal {
 }
@@ -43,10 +40,9 @@ GSCPUTest::GSCPUTest(GameBase *game) : game_(game) {
 GSCPUTest::~GSCPUTest() = default;
 
 void GSCPUTest::Enter() {
-#if defined(USE_SW_RENDER)
     swEnable(SW_FAST_PERSPECTIVE_CORRECTION);
     swEnable(SW_DEPTH_TEST);
-#endif
+
     using namespace GSCPUTestInternal;
 
     if (state_ == eWarmup) {
@@ -100,9 +96,7 @@ void GSCPUTest::Exit() {
 void GSCPUTest::Draw(uint64_t dt_us) {
     using namespace GSCPUTestInternal;
 
-#if defined(USE_SW_RENDER)
     swClearColor(0, 0, 0, 0);
-#endif
 
     if (state_ == eWarmup) {
         int num_ready = num_ready_;
@@ -156,8 +150,6 @@ void GSCPUTest::Draw(uint64_t dt_us) {
         ui_renderer_->EndDraw();
     }
 #endif
-
-    ctx_->ProcessTasks();
 }
 
 void GSCPUTest::Update(uint64_t dt_us) {

@@ -15,12 +15,8 @@ struct AppParams;
 class GameBase;
 
 class DemoApp {
-#if defined(USE_GL_RENDER)
-    void *gl_ctx_ = nullptr;
-#elif defined(USE_SW_RENDER)
     SDL_Renderer *renderer_ = nullptr;
     SDL_Texture *texture_ = nullptr;
-#endif
     SDL_Window *window_ = nullptr;
 
     std::shared_ptr<InputManager> p_input_manager_;

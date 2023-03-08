@@ -52,6 +52,36 @@ set(GUI_SOURCES gui/BaseElement.h
 		        gui/Utils.h
 		        gui/Utils.cpp)
 
+set(REN_SOURCES ren/Anim.h
+		        ren/Anim.cpp
+		        ren/Buffer.h
+		        ren/Buffer.cpp
+		        ren/Camera.h
+		        ren/Camera.cpp
+		        ren/Context.h
+		        ren/Context.cpp
+		        ren/ContextSW.cpp
+		        ren/Fwd.h
+		        ren/Material.h
+		        ren/Material.cpp
+		        ren/Mesh.h
+		        ren/Mesh.cpp
+		        ren/MMat.h
+		        ren/MQuat.h
+		        ren/MVec.h
+		        ren/Program.h
+		        ren/ProgramSW.h
+		        ren/ProgramSW.cpp
+		        ren/RingBuffer.h
+		        ren/SmallVector.h
+		        ren/SparseArray.h
+		        ren/Storage.h
+		        ren/Texture.h
+		        ren/TextureSW.h
+		        ren/TextureSW.cpp
+		        ren/Utils.h
+		        ren/Utils.cpp)
+
 list(APPEND ALL_SOURCE_FILES ${SOURCE_FILES})
 source_group("src" FILES ${SOURCE_FILES})
 
@@ -67,6 +97,9 @@ source_group("src\\states" FILES ${STATES_SOURCES})
 list(APPEND ALL_SOURCE_FILES ${GUI_SOURCES})
 source_group("src\\ui" FILES ${GUI_SOURCES})
 
+list(APPEND ALL_SOURCE_FILES ${REN_SOURCES})
+source_group("src\\ren" FILES ${REN_SOURCES})
+
 add_library(DemoLib STATIC ${ALL_SOURCE_FILES})
-target_link_libraries(DemoLib Ray Ren Sys ${LIBS})
+target_link_libraries(DemoLib Ray Sys SW ${LIBS})
 

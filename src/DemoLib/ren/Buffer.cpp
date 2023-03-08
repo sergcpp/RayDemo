@@ -4,46 +4,22 @@
 
 #include <algorithm>
 
-#if defined(USE_GL_RENDER)
-#include "GL.h"
-#elif defined(USE_SW_RENDER)
-#include "SW/SW.h"
-#endif
+#include <SW/SW.h>
 
 Ren::Buffer::Buffer(uint32_t initial_size) : size_(0) {
     nodes_.emplace_back();
     nodes_.back().size = initial_size;
 
-#if defined(USE_GL_RENDER)
-    buf_id_ = 0xffffffff;
-#endif
-
     Resize(initial_size);
 }
 
-Ren::Buffer::~Buffer() {
-#if defined(USE_GL_RENDER)
-    if (buf_id_ != 0xffffffff) {
-        GLuint gl_buf = (GLuint)buf_id_;
-        glDeleteBuffers(1, &gl_buf);
-    }
-#endif
-}
+Ren::Buffer::~Buffer() = default;
 
 Ren::Buffer &Ren::Buffer::operator=(Buffer &&rhs) {
     RefCounter::operator=(std::move(rhs));
 
-    if (buf_id_ == 0xffffffff) {
-#if defined(USE_GL_RENDER)
-        GLuint buf = (GLuint)buf_id_;
-        glDeleteBuffers(1, &buf);
-#endif
-    }
-
-#if defined(USE_GL_RENDER) || defined(USE_SW_RENDER)
     buf_id_ = rhs.buf_id_;
     rhs.buf_id_ = 0xffffffff;
-#endif
 
     nodes_ = std::move(rhs.nodes_);
 
@@ -174,13 +150,8 @@ uint32_t Ren::Buffer::Alloc(uint32_t req_size, const void *init_data) {
         assert(n.size == req_size);
 
         if (init_data) {
-#if defined(USE_GL_RENDER)
-            glBindBuffer(GL_ARRAY_BUFFER, (GLuint)buf_id_);
-            glBufferSubData(GL_ARRAY_BUFFER, n.offset, n.size, init_data);
-#elif defined(USE_SW_RENDER)
             swBindBuffer(SW_ARRAY_BUFFER, (SWuint)buf_id_);
             swBufferSubData(SW_ARRAY_BUFFER, n.offset, n.size, init_data);
-#endif
         }
         
         return n.offset;
@@ -206,26 +177,6 @@ void Ren::Buffer::Resize(uint32_t new_size) {
         size_ *= 2;
     }
 
-#if defined(USE_GL_RENDER)
-    GLuint gl_buffer;
-    glGenBuffers(1, &gl_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, gl_buffer);
-    glBufferData(GL_ARRAY_BUFFER, size_, nullptr, GL_STATIC_DRAW);
-
-    if (buf_id_ != 0xffffffff) {
-        glBindBuffer(GL_ARRAY_BUFFER, (GLuint)buf_id_);
-        glBindBuffer(GL_COPY_WRITE_BUFFER, gl_buffer);
-
-        glCopyBufferSubData(GL_ARRAY_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, old_size);
-
-        GLuint old_buffer = (GLuint)buf_id_;
-        glDeleteBuffers(1, &old_buffer);
-
-        glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-    }
-
-    buf_id_ = (uint32_t)gl_buffer;
-#elif defined(USE_SW_RENDER)
     SWuint sw_buffer = swCreateBuffer();
     swBindBuffer(SW_ARRAY_BUFFER, sw_buffer);
     swBufferData(SW_ARRAY_BUFFER, size_, nullptr);
@@ -243,5 +194,4 @@ void Ren::Buffer::Resize(uint32_t new_size) {
     }
 
     buf_id_ = (uint32_t)sw_buffer;
-#endif
 }

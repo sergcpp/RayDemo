@@ -1,5 +1,7 @@
 #include "Camera.h"
 
+#include <cstring>
+
 Ren::Plane::Plane(const Ren::Vec3f &v0, const Ren::Vec3f &v1, const Ren::Vec3f &v2) : n(Uninitialize) {
     const Ren::Vec3f e1 = {v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]},
                      e2 = {v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]};

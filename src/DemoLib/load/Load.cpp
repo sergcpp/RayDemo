@@ -12,23 +12,24 @@
 
 #include <Ray/Log.h>
 #include <Ray/RendererBase.h>
-#include <Ren/MMat.h>
-#include <Ren/SmallVector.h>
-#include <Ren/Texture.h>
-#include <Ren/Utils.h>
 #include <Sys/AssetFile.h>
 #include <Sys/Time_.h>
 #include <Sys/ThreadPool.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_PKM
-#include <Ren/SOIL2/stb_image.h>
+#include <SOIL2/stb_image.h>
 #undef STBI_NO_PKM
 #undef STB_IMAGE_IMPLEMENTATION
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <Ren/SOIL2/stb_image_write.h>
+#include <SOIL2/stb_image_write.h>
 #undef STB_IMAGE_WRITE_IMPLEMENTATION
+
+#include "../ren/MMat.h"
+#include "../ren/SmallVector.h"
+#include "../ren/Texture.h"
+#include "../ren/Utils.h"
 
 #include <turbojpeg.h>
 

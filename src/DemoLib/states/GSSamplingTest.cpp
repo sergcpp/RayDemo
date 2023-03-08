@@ -2,21 +2,17 @@
 
 #include <fstream>
 
-#if defined(USE_SW_RENDER)
-#include <Ren/SW/SW.h>
-#endif
-
-#include <Ren/Context.h>
-#include <Sys/Json.h>
-
 #include <Ray/internal/Core.h>
 #include <Ray/internal/Halton.h>
+#include <Sys/Json.h>
+#include <SW/SW.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
 #include "../eng/Random.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
+#include "../ren/Context.h"
 
 namespace GSSamplingTestInternal {
 float EvalFunc(const float x, const float y, const float xmax, const float ymax) {
@@ -60,10 +56,9 @@ GSSamplingTest::GSSamplingTest(GameBase *game) : game_(game) {
 }
 
 void GSSamplingTest::Enter() {
-#if defined(USE_SW_RENDER)
     swEnable(SW_FAST_PERSPECTIVE_CORRECTION);
     swEnable(SW_DEPTH_TEST);
-#endif
+
     using namespace GSSamplingTestInternal;
 
     radical_inv_perms = Ray::ComputeRadicalInversePermutations(Ray::g_primes, Ray::PrimesCount, ::rand);
@@ -243,26 +238,7 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
     }
 #endif
 
-#if defined(USE_SW_RENDER)
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, width, height, &pixels_[0], 1);
-#endif
-
-#if 0
-    {
-        // ui draw
-        ui_renderer_->BeginDraw();
-
-        float font_height = font_->height(ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), "regular", { 0.25f, 1 - font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), "random", { 0.25f, 1 - 2 * 0.25f - font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), "jittered", { 0.25f, 1 - 2 * 0.5f - font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), "halton", { 0.25f, 1 - 2 * 0.75f - font_height }, ui_root_.get());
-
-        ui_renderer_->EndDraw();
-    }
-#endif
-
-    ctx_->ProcessTasks();
 }
 
 void GSSamplingTest::Update(uint64_t dt_us) {

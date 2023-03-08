@@ -55,28 +55,12 @@ void Ren::Material::InitFromTXT(const char *mat_src, eMatLoadStatus *status,
         }
         std::string item(p, q);
 
-        if (item == "gl_program:") {
-#ifdef USE_GL_RENDER
-            p = q + 1;
-            q = strpbrk(p, delims);
-            std::string program_name = std::string(p, q);
-            p = q + 1;
-            q = strpbrk(p, delims);
-            std::string v_shader_name = std::string(p, q);
-            p = q + 1;
-            q = strpbrk(p, delims);
-            std::string f_shader_name = std::string(p, q);
-
-            program_ = on_prog_load(program_name.c_str(), v_shader_name.c_str(), f_shader_name.c_str());
-#endif
-        } else if (item == "sw_program:") {
-#ifdef USE_SW_RENDER
+        if (item == "sw_program:") {
             p = q + 1;
             q = strpbrk(p, delims);
             std::string program_name = std::string(p, q);
 
             program_ = on_prog_load(program_name.c_str(), nullptr, nullptr);
-#endif
         } else if (item == "flag:") {
             p = q + 1;
             q = strpbrk(p, delims);

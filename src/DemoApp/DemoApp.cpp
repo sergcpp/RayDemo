@@ -1,20 +1,14 @@
 #include "DemoApp.h"
 
-#if defined(USE_GL_RENDER)
-#include <Ren/GL.h>
-#elif defined(USE_SW_RENDER)
-
-#endif
-
 #if !defined(__ANDROID__)
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_video.h>
 #endif
 
-#include <Ren/SW/SW.h>
 #include <Sys/DynLib.h>
 #include <Sys/Time_.h>
+#include <SW/SW.h>
 
 #include <SDL2/SDL_events.h>
 
@@ -82,9 +76,6 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
         return -1;
     }
 
-#if defined(USE_GL_RENDER)
-    gl_ctx_ = SDL_GL_CreateContext(window_);
-#elif defined(USE_SW_RENDER)
     renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer_) {
         const char *s = SDL_GetError();
@@ -97,7 +88,6 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
         fprintf(stderr, "%s\n", s);
         return -1;
     }
-#endif
 #endif
 
     char envarg[] = "MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE=1";
@@ -121,12 +111,8 @@ void DemoApp::Destroy() {
     viewer_.reset();
 
 #if !defined(__ANDROID__)
-#if defined(USE_GL_RENDER)
-    SDL_GL_DeleteContext(gl_ctx_);
-#elif defined(USE_SW_RENDER)
     SDL_DestroyTexture(texture_);
     SDL_DestroyRenderer(renderer_);
-#endif
     SDL_DestroyWindow(window_);
     SDL_Quit();
 #endif
@@ -217,16 +203,12 @@ int DemoApp::Run(int argc, char *argv[]) {
         this->PollEvents();
         this->Frame();
 
-#if defined(USE_GL_RENDER)
-        SDL_GL_SwapWindow(window_);
-#elif defined(USE_SW_RENDER)
         const void *_pixels = swGetPixelDataRef(swGetCurFramebuffer());
         SDL_UpdateTexture(texture_, NULL, _pixels, viewer_->width * sizeof(Uint32));
 
         // SDL_RenderClear(renderer_);
         SDL_RenderCopy(renderer_, texture_, NULL, NULL);
         SDL_RenderPresent(renderer_);
-#endif
     }
 
     const int return_code = viewer_->return_code;
@@ -357,12 +339,11 @@ void DemoApp::PollEvents() {
                 evt.point.y = float(e.window.data2);
 
                 viewer_->Resize(e.window.data1, e.window.data2);
-#if defined(USE_SW_RENDER)
+
                 SDL_RenderPresent(renderer_);
                 SDL_DestroyTexture(texture_);
                 texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
                                              e.window.data1, e.window.data2);
-#endif
             }
             break;
         default:

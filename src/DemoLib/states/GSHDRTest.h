@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Ray/Types.h>
-#include <Ren/Camera.h>
-#include <Ren/Program.h>
-#include <Ren/Texture.h>
-
 #include "../eng/GameState.h"
+#include "../ren/Camera.h"
+#include "../ren/Program.h"
+#include "../ren/Texture.h"
+
+#include <Ray/Types.h>
 
 class GameBase;
 class GameStateManager;

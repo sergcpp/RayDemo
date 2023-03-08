@@ -3,17 +3,14 @@
 #include <fstream>
 #include <iomanip>
 
-#if defined(USE_SW_RENDER)
-#include <Ren/SW/SW.h>
-#include <Ren/SW/SWframebuffer.h>
-#endif
-
-#include <Ren/SOIL2/stb_image_write.h>
+#include <SOIL2/stb_image_write.h>
 
 #include <Ray/Log.h>
 #include <Sys/Json.h>
 #include <Sys/ThreadPool.h>
 #include <Sys/Time_.h>
+#include <SW/SW.h>
+#include <SW/SWframebuffer.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
@@ -271,7 +268,6 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     std::tie(w, h) = ray_renderer_->size();
     const auto *pixel_data = ray_renderer_->get_pixels_ref();
 
-#if defined(USE_SW_RENDER)
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 
     bool write_output = region_contexts_[0].iteration > 0;
@@ -542,7 +538,6 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         memset(&hor_line[0][0], 255, sizeof(hor_line));
         swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, UiWidth, 1, &hor_line[0][0], 1);
     }
-#endif
 
     const int dt_ms = int(Sys::GetTimeMs() - t1);
     time_acc_ += dt_ms;
@@ -651,8 +646,6 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
         ui_renderer_->EndDraw();
     }
-
-    ctx_->ProcessTasks();
 }
 
 void GSRayTest::Update(const uint64_t dt_us) {
