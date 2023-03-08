@@ -7,8 +7,6 @@
 #include <Ren/SW/SW.h>
 #endif
 
-#include <Eng/GameStateManager.h>
-#include <Eng/Random.h>
 #include <Ren/Context.h>
 #include <Sys/Json.h>
 #include <Sys/ThreadPool.h>
@@ -19,6 +17,8 @@
 
 #include "GSCreate.h"
 #include "../Viewer.h"
+#include "../eng/GameStateManager.h"
+#include "../eng/Random.h"
 #include "../ui/FontStorage.h"
 
 namespace GSCPUTestInternal {

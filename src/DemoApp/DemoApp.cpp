@@ -12,8 +12,6 @@
 #include <SDL2/SDL_video.h>
 #endif
 
-#include <Eng/GameBase.h>
-#include <Eng/TimedInput.h>
 #include <Ren/SW/SW.h>
 #include <Sys/DynLib.h>
 #include <Sys/Time_.h>
@@ -27,6 +25,8 @@
 #include <renderdoc/renderdoc_app.h>
 #endif
 
+#include "../DemoLib/eng/GameBase.h"
+#include "../DemoLib/eng/TimedInput.h"
 #include "../DemoLib/Viewer.h"
 
 #pragma warning(disable : 4996)

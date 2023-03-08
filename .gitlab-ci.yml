@@ -17,7 +17,6 @@ stages:
     - cmake --build build --target ALL_BUILD --config Release --parallel 16
     - echo "Compile complete."
     - mkdir windows-x86_64
-    - copy build/src/Eng/tests/Release/test_Eng.exe windows-x86_64
     - copy build/src/Ray/tests/Release/test_Ray.exe windows-x86_64
     - copy build/src/Ren/tests/Release/test_Ren.exe windows-x86_64
     - copy build/src/Ren/SW/tests/Release/test_SW.exe windows-x86_64
@@ -42,7 +41,6 @@ stages:
     - cmake --build build --target ALL_BUILD --config RelWithDebInfo --parallel 16
     - echo "Compile complete."
     - mkdir windows-x86_64
-    - copy build/src/Eng/tests/RelWithDebInfo/test_Eng.exe windows-x86_64
     - copy build/src/Ray/tests/RelWithDebInfo/test_Ray-dev.exe windows-x86_64
     - copy build/src/Ren/tests/RelWithDebInfo/test_Ren.exe windows-x86_64
     - copy build/src/Ren/SW/tests/RelWithDebInfo/test_SW.exe windows-x86_64
@@ -67,7 +65,6 @@ stages:
     - cmake --build build --target ALL_BUILD --config Debug --parallel 16
     - echo "Compile complete."
     - mkdir windows-x86_64
-    - copy build/src/Eng/tests/Debug/test_Eng.exe windows-x86_64
     - copy build/src/Ray/tests/Debug/test_Ray-dbg.exe windows-x86_64
     - copy build/src/Ren/tests/Debug/test_Ren.exe windows-x86_64
     - copy build/src/Ren/SW/tests/Debug/test_SW.exe windows-x86_64
@@ -105,7 +102,6 @@ stages:
     - cmake --build build --target ALL_BUILD --config RelWithDebInfo --parallel 16
     - echo "Compile complete."
     - mkdir windows-x86_64_clang
-    - copy build/src/Eng/tests/Release/test_Eng.exe windows-x86_64_clang
     - copy build/src/Ray/tests/Release/test_Ray.exe windows-x86_64_clang
     - copy build/src/Ren/tests/Release/test_Ren.exe windows-x86_64_clang
     - copy build/src/Ren/SW/tests/Release/test_SW.exe windows-x86_64_clang
@@ -127,14 +123,12 @@ stages:
     - cd build
     - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
-    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config Release --parallel 16
-    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config Debug --parallel 16
-    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --config RelWithDebInfo --parallel 16
+    - cmake --build build --target DemoApp test_Ray test_SW test_Sys --config Release --parallel 16
+    - cmake --build build --target DemoApp test_Ray test_SW test_Sys --config Debug --parallel 16
+    - cmake --build build --target DemoApp test_Ray test_SW test_Sys --config RelWithDebInfo --parallel 16
     - echo "Compile complete."
     - mkdir windows-arm64
-    - copy build/src/Eng/tests/Release/test_Eng.exe windows-arm64
     - copy build/src/Ray/tests/Release/test_Ray.exe windows-arm64
-    #- copy build/src/Ren/tests/Release/test_Ren.exe windows-arm64
     - copy build/src/Ren/SW/tests/Release/test_SW.exe windows-arm64
     - copy build/src/Sys/tests/Release/test_Sys.exe windows-arm64
     - copy DemoApp.exe windows-arm64
@@ -178,7 +172,6 @@ stages:
     - cmake --build build_dev --target all --parallel 16
     - echo "Compile complete."
     - mkdir linux-x86_64
-    - cp build/src/Eng/tests/test_Eng linux-x86_64
     - cp build/src/Ray/tests/test_Ray linux-x86_64
     - cp build/src/Ren/tests/test_Ren linux-x86_64
     - cp build/src/Ren/SW/tests/test_SW linux-x86_64
@@ -223,14 +216,12 @@ stages:
     - cd build_dev
     - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
-    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
-    - cmake --build build_dbg --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
-    - cmake --build build_dev --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
+    - cmake --build build --target DemoApp test_Ray test_SW test_Sys --parallel 16
+    - cmake --build build_dbg --target DemoApp test_Ray test_SW test_Sys --parallel 16
+    - cmake --build build_dev --target DemoApp test_Ray test_SW test_Sys --parallel 16
     - echo "Compile complete."
     - mkdir macos-x86_64
-    - cp build/src/Eng/tests/test_Eng macos-x86_64
     - cp build/src/Ray/tests/test_Ray macos-x86_64
-#    - cp build/src/Ren/tests/test_Ren macos-x86_64
     - cp build/src/Ren/SW/tests/test_SW macos-x86_64
     - cp build/src/Sys/tests/test_Sys macos-x86_64
     - cp DemoApp macos-x86_64
@@ -257,12 +248,11 @@ stages:
     - cd build_dev
     - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
     - cd ..
-    - cmake --build build --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
-    - cmake --build build_dbg --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
-    - cmake --build build_dev --target DemoApp test_Eng test_Ray test_SW test_Sys --parallel 16
+    - cmake --build build --target DemoApp test_Ray test_SW test_Sys --parallel 16
+    - cmake --build build_dbg --target DemoApp test_Ray test_SW test_Sys --parallel 16
+    - cmake --build build_dev --target DemoApp test_Ray test_SW test_Sys --parallel 16
     - echo "Compile complete."
     - mkdir macos-arm64
-    - cp build/src/Eng/tests/test_Eng macos-arm64
     - cp build/src/Ray/tests/test_Ray macos-arm64
 #    - cp build/src/Ren/tests/test_Ren macos-arm64
     - cp build/src/Ren/SW/tests/test_SW macos-arm64
@@ -290,7 +280,6 @@ stages:
   stage: test
   script:
     - echo "Running tests..."
-    - '& "$BIN_DIR/test_Eng"'
     - cd src/Ray/tests
     - '& "../../../$BIN_DIR/test_Ray" $TEST_ARGS.split(" ") $AUX_TEST_ARGS.split(" ")'
     - cd ../../../
@@ -354,7 +343,6 @@ stages:
   stage: test
   script:
     - echo "Running tests..."
-    - $BIN_DIR/test_Eng
     - cd src/Ray/tests
     - ../../../$BIN_DIR/test_Ray $TEST_ARGS $AUX_TEST_ARGS
     - cd ../../../

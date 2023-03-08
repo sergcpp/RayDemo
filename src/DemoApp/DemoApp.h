@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include <Eng/TimedInput.h>
+#include <DemoLib/eng/TimedInput.h>
 #include <Sys/DynLib.h>
 
 struct SDL_Renderer;
