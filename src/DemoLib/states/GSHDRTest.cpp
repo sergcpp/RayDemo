@@ -14,7 +14,6 @@
 #include <Ren/MMat.h>
 #include <Sys/AssetFile.h>
 #include <Sys/Json.h>
-#include <Sys/Log.h>
 
 #include "../Viewer.h"
 #include "../load/Load.h"
@@ -354,8 +353,6 @@ void GSHDRTest::Enter() {
         --quadtree_count_;
         --the_last_required_lod;
     }
-
-    LOGI("Final res is %i", quadtree_res_);
 }
 
 void GSHDRTest::Exit() {}
@@ -627,7 +624,6 @@ void GSHDRTest::HandleInput(const InputManager::Event &evt) {
     } break;
     case InputManager::RAW_INPUT_MOUSE_WHEEL: {
         mul_ += evt.move.dy * 0.025f;
-        LOGI("%f", mul_);
         iteration_ = 0;
     } break;
     case InputManager::RAW_INPUT_RESIZE:

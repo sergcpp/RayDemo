@@ -10,8 +10,8 @@
 
 #include <Eng/GameStateManager.h>
 #include <Gui/Renderer.h>
+#include <Ray/Log.h>
 #include <Sys/Json.h>
-#include <Sys/Log.h>
 #include <Sys/ThreadPool.h>
 #include <Sys/Time_.h>
 
@@ -87,7 +87,7 @@ void GSLightmapTest::Enter() {
     {
         std::ifstream in_file("./assets/scenes/test_lmap.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
-            LOGE("Failed to parse scene file!");
+            ray_renderer_->log()->Error("Failed to parse scene file!");
         }
     }
 
@@ -95,7 +95,7 @@ void GSLightmapTest::Enter() {
         try {
             ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res, threads_.get());
         } catch (std::exception &e) {
-            LOGE("%s", e.what());
+            ray_renderer_->log()->Error("%s", e.what());
         }
 
         if (js_scene.Has("camera")) {
@@ -520,7 +520,7 @@ void GSLightmapTest::HandleInput(const InputManager::Event &evt) {
         break;
     case InputManager::RAW_INPUT_MOUSE_WHEEL:
         focal_distance_ += evt.move.dy;
-        LOGI("focal distance = %f", focal_distance_);
+        ray_renderer_->log()->Error("focal distance = %f", focal_distance_);
         invalidate_preview_ = true;
         break;
     case InputManager::RAW_INPUT_KEY_DOWN: {

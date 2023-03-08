@@ -8,11 +8,11 @@
 #endif
 
 #include <Eng/GameStateManager.h>
+#include <Ray/Log.h>
 #include <Ren/Context.h>
 #include <Ren/Utils.h>
 #include <Sys/AssetFile.h>
 #include <Sys/Json.h>
-#include <Sys/Log.h>
 #include <Sys/Time_.h>
 #include <Sys/ThreadPool.h>
 #include <Gui/Renderer.h>
@@ -203,7 +203,7 @@ void GSRayBucketTest::Enter() {
     {
         std::ifstream in_file(app_params->scene_name, std::ios::binary);
         if (!js_scene.Read(in_file)) {
-            LOGE("Failed to parse scene file!");
+            ray_renderer_->log()->Error("Failed to parse scene file!");
         }
     }
 

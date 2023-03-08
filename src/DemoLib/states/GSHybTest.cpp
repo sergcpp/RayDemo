@@ -11,7 +11,6 @@
 #include <Gui/Renderer.h>
 #include <Ray/RendererFactory.h>
 #include <Sys/Json.h>
-#include <Sys/Log.h>
 #include <Sys/ThreadPool.h>
 #include <Sys/Time_.h>
 
@@ -127,7 +126,7 @@ void GSHybTest::Enter() {
     {
         std::ifstream in_file("./assets/scenes/inter.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
-            LOGE("Failed to parse scene file!");
+            cpu_tracer_->log()->Error("Failed to parse scene file!");
         }
     }
 

@@ -11,7 +11,6 @@
 #include <Sys/Time_.h>
 #include <Sys/ThreadPool.h>
 
-#include "FlowControl.h"
 #include "GameStateManager.h"
 #include "Log.h"
 #include "Random.h"
@@ -44,9 +43,6 @@ GameBase::GameBase(const int w, const int h, const char * /*local_dir*/) : width
 
     auto input_manager = std::make_shared<InputManager>();
     AddComponent(INPUT_MANAGER_KEY, input_manager);
-
-    auto flow_control = std::make_shared<FlowControl>(2 * NET_UPDATE_DELTA, NET_UPDATE_DELTA);
-    AddComponent(FLOW_CONTROL_KEY, flow_control);
 
     auto random_engine = std::make_shared<Random>(std::random_device{}());
     AddComponent(RANDOM_KEY, random_engine);

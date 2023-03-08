@@ -16,7 +16,6 @@
 #include <Eng/TimedInput.h>
 #include <Ren/SW/SW.h>
 #include <Sys/DynLib.h>
-#include <Sys/Log.h>
 #include <Sys/Time_.h>
 
 #include <SDL2/SDL_events.h>
@@ -71,7 +70,7 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         const char *s = SDL_GetError();
-        LOGE("%s\n", s);
+        fprintf(stderr, "%s\n", s);
         return -1;
     }
 
@@ -79,7 +78,7 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
                                SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!window_) {
         const char *s = SDL_GetError();
-        LOGE("%s\n", s);
+        fprintf(stderr, "%s\n", s);
         return -1;
     }
 
@@ -89,13 +88,13 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
     renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer_) {
         const char *s = SDL_GetError();
-        LOGE("%s\n", s);
+        fprintf(stderr, "%s\n", s);
         return -1;
     }
     texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
     if (!texture_) {
         const char *s = SDL_GetError();
-        LOGE("%s\n", s);
+        fprintf(stderr, "%s\n", s);
         return -1;
     }
 #endif

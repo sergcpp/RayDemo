@@ -11,7 +11,6 @@
 #include <Eng/Random.h>
 #include <Ren/Context.h>
 #include <Sys/Json.h>
-#include <Sys/Log.h>
 #include <Sys/ThreadPool.h>
 #include <Gui/Renderer.h>
 
