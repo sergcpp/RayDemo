@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 project(Sys)
 
-OPTION(ENABLE_UNITYBUILD "Enable compilation of one large cpp file" ON)
-
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo;Asan" CACHE STRING "" FORCE)
 
 IF(MSVC)
@@ -38,7 +36,6 @@ set(SOURCE_FILES AssetFile.h
                  InplaceFunction.h
                  Json.h
                  Json.cpp
-                 Log.h
                  MemBuf.h
                  MonoAlloc.h
                  Optional.h
@@ -68,15 +65,6 @@ ENDIF(APPLE)
 ENDIF(WIN32)
 
 list(APPEND ALL_SOURCE_FILES ${SOURCE_FILES})
-
-# enable or disable unity build
-if(ENABLE_UNITYBUILD)
-    set_source_files_properties(${SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-    source_group("src" FILES ${SOURCE_FILES})
-
-    list(APPEND ALL_SOURCE_FILES _Sys.cpp)
-    source_group("src" FILES _Sys.cpp)
-endif()
 
 if(MSVC)
     list(APPEND ALL_SOURCE_FILES _CustomTypes.natvis)
