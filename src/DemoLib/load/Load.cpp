@@ -896,7 +896,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     std::tie(attrs, indices, groups) = LoadOBJ(js_vtx_data.val.c_str());
                     const uint64_t t2 = Sys::GetTimeUs();
 
-                    r->log()->Info("OBJ loaded in %.2fms", double(t2 - t1) / 1000.0);
+                    r->log()->Info("OBJ \'%s\' loaded in %.2fms", js_vtx_data.val.c_str(), double(t2 - t1) / 1000.0);
                 } else if (js_vtx_data.val.find(".bin") != std::string::npos) {
                     std::tie(attrs, indices, groups) = LoadBIN(js_vtx_data.val.c_str());
                 } else {
@@ -914,6 +914,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 const JsArray &js_materials = js_mesh_obj.at("materials").as_arr();
 
                 Ray::mesh_desc_t mesh_desc;
+                mesh_desc.name = js_mesh_name.c_str();
                 mesh_desc.prim_type = Ray::TriangleList;
                 mesh_desc.layout = Ray::PxyzNxyzTuv;
                 mesh_desc.vtx_attrs = &attrs[0];
