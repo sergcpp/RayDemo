@@ -88,7 +88,6 @@ link_directories(${ITT_LIBRARIES})
 enable_testing()
 
 add_subdirectory(Ray)
-add_subdirectory(Ren)
 add_subdirectory(Sys)
 add_subdirectory(DemoLib)
 add_subdirectory(DemoApp)
@@ -98,18 +97,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_target_properties(DemoApp
                       DemoLib PROPERTIES FOLDER App)
 
-set_target_properties(Ray
-                      Ren
-                      SW
+set_target_properties(SW
                       Sys PROPERTIES FOLDER Libs)
 
 set_target_properties(test_Ray
-                      test_Ren
                       test_SW
                       test_Sys PROPERTIES FOLDER Tests)
 
 add_test(RayTest        ray/tests/test_Ray)
-add_test(RenTest        Ren/tests/test_Ren)
 add_test(SWTest         Ren/SW/tests/test_SW)
 add_test(SysTest        Sys/tests/test_Sys)
 
