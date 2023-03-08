@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eng/GameState.h>
-#include <Eng/go/Go.h>
 #include <Ray/Types.h>
 #include <Ren/Camera.h>
 #include <Ren/Program.h>
