@@ -1,13 +1,13 @@
 #pragma once
 
-#include <Eng/GameState.h>
 #include <Ren/Camera.h>
 #include <Ren/Program.h>
 #include <Ren/Texture.h>
 
+#include "../eng/GameState.h"
+
 class GameBase;
 class GameStateManager;
-class GCursor;
 class FontStorage;
 class Random;
 class Renderer;

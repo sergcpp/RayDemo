@@ -7,8 +7,6 @@
 #include <Ren/SW/SW.h>
 #endif
 
-#include <Eng/GameStateManager.h>
-#include <Eng/Random.h>
 #include <Gui/Renderer.h>
 #include <Ren/Context.h>
 #include <Ren/MMat.h>
@@ -16,6 +14,8 @@
 #include <Sys/Json.h>
 
 #include "../Viewer.h"
+#include "../eng/GameStateManager.h"
+#include "../eng/Random.h"
 #include "../load/Load.h"
 #include "../ui/FontStorage.h"
 

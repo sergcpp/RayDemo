@@ -4,12 +4,13 @@
 #include <future>
 #include <mutex>
 
-#include <Eng/GameState.h>
 #include <Ren/Camera.h>
 #include <Ren/Program.h>
 #include <Ren/Texture.h>
 
 #include <Ray/RendererBase.h>
+
+#include "../eng/GameState.h"
 
 class GameBase;
 class GameStateManager;

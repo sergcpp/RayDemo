@@ -7,7 +7,6 @@
 #include <Ren/SW/SWframebuffer.h>
 #endif
 
-#include <Eng/GameStateManager.h>
 #include <Gui/Renderer.h>
 #include <Ray/RendererFactory.h>
 #include <Sys/Json.h>
@@ -15,6 +14,7 @@
 #include <Sys/Time_.h>
 
 #include "../Viewer.h"
+#include "../eng/GameStateManager.h"
 #include "../load/Load.h"
 #include "../ui/FontStorage.h"
 

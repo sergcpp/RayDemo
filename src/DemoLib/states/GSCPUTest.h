@@ -2,10 +2,11 @@
 
 #include <atomic>
 
-#include <Eng/GameState.h>
 #include <Ren/Camera.h>
 #include <Ren/Program.h>
 #include <Ren/Texture.h>
+
+#include "../eng/GameState.h"
 
 class GameBase;
 class GameStateManager;

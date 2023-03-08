@@ -6,8 +6,6 @@
 #include <Ren/SW/SW.h>
 #endif
 
-#include <Eng/GameStateManager.h>
-#include <Eng/Random.h>
 #include <Gui/Renderer.h>
 #include <Ren/Context.h>
 #include <Ren/Program.h>
@@ -17,6 +15,8 @@
 #include <Ray/internal/Halton.h>
 
 #include "../Viewer.h"
+#include "../eng/GameStateManager.h"
+#include "../eng/Random.h"
 #include "../ui/FontStorage.h"
 
 namespace GSVNDFTestInternal {
