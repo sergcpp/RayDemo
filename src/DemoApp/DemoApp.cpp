@@ -183,6 +183,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.device_name = argv[i];
         } else if (strcmp(argv[i], "--max_tex_res") == 0 && (++i != argc)) {
             app_params.max_tex_res = atoi(argv[i]);
+        } else if (strcmp(argv[i], "--output_exr") == 0) {
+            app_params.output_exr = true;
         }
     }
 
