@@ -26,6 +26,13 @@
 #include <SOIL2/stb_image_write.h>
 #undef STB_IMAGE_WRITE_IMPLEMENTATION
 
+#define TINYEXR_IMPLEMENTATION
+#define TINYEXR_USE_MINIZ 0
+#define TINYEXR_USE_STB_ZLIB 1
+#include <tinyexr/tinyexr.h>
+#undef near
+#undef far
+
 #include "../ren/MMat.h"
 #include "../ren/SmallVector.h"
 #include "../ren/Texture.h"

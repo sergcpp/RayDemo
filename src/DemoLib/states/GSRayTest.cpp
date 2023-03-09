@@ -5,19 +5,23 @@
 
 #include <SOIL2/stb_image_write.h>
 
+#define TINYEXR_USE_MINIZ 0
+#define TINYEXR_USE_STB_ZLIB 1
+#include <tinyexr/tinyexr.h>
+
 #include <Ray/Log.h>
+#include <SW/SW.h>
+#include <SW/SWframebuffer.h>
 #include <Sys/Json.h>
 #include <Sys/ThreadPool.h>
 #include <Sys/Time_.h>
-#include <SW/SW.h>
-#include <SW/SWframebuffer.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
-#include "../load/Load.h"
 #include "../gui/BaseElement.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
+#include "../load/Load.h"
 
 namespace GSRayTestInternal {
 const float FORWARD_SPEED = 8.0f;
@@ -97,7 +101,7 @@ void GSRayTest::Enter() {
             const uint64_t t1 = Sys::GetTimeMs();
             ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res, threads_.get());
             const uint64_t t2 = Sys::GetTimeMs();
-            ray_renderer_->log()->Info("Scene loaded in %.1fs", (t2 - t1) * 0.001f);
+            ray_renderer_->log()->Info("Scene loaded in %.1fs", double(t2 - t1) * 0.001);
         } catch (std::exception &e) {
             ray_renderer_->log()->Error("%s", e.what());
         }
@@ -291,8 +295,20 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             base_name = base_name.substr(0, n2);
         }
 
+        // Write tonemapped image
         WritePNG(pixel_data, w, h, 3, false /* flip */, (base_name + ".png").c_str());
-        ray_renderer_->log()->Info("Written: %s (%i samples)", (base_name + ".png").c_str(), region_contexts_[0].iteration);
+
+        if (app_params->output_exr) { // Write untonemapped image
+            const auto *raw_pixel_data = ray_renderer_->get_raw_pixels_ref();
+
+            const char *error = nullptr;
+            if (TINYEXR_SUCCESS != SaveEXR(&raw_pixel_data->r, w, h, 4, 0, (base_name + ".exr").c_str(), &error)) {
+                ray_renderer_->log()->Error("Failed to write %s (%s)", (base_name + ".exr").c_str(), error);
+            }
+        }
+
+        ray_renderer_->log()->Info("Written: %s (%i samples)", (base_name + ".png").c_str(),
+                                   region_contexts_[0].iteration);
     }
 
     const bool should_compare_result = write_output && !app_params->ref_name.empty();
@@ -332,18 +348,20 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             double psnr = -10.0 * std::log10(mse / (255.0f * 255.0f));
             psnr = std::floor(psnr * 100.0) / 100.0;
 
-            ray_renderer_->log()->Info("PSNR: %.2f dB, Fireflies: %i (%i samples)", psnr, error_pixels, region_contexts_[0].iteration);
+            ray_renderer_->log()->Info("PSNR: %.2f dB, Fireflies: %i (%i samples)", psnr, error_pixels,
+                                       region_contexts_[0].iteration);
             fflush(stdout);
 
             if (app_params->threshold != -1 && region_contexts_[0].iteration >= app_params->samples) {
-                ray_renderer_->log()->Info("Elapsed time: %.2fm", double(Sys::GetTimeMs() - test_start_time_) / 60000.0);
+                ray_renderer_->log()->Info("Elapsed time: %.2fm",
+                                           double(Sys::GetTimeMs() - test_start_time_) / 60000.0);
                 if (psnr < app_params->psnr || error_pixels > app_params->threshold) {
-                    ray_renderer_->log()->Info("Test failed: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr, app_params->psnr, error_pixels,
-                         app_params->threshold);
+                    ray_renderer_->log()->Info("Test failed: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr,
+                                               app_params->psnr, error_pixels, app_params->threshold);
                     game_->return_code = -1;
                 } else {
-                    ray_renderer_->log()->Info("Test success: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr, app_params->psnr, error_pixels,
-                         app_params->threshold);
+                    ray_renderer_->log()->Info("Test success: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr,
+                                               app_params->psnr, error_pixels, app_params->threshold);
                 }
                 game_->terminated = true;
             }
@@ -358,37 +376,38 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         int off_x = (UiWidth - 64) - int(stats_.size());
 
         for (const auto &st : stats_) {
-            const int p0 = int(UiHeight * float(st.time_secondary_shadow_us) / time_total);
-            const int p1 = int(UiHeight * float(st.time_secondary_shade_us + st.time_secondary_shadow_us) / time_total);
+            const int p0 = int(UiHeight * float(st.time_secondary_shadow_us) / float(time_total));
+            const int p1 =
+                int(UiHeight * float(st.time_secondary_shade_us + st.time_secondary_shadow_us) / float(time_total));
             const int p2 =
                 int(UiHeight *
                     float(st.time_secondary_trace_us + st.time_secondary_shade_us + st.time_secondary_shadow_us) /
-                    time_total);
+                    float(time_total));
             const int p3 = int(UiHeight *
                                float(st.time_secondary_sort_us + st.time_secondary_trace_us +
                                      st.time_secondary_shade_us + st.time_secondary_shadow_us) /
-                               time_total);
+                               float(time_total));
             const int p4 =
                 int(UiHeight *
                     float(st.time_primary_shadow_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
                           st.time_secondary_shade_us + st.time_secondary_shadow_us) /
-                    time_total);
+                    float(time_total));
             const int p5 =
                 int(UiHeight *
                     float(st.time_primary_shade_us + st.time_primary_shadow_us + st.time_secondary_sort_us +
                           st.time_secondary_trace_us + st.time_secondary_shade_us + st.time_secondary_shadow_us) /
-                    time_total);
+                    float(time_total));
             const int p6 = int(UiHeight *
                                float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_primary_shadow_us +
                                      st.time_secondary_sort_us + st.time_secondary_trace_us +
                                      st.time_secondary_shade_us + st.time_secondary_shadow_us) /
-                               time_total);
+                               float(time_total));
             const int p7 =
                 int(UiHeight *
                     float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
                           st.time_primary_shadow_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
                           st.time_secondary_shade_us + st.time_secondary_shadow_us) /
-                    time_total);
+                    float(time_total));
             const int l = p7;
 
             for (int i = 0; i < p0; i++) {
@@ -448,14 +467,14 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         for (int j = 0; j < 78 && !stats_.empty(); ++j) {
             const auto &st = stats_.back();
 
-            const float v0 = float(UiHeight) * float(st.time_secondary_shadow_us) / time_total;
-            const float v1 = float(UiHeight) * float(st.time_secondary_shade_us) / time_total;
-            const float v2 = float(UiHeight) * float(st.time_secondary_trace_us) / time_total;
-            const float v3 = float(UiHeight) * float(st.time_secondary_sort_us) / time_total;
-            const float v4 = float(UiHeight) * float(st.time_primary_shadow_us) / time_total;
-            const float v5 = float(UiHeight) * float(st.time_primary_shade_us) / time_total;
-            const float v6 = float(UiHeight) * float(st.time_primary_trace_us) / time_total;
-            const float v7 = float(UiHeight) * float(st.time_primary_ray_gen_us) / time_total;
+            const float v0 = float(UiHeight) * float(st.time_secondary_shadow_us) / float(time_total);
+            const float v1 = float(UiHeight) * float(st.time_secondary_shade_us) / float(time_total);
+            const float v2 = float(UiHeight) * float(st.time_secondary_trace_us) / float(time_total);
+            const float v3 = float(UiHeight) * float(st.time_secondary_sort_us) / float(time_total);
+            const float v4 = float(UiHeight) * float(st.time_primary_shadow_us) / float(time_total);
+            const float v5 = float(UiHeight) * float(st.time_primary_shade_us) / float(time_total);
+            const float v6 = float(UiHeight) * float(st.time_primary_trace_us) / float(time_total);
+            const float v7 = float(UiHeight) * float(st.time_primary_ray_gen_us) / float(time_total);
 
             const float sz = float(UiHeight) / 8.5f;
             const float k = std::min(float(j) / 16.0f, 1.0f);
@@ -544,7 +563,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     time_counter_++;
 
     if (time_counter_ == 20) {
-        cur_time_stat_ms_ = float(time_acc_) / time_counter_;
+        cur_time_stat_ms_ = float(time_acc_) / float(time_counter_);
         time_acc_ = 0;
         time_counter_ = 0;
     }
@@ -589,11 +608,11 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         std::string stats6 = std::to_string(time_total / 1000);
         stats6 += " ms";
 
-        font_->DrawText(ui_renderer_.get(), stats6.c_str(), {-1 + 2 * 135.0f / w, 1 - 2 * 4.0f / h - font_height},
-                        ui_root_.get());
+        font_->DrawText(ui_renderer_.get(), stats6.c_str(),
+                        {-1 + 2 * 135.0f / float(w), 1 - 2 * 4.0f / float(h) - font_height}, ui_root_.get());
 
         //
-        const float xx = -1.0f + 2.0f * (180.0f + 152.0f) / ui_root_->size_px()[0];
+        const float xx = -1.0f + 2.0f * (180.0f + 152.0f) / float(ui_root_->size_px()[0]);
         const auto cur = ui_renderer_->GetParams();
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
@@ -681,7 +700,7 @@ void GSRayTest::Update(const uint64_t dt_us) {
         _L = _L * rot_m3;*/
 
         static float angle = 0;
-        angle += 0.05f * (0.001f * dt_us);
+        angle += 0.05f * (0.001f * float(dt_us));
 
         Mat4f tr(1.0f);
         tr = Translate(tr, Vec3f{0, std::sin(angle * Pi / 180.0f) * 200.0f, 0});
