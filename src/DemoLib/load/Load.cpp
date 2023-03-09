@@ -13,8 +13,8 @@
 #include <Ray/Log.h>
 #include <Ray/RendererBase.h>
 #include <Sys/AssetFile.h>
-#include <Sys/Time_.h>
 #include <Sys/ThreadPool.h>
+#include <Sys/Time_.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_PKM
@@ -652,7 +652,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             for (const auto &t : textures_to_load) {
                 tex_load_events.emplace_back(
-                    threads->Enqueue(load_texture, t.first, t.second.srgb, t.second.normalmap, t.second.mips));
+                    threads->Enqueue(load_texture, std::ref(t.first), t.second.srgb, t.second.normalmap, t.second.mips));
             }
 
             int index = 0;
@@ -889,72 +889,71 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
         std::vector<std::future<Ray::MeshHandle>> mesh_load_events;
 
-        const JsObject &js_meshes = js_scene.at("meshes").as_obj();
-        for (const auto &js_mesh : js_meshes.elements) {
-            auto load_mesh_job = [&js_mesh, &global_settings, &materials, &new_scene, r]() -> Ray::MeshHandle {
-                const std::string &js_mesh_name = js_mesh.first;
-                const JsObject &js_mesh_obj = js_mesh.second.as_obj();
+        auto load_mesh_job = [&global_settings, &materials, &new_scene,
+                              r](const char *mesh_name, const JsObject &js_mesh_obj) -> Ray::MeshHandle {
+            std::vector<float> attrs;
+            std::vector<unsigned> indices, groups;
 
-                std::vector<float> attrs;
-                std::vector<unsigned> indices, groups;
+            const JsString &js_vtx_data = js_mesh_obj.at("vertex_data").as_str();
+            if (js_vtx_data.val.find(".obj") != std::string::npos) {
+                const uint64_t t1 = Sys::GetTimeUs();
+                std::tie(attrs, indices, groups) = LoadOBJ(js_vtx_data.val.c_str());
+                const uint64_t t2 = Sys::GetTimeUs();
 
-                const JsString &js_vtx_data = js_mesh_obj.at("vertex_data").as_str();
-                if (js_vtx_data.val.find(".obj") != std::string::npos) {
-                    const uint64_t t1 = Sys::GetTimeUs();
-                    std::tie(attrs, indices, groups) = LoadOBJ(js_vtx_data.val.c_str());
-                    const uint64_t t2 = Sys::GetTimeUs();
-
-                    r->log()->Info("OBJ \'%s\' loaded in %.2fms", js_vtx_data.val.c_str(), double(t2 - t1) / 1000.0);
-                } else if (js_vtx_data.val.find(".bin") != std::string::npos) {
-                    std::tie(attrs, indices, groups) = LoadBIN(js_vtx_data.val.c_str());
-                } else {
-                    throw std::runtime_error("unknown mesh type");
-                }
+                r->log()->Info("OBJ \'%s\' loaded in %.2fms", js_vtx_data.val.c_str(), double(t2 - t1) / 1000.0);
+            } else if (js_vtx_data.val.find(".bin") != std::string::npos) {
+                std::tie(attrs, indices, groups) = LoadBIN(js_vtx_data.val.c_str());
+            } else {
+                throw std::runtime_error("unknown mesh type");
+            }
 
 #if !defined(NDEBUG) && defined(_WIN32)
-                for (int i = 0; i < int(attrs.size()); ++i) {
-                    if (attrs[i] > 1.0e+30F) {
-                        __debugbreak();
-                    }
+            for (int i = 0; i < int(attrs.size()); ++i) {
+                if (attrs[i] > 1.0e+30F) {
+                    __debugbreak();
                 }
+            }
 #endif
 
-                const JsArray &js_materials = js_mesh_obj.at("materials").as_arr();
+            const JsArray &js_materials = js_mesh_obj.at("materials").as_arr();
 
-                Ray::mesh_desc_t mesh_desc;
-                mesh_desc.name = js_mesh_name.c_str();
-                mesh_desc.prim_type = Ray::TriangleList;
-                mesh_desc.layout = Ray::PxyzNxyzTuv;
-                mesh_desc.vtx_attrs = &attrs[0];
-                mesh_desc.vtx_attrs_count = attrs.size() / 8;
-                mesh_desc.vtx_indices = &indices[0];
-                mesh_desc.vtx_indices_count = indices.size();
-                mesh_desc.use_fast_bvh_build = global_settings.use_fast_bvh_build;
+            Ray::mesh_desc_t mesh_desc;
+            mesh_desc.name = mesh_name;
+            mesh_desc.prim_type = Ray::TriangleList;
+            mesh_desc.layout = Ray::PxyzNxyzTuv;
+            mesh_desc.vtx_attrs = &attrs[0];
+            mesh_desc.vtx_attrs_count = attrs.size() / 8;
+            mesh_desc.vtx_indices = &indices[0];
+            mesh_desc.vtx_indices_count = indices.size();
+            mesh_desc.use_fast_bvh_build = global_settings.use_fast_bvh_build;
 
-                for (size_t i = 0; i < groups.size(); i += 2) {
-                    const JsString &js_mat_name = js_materials.at(i / 2).as_str();
-                    const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
-                    mesh_desc.shapes.push_back({mat_handle, mat_handle, groups[i], groups[i + 1]});
-                }
+            for (size_t i = 0; i < groups.size(); i += 2) {
+                const JsString &js_mat_name = js_materials.at(i / 2).as_str();
+                const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
+                mesh_desc.shapes.push_back({mat_handle, mat_handle, groups[i], groups[i + 1]});
+            }
 
-                if (js_mesh_obj.Has("allow_spatial_splits")) {
-                    JsLiteral splits = js_mesh_obj.at("allow_spatial_splits").as_lit();
-                    mesh_desc.allow_spatial_splits = (splits.val == JsLiteralType::True);
-                }
+            if (js_mesh_obj.Has("allow_spatial_splits")) {
+                JsLiteral splits = js_mesh_obj.at("allow_spatial_splits").as_lit();
+                mesh_desc.allow_spatial_splits = (splits.val == JsLiteralType::True);
+            }
 
-                if (js_mesh_obj.Has("use_fast_bvh_build")) {
-                    JsLiteral use_fast = js_mesh_obj.at("use_fast_bvh_build").as_lit();
-                    mesh_desc.use_fast_bvh_build = (use_fast.val == JsLiteralType::True);
-                }
+            if (js_mesh_obj.Has("use_fast_bvh_build")) {
+                JsLiteral use_fast = js_mesh_obj.at("use_fast_bvh_build").as_lit();
+                mesh_desc.use_fast_bvh_build = (use_fast.val == JsLiteralType::True);
+            }
 
-                return new_scene->AddMesh(mesh_desc);
-            };
+            return new_scene->AddMesh(mesh_desc);
+        };
 
+        const JsObject &js_meshes = js_scene.at("meshes").as_obj();
+        for (const auto &js_mesh : js_meshes.elements) {
+            const std::string &js_mesh_name = js_mesh.first;
             if (threads) {
-                mesh_load_events.push_back(threads->Enqueue(load_mesh_job));
+                mesh_load_events.push_back(
+                    threads->Enqueue(load_mesh_job, js_mesh_name.c_str(), std::ref(js_mesh.second.as_obj())));
             } else {
-                const std::string &js_mesh_name = js_mesh.first;
-                meshes[js_mesh_name] = load_mesh_job();
+                meshes[js_mesh_name] = load_mesh_job(js_mesh_name.c_str(), js_mesh.second.as_obj());
             }
         }
 
