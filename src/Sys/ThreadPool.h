@@ -21,6 +21,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+#undef DrawText
 #else
 #include <sched.h>
 #endif
