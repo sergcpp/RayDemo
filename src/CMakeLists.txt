@@ -38,6 +38,9 @@ if(WIN32)
         add_definitions(-DINTEL_NO_ITTNOTIFY_API)
     endif()
 else(WIN32)
+    set(CMAKE_CXX_FLAGS_ASAN "-fsanitize=address")
+    set(CMAKE_EXE_LINKER_FLAGS_ASAN "-fsanitize=address")
+
     include(FindPkgConfig)
     pkg_search_module (SDL2 REQUIRED sdl2)
 
