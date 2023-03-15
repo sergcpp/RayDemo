@@ -39,8 +39,8 @@ set_target_properties(DemoApp PROPERTIES OUTPUT_NAME_RELWITHDEBINFO DemoApp-dev)
 set_target_properties(DemoApp PROPERTIES OUTPUT_NAME_ASAN DemoApp-asan)
 set_target_properties(DemoApp PROPERTIES OUTPUT_NAME_RELEASE DemoApp)
 
-add_custom_command(TARGET DemoApp 
+add_custom_command(TARGET DemoApp
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DemoApp> ${WORKING_DIRECTORY})
-				   
+
 set_target_properties(DemoApp PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${WORKING_DIRECTORY}")

@@ -1,1 +1,1 @@
-DemoApp.exe -w 720 -h 900 -s assets/scenes/staircase.json
+DemoApp.exe -w 720 -h 900 -s assets/scenes/staircase.json --denoise

@@ -24,6 +24,7 @@ struct AppParams {
     int transp_depth = 8;
     int total_depth = 8;
     int max_tex_res = -1;
+    int denoise_after = -1;
     bool output_exr = false;
     bool output_aux = false;
 };

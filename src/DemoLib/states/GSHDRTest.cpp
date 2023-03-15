@@ -550,7 +550,7 @@ void GSHDRTest::Draw(uint64_t dt_us) {
 #if 0
         const float theta = std::acos(1.0f - 2.0f * r[1]);
         const float phi = 2 * Ren::Pi<float>() * r[0];
-        
+
         Ren::Vec3f dir;
         dir[0] = std::sin(theta) * std::cos(phi);
         dir[1] = std::cos(theta);

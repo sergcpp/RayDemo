@@ -31,11 +31,11 @@ class GSVNDFTest : public GameState {
 
     Ren::ProgramRef vtx_color_prog_;
     Ren::Camera cam_;
-    
+
     bool input_grabbed_ = false;
     int mode_ = 0;
     float cam_angle_ = 0.0f;
-    
+
 public:
     explicit GSVNDFTest(GameBase *game);
 
