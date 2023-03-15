@@ -7,6 +7,7 @@ void test_inplace_function();
 void test_json();
 void test_optional();
 void test_pack();
+void test_scope_exit();
 void test_signal();
 void test_vector();
 
@@ -17,6 +18,7 @@ int main() {
     test_json();
     test_optional();
     //test_pack();
+    test_scope_exit();
     test_signal();
     test_vector();
     puts("OK");

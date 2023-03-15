@@ -176,7 +176,7 @@ void JsArrayT<Alloc>::Write(std::ostream &out, JsFlags flags) const {
         ident_str += '\n';
     }
     if (flags.ident_levels) {
-        for (int i = 0; i < flags.level; i++) {
+        for (int i = 0; i < int(flags.level); i++) {
             ident_str += flags.use_spaces ? "    " : "\t";
         }
     }
@@ -356,7 +356,7 @@ void JsObjectT<Alloc>::Write(std::ostream &out, JsFlags flags) const {
         ident_str += '\n';
     }
     if (flags.ident_levels) {
-        for (int i = 0; i < flags.level; i++) {
+        for (int i = 0; i < int(flags.level); i++) {
             ident_str += flags.use_spaces ? "    " : "\t";
         }
     }
