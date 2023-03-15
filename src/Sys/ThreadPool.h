@@ -1,6 +1,7 @@
 #pragma once
 
-#ifndef __EMSCRIPTEN__
+#include <cassert>
+
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -9,12 +10,24 @@
 #include <queue>
 #include <stdexcept>
 #include <thread>
-#include <vector>
 
-//#include <optick/optick.h>
-//#include <vtune/ittnotify.h>
-//extern __itt_domain * __g_itt_domain;
+#include "SmallVector.h"
 
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#else
+#include <sched.h>
+#endif
+
+// #include <optick/optick.h>
+// #include <vtune/ittnotify.h>
+// extern __itt_domain * __g_itt_domain;
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -22,20 +35,31 @@
 #endif
 
 namespace Sys {
+enum class eThreadPriority { Low, Normal, High };
+
 class ThreadPool {
   public:
-    explicit ThreadPool(size_t threads_count, const char *threads_name = nullptr);
+    explicit ThreadPool(int threads_count, eThreadPriority priority = eThreadPriority::Normal,
+                        const char *threads_name = nullptr);
     ~ThreadPool();
 
     template <class F, class... Args>
-    std::future<typename std::result_of<F(Args...)>::type> Enqueue(F &&f,
-                                                                   Args &&... args);
+    std::future<typename std::result_of<F(Args...)>::type> Enqueue(F &&f, Args &&...args);
 
-    size_t workers_count() const { return workers_.size(); }
+    int workers_count() const { return int(workers_.size()); }
+
+    bool SetPriority(int i, eThreadPriority priority);
+    bool SetPriority(const eThreadPriority priority) {
+        bool ret = true;
+        for (int i = 0; i < int(workers_.size()); ++i) {
+            ret &= SetPriority(i, priority);
+        }
+        return ret;
+    }
 
   private:
     // need to keep track of threads so we can join them
-    std::vector<std::thread> workers_;
+    Sys::SmallVector<std::thread, 64> workers_;
     // the task queue
     std::queue<std::function<void()>> tasks_;
 
@@ -46,16 +70,16 @@ class ThreadPool {
 };
 
 // the constructor just launches some amount of workers_
-inline ThreadPool::ThreadPool(size_t threads_count, const char *threads_name)
+inline ThreadPool::ThreadPool(const int threads_count, const eThreadPriority priority, const char *threads_name)
     : stop_(false) {
-    for (size_t i = 0; i < threads_count; ++i)
+    for (int i = 0; i < threads_count; ++i) {
         workers_.emplace_back([this, i, threads_name] {
             char name_buf[64] = "Worker thread";
             if (threads_name) {
-                sprintf(name_buf, "%s_%i", threads_name, int(i));
+                snprintf(name_buf, sizeof(name_buf), "%s_%i", threads_name, int(i));
             }
             //__itt_thread_set_name(name_buf);
-            //OPTICK_THREAD(name_buf);
+            // OPTICK_THREAD(name_buf);
 
             for (;;) {
                 std::function<void()> task;
@@ -73,16 +97,39 @@ inline ThreadPool::ThreadPool(size_t threads_count, const char *threads_name)
                 task();
             }
         });
+    }
+    SetPriority(priority);
+}
+
+inline bool ThreadPool::SetPriority(const int i, const eThreadPriority priority) {
+#ifdef _WIN32
+    int win32_priority = THREAD_PRIORITY_NORMAL;
+    if (priority == eThreadPriority::Low) {
+        win32_priority = THREAD_PRIORITY_BELOW_NORMAL;
+    } else if (priority == eThreadPriority::High) {
+        win32_priority = THREAD_PRIORITY_HIGHEST;
+    }
+    const BOOL res = SetThreadPriority(workers_[i].native_handle(), win32_priority);
+    return (res == TRUE);
+#else
+    int posix_policy = SCHED_OTHER;
+#ifndef __APPLE__
+    if (priority == eThreadPriority::Low) {
+        posix_policy = SCHED_IDLE;
+    }
+#endif
+    const sched_param param = {};
+    return (0 == pthread_setschedparam(workers_[i].native_handle(), posix_policy, &param));
+#endif
 }
 
 // add new work item to the pool
 template <class F, class... Args>
-std::future<typename std::result_of<F(Args...)>::type>
-ThreadPool::Enqueue(F &&f, Args &&... args) {
+std::future<typename std::result_of<F(Args...)>::type> ThreadPool::Enqueue(F &&f, Args &&...args) {
     using return_type = typename std::result_of<F(Args...)>::type;
 
-    auto task = std::make_shared<std::packaged_task<return_type()>>(
-        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    auto task =
+        std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 
     std::future<return_type> res = task->get_future();
     {
@@ -114,19 +161,17 @@ inline ThreadPool::~ThreadPool() {
 
 class QThreadPool {
   public:
-    explicit QThreadPool(int threads_count, int q_count,
-                         const char *threads_name = nullptr);
+    explicit QThreadPool(int threads_count, int q_count, const char *threads_name = nullptr);
     ~QThreadPool();
 
     template <class F, class... Args>
-    std::future<typename std::result_of<F(Args...)>::type> Enqueue(int q_index, F &&f,
-                                                                   Args &&... args);
+    std::future<typename std::result_of<F(Args...)>::type> Enqueue(int q_index, F &&f, Args &&...args);
     int workers_count() const { return int(workers_.size()); }
     int queue_count() const { return int(tasks_.size()); }
 
   private:
-    std::vector<std::thread> workers_;
-    std::vector<std::queue<std::function<void()>>> tasks_;
+    Sys::SmallVector<std::thread, 64> workers_;
+    Sys::SmallVector<std::queue<std::function<void()>>, 16> tasks_;
     std::unique_ptr<std::atomic_bool[]> q_active_;
 
     std::mutex q_mtx_;
@@ -134,9 +179,7 @@ class QThreadPool {
     bool stop_;
 };
 
-inline QThreadPool::QThreadPool(const int threads_count, const int q_count,
-                                const char *threads_name)
-    : stop_(false) {
+inline QThreadPool::QThreadPool(const int threads_count, const int q_count, const char *threads_name) : stop_(false) {
     workers_.reserve(threads_count);
     tasks_.resize(q_count);
     q_active_.reset(new std::atomic_bool[q_count]);
@@ -147,9 +190,9 @@ inline QThreadPool::QThreadPool(const int threads_count, const int q_count,
         workers_.emplace_back([this, i, threads_name] {
             char name_buf[64];
             if (threads_name) {
-                sprintf(name_buf, "%s_%i", threads_name, int(i));
+                snprintf(name_buf, sizeof(name_buf), "%s_%i", threads_name, int(i));
             } else {
-                sprintf(name_buf, "worker_thread_%i", int(i));
+                snprintf(name_buf, sizeof(name_buf), "worker_thread_%i", int(i));
             }
             //__itt_thread_set_name(name_buf);
 
@@ -185,12 +228,11 @@ inline QThreadPool::QThreadPool(const int threads_count, const int q_count,
 }
 
 template <class F, class... Args>
-std::future<typename std::result_of<F(Args...)>::type>
-QThreadPool::Enqueue(const int q_index, F &&f, Args &&... args) {
+std::future<typename std::result_of<F(Args...)>::type> QThreadPool::Enqueue(const int q_index, F &&f, Args &&...args) {
     using return_type = typename std::result_of<F(Args...)>::type;
 
-    auto task = std::make_shared<std::packaged_task<return_type()>>(
-        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    auto task =
+        std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 
     std::future<return_type> res = task->get_future();
     {
@@ -220,33 +262,6 @@ inline QThreadPool::~QThreadPool() {
 }
 
 } // namespace Sys
-#else
-
-#include <future>
-
-namespace Sys {
-class ThreadPool {
-  public:
-    ThreadPool(size_t);
-
-    template <class F, class... Args>
-    auto Enqueue(F &&f, Args &&... args)
-        -> std::future<typename std::result_of<F(Args...)>::type>;
-};
-
-// the constructor just launches some amount of workers_
-inline ThreadPool::ThreadPool(size_t threads) {}
-
-// add new work item to the pool
-template <class F, class... Args>
-auto ThreadPool::Enqueue(F &&f, Args &&... args)
-    -> std::future<typename std::result_of<F(Args...)>::type> {
-
-    return std::future<typename std::result_of<F(Args...)>>(f(args...));
-}
-} // namespace Sys
-
-#endif
 
 #ifdef _MSC_VER
 #pragma warning(pop)
