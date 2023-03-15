@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/ai043_01.json -w 700 -h 477 --nogpu
+DemoApp.exe -s assets/scenes/ai043_01.json -w 700 -h 477 --nogpu --denoise

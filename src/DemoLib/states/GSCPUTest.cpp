@@ -70,7 +70,7 @@ void GSCPUTest::Enter() {
 
                 deviation = dt.count() - mean_us;
                 mean_us += deviation * k;
-                
+
                 std::chrono::duration<double, std::milli> time_since_start = std::chrono::high_resolution_clock::now() - warmup_start;
                 if ((deviation < 1000.0 || time_since_start.count() > 100.0) && !signaled_ready) {
                     ++num_ready_;
@@ -108,7 +108,7 @@ void GSCPUTest::Draw(uint64_t dt_us) {
             sm->Push(GSCreate(GS_RAY_BUCK_TEST, game_));
         }
     } else if (state_ == eStarted) {
-        
+
     } else if (state_ == eFinished) {
 
     }
@@ -169,12 +169,12 @@ void GSCPUTest::HandleInput(const InputManager::Event &evt) {
     } break;
     case InputManager::RAW_INPUT_KEY_UP: {
         if (evt.key == InputManager::RAW_INPUT_BUTTON_SPACE) {
-            
+
         }
     }
     break;
     case InputManager::RAW_INPUT_RESIZE:
-        
+
         break;
     default:
         break;

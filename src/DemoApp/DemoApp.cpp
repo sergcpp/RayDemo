@@ -92,7 +92,7 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
     putenv(envarg);
 
 #if !defined(NDEBUG) && defined(_WIN32)
-    _controlfp(_EM_INEXACT, _MCW_EM);
+    _controlfp(_EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
 #endif
 
     try {
@@ -143,7 +143,6 @@ int DemoApp::Run(int argc, char *argv[]) {
     bool nohwrt = false;
     bool nobindless = false;
     bool nocompression = false;
-    bool output_aux = false;
 
     for (size_t i = 1; i < argc; i++) {
         if ((strcmp(argv[i], "--width") == 0 || strcmp(argv[i], "-w") == 0) && (++i != argc)) {
@@ -186,6 +185,10 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.output_exr = true;
         } else if (strcmp(argv[i], "--output_aux") == 0) {
             app_params.output_aux = true;
+        } else if (strcmp(argv[i], "--denoise") == 0) {
+            app_params.denoise_after = 1;
+        } else if (strcmp(argv[i], "--denoise_after") == 0 && (++i != argc)) {
+            app_params.denoise_after = int(strtol(argv[i], nullptr, 10));
         }
     }
 
