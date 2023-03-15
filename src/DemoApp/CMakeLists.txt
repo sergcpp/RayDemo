@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
 project(DemoApp)
 
+find_library(CORE_GRAPHICS CoreGraphics)
+
 IF(WIN32)
     IF(SDL_STATIC)
         if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -16,10 +18,9 @@ IF(WIN32)
 		endif()
     ENDIF(SDL_STATIC)
 ELSEIF(UNIX AND NOT APPLE)
-    #set(LIBS X11 :libSDL2.a dl pthread GL glut c)
-    set(LIBS X11 SDL2 dl pthread GL c)
+    set(LIBS SDL2.a X11 Xext Xfixes Xi Xcursor Xinerama Xrandr Xss Xxf86vm drm gbm dl pthread GL c wayland-cursor wayland-client wayland-egl decor-0 asound pulse xkbcommon)
 ELSE()
-    set(LIBS SDL2)
+    set(LIBS SDL2.a ${CORE_GRAPHICS})
 ENDIF()
 
 set(SOURCE_FILES    main.cpp
