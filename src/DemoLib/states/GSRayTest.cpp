@@ -302,7 +302,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             const auto *raw_pixel_data = ray_renderer_->get_raw_pixels_ref();
 
             const char *error = nullptr;
-            if (TINYEXR_SUCCESS != SaveEXR(&raw_pixel_data->r, w, h, 4, 0, (base_name + ".exr").c_str(), &error)) {
+            if (TINYEXR_SUCCESS != SaveEXR(&raw_pixel_data->v[0], w, h, 4, 0, (base_name + ".exr").c_str(), &error)) {
                 ray_renderer_->log()->Error("Failed to write %s (%s)", (base_name + ".exr").c_str(), error);
             }
         }
@@ -322,11 +322,11 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             double mse = 0.0f;
             for (int j = 0; j < ref_h; ++j) {
                 for (int i = 0; i < ref_w; ++i) {
-                    const Ray::pixel_color_t &p = pixel_data[j * ref_w + i];
+                    const Ray::color_rgba_t &p = pixel_data[j * ref_w + i];
 
-                    const auto r = uint8_t(p.r * 255);
-                    const auto g = uint8_t(p.g * 255);
-                    const auto b = uint8_t(p.b * 255);
+                    const auto r = uint8_t(p.v[0] * 255);
+                    const auto g = uint8_t(p.v[1] * 255);
+                    const auto b = uint8_t(p.v[2] * 255);
 
                     const uint8_t diff_r = std::abs(r - ref_data[(ref_h - j - 1) * ref_w + i].v[0]);
                     const uint8_t diff_g = std::abs(g - ref_data[(ref_h - j - 1) * ref_w + i].v[1]);

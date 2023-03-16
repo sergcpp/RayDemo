@@ -4,17 +4,17 @@
 #include <iomanip>
 
 #include <Ray/Log.h>
+#include <SW/SW.h>
+#include <SW/SWframebuffer.h>
 #include <Sys/Json.h>
 #include <Sys/ThreadPool.h>
 #include <Sys/Time_.h>
-#include <SW/SW.h>
-#include <SW/SWframebuffer.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
-#include "../load/Load.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
+#include "../load/Load.h"
 
 namespace GSLightmapTestInternal {
 const float FORWARD_SPEED = 1.0f;
@@ -257,7 +257,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
 #else
     const auto *sh_data = ray_renderer_->get_sh_data_ref();
 
-    static std::vector<Ray::pixel_color_t> temp_buf;
+    static std::vector<Ray::color_rgba_t> temp_buf;
     temp_buf.resize(w * h);
 
     // const float Y0 = std::sqrt(1.0f / (4.0f * Ren::Pi<float>()));
@@ -279,28 +279,31 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
         for (int x = 0; x < w; x++) {
             int i = y * w + x;
 
-            temp_buf[i].r = coeff[0] * sh_data[i].coeff_r[0] + coeff[1] * sh_data[i].coeff_r[1] +
-                            coeff[2] * sh_data[i].coeff_r[2] + coeff[3] * sh_data[i].coeff_r[3];
-            temp_buf[i].g = coeff[0] * sh_data[i].coeff_g[0] + coeff[1] * sh_data[i].coeff_g[1] +
-                            coeff[2] * sh_data[i].coeff_g[2] + coeff[3] * sh_data[i].coeff_g[3];
-            temp_buf[i].b = coeff[0] * sh_data[i].coeff_b[0] + coeff[1] * sh_data[i].coeff_b[1] +
-                            coeff[2] * sh_data[i].coeff_b[2] + coeff[3] * sh_data[i].coeff_b[3];
-            temp_buf[i].a = 1.0f;
+            temp_buf[i].v[0] = coeff[0] * sh_data[i].coeff_r[0] + coeff[1] * sh_data[i].coeff_r[1] +
+                               coeff[2] * sh_data[i].coeff_r[2] + coeff[3] * sh_data[i].coeff_r[3];
+            temp_buf[i].v[1] = coeff[0] * sh_data[i].coeff_g[0] + coeff[1] * sh_data[i].coeff_g[1] +
+                               coeff[2] * sh_data[i].coeff_g[2] + coeff[3] * sh_data[i].coeff_g[3];
+            temp_buf[i].v[2] = coeff[0] * sh_data[i].coeff_b[0] + coeff[1] * sh_data[i].coeff_b[1] +
+                               coeff[2] * sh_data[i].coeff_b[2] + coeff[3] * sh_data[i].coeff_b[3];
+            temp_buf[i].v[3] = 1.0f;
 
-            if (temp_buf[i].r < 0.0f)
-                temp_buf[i].r = 0.0f;
-            else if (temp_buf[i].r > 1.0f)
-                temp_buf[i].r = 1.0f;
+            if (temp_buf[i].v[0] < 0.0f) {
+                temp_buf[i].v[0] = 0.0f;
+            } else if (temp_buf[i].v[0] > 1.0f) {
+                temp_buf[i].v[0] = 1.0f;
+            }
 
-            if (temp_buf[i].g < 0.0f)
-                temp_buf[i].g = 0.0f;
-            else if (temp_buf[i].g > 1.0f)
-                temp_buf[i].g = 1.0f;
+            if (temp_buf[i].v[1] < 0.0f) {
+                temp_buf[i].v[1] = 0.0f;
+            } else if (temp_buf[i].v[1] > 1.0f) {
+                temp_buf[i].v[1] = 1.0f;
+            }
 
-            if (temp_buf[i].b < 0.0f)
-                temp_buf[i].b = 0.0f;
-            else if (temp_buf[i].b > 1.0f)
-                temp_buf[i].b = 1.0f;
+            if (temp_buf[i].v[2] < 0.0f) {
+                temp_buf[i].v[2] = 0.0f;
+            } else if (temp_buf[i].v[2] > 1.0f) {
+                temp_buf[i].v[2] = 1.0f;
+            }
         }
     }
 
