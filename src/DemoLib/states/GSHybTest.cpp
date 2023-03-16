@@ -370,15 +370,15 @@ void GSHybTest::Draw(uint64_t dt_us) {
         /*for (const auto &r : cpu_region_contexts_) {
             const auto rect = r.rect();
             for (int j = rect.y; j < rect.y + rect.h; j++) {
-                const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w + rect.x] = Ray::pixel_color_t{ 1.0f, 0.0f,
-        0.0f, 1.0f }; const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w + rect.x + rect.w - 1] =
-        Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+                const_cast<Ray::color_rgba_t*>(cpu_pixel_data)[j * w + rect.x] = Ray::color_rgba_t{ 1.0f, 0.0f,
+        0.0f, 1.0f }; const_cast<Ray::color_rgba_t*>(cpu_pixel_data)[j * w + rect.x + rect.w - 1] =
+        Ray::color_rgba_t{ 1.0f, 0.0f, 0.0f, 1.0f };
             }
 
             for (int j = rect.x; j < rect.x + rect.w; j++) {
-                const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[rect.y * w + j] = Ray::pixel_color_t{ 1.0f, 0.0f,
-        0.0f, 1.0f }; const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[(rect.y + rect.h - 1) * w + j] =
-        Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+                const_cast<Ray::color_rgba_t*>(cpu_pixel_data)[rect.y * w + j] = Ray::color_rgba_t{ 1.0f, 0.0f,
+        0.0f, 1.0f }; const_cast<Ray::color_rgba_t*>(cpu_pixel_data)[(rect.y + rect.h - 1) * w + j] =
+        Ray::color_rgba_t{ 1.0f, 0.0f, 0.0f, 1.0f };
             }
         }*/
 

@@ -137,6 +137,9 @@ void GSRayTest::Enter() {
     cam_desc.max_transp_depth = app_params->transp_depth;
     cam_desc.max_total_depth = total_depth_ = app_params->total_depth;
 
+    //cam_desc.output_base_color = true;
+    //cam_desc.output_depth_normals = true;
+
     ray_scene_->SetCamera(current_cam_, cam_desc);
 
     memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
@@ -271,6 +274,32 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     int w, h;
     std::tie(w, h) = ray_renderer_->size();
     const auto *pixel_data = ray_renderer_->get_pixels_ref();
+
+#if 0
+    const auto *base_color = ray_renderer_->get_aux_pixels_ref(Ray::BaseColor);
+    std::vector<Ray::color_rgba_t> base_color_rgba(w * h);
+    for (int i = 0; i < w * h; ++i) {
+        base_color_rgba[i].v[0] = base_color[i].v[0]; // * 0.5f + 0.5f;
+        base_color_rgba[i].v[1] = base_color[i].v[1]; // * 0.5f + 0.5f;
+        base_color_rgba[i].v[2] = base_color[i].v[2]; // * 0.5f + 0.5f;
+        base_color_rgba[i].v[3] = 1.0f;
+    }
+
+    pixel_data = base_color_rgba.data();
+#endif
+
+#if 0
+    const auto *depth = ray_renderer_->get_aux_pixels_ref(Ray::Depth);
+    std::vector<Ray::color_rgba_t> depth_rgba(w * h);
+    for (int i = 0; i < w * h; ++i) {
+        depth_rgba[i].r = depth[i];
+        depth_rgba[i].g = depth[i];
+        depth_rgba[i].b = depth[i];
+        depth_rgba[i].a = 1.0f;
+    }
+
+    pixel_data = depth_rgba.data();
+#endif
 
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 
