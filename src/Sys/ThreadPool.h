@@ -22,6 +22,8 @@
 #endif
 #include <Windows.h>
 #undef DrawText
+#undef near
+#undef far
 #else
 #include <sched.h>
 #endif
