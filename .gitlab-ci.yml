@@ -73,14 +73,14 @@ stages:
       - windows-x86_64/
     expire_in: 1 week
 
-.windows-x86_64-build-shaders-job:
+.windows-build-shaders-job:
   stage: build
   tags:
     - windows
   script:
     - echo "Compiling shaders..."
     - cd src/Ray
-    - ./compile_shaders.bat
+    - python compile_shaders.py
     - git diff --quiet -- internal/shaders
     - cd ../..
 
@@ -134,17 +134,6 @@ stages:
       - windows-arm64/
     expire_in: 1 week
 
-.windows-arm64-build-shaders-job:
-  stage: build
-  tags:
-    - windows
-  script:
-    - echo "Compiling shaders..."
-    - cd src/Ray
-    - ./compile_shaders.bat
-    - git diff --quiet -- internal/shaders
-    - cd ../..
-
 .linux-build-job:
   stage: build
   tags:
@@ -187,9 +176,7 @@ stages:
     - chmod +x third-party/spirv/linux/glslangValidator
     - chmod +x third-party/spirv/linux/spirv-opt
     - chmod +x third-party/spirv/linux/spirv-opt.sh
-    - chmod +x third-party/spirv/linux/bin2c
-    - chmod +x ./compile_shaders.sh
-    - ./compile_shaders.sh
+    - python compile_shaders.py
     - git diff --quiet -- internal/shaders
     - cd ../..
 
@@ -412,9 +399,9 @@ windows-x86_64-build-dbg-job:
   tags:
     - windows,builder
 
-windows-x86_64-build-shaders-job:
+windows-build-shaders-job:
   extends:
-    - .windows-x86_64-build-shaders-job
+    - .windows-build-shaders-job
   tags:
     - windows,builder
 
@@ -429,12 +416,6 @@ windows-arm64-build-job:
     - .windows-arm64-build-job
   tags:
     - windows,builder
-
-windows-arm64-build-shaders-job:
-  extends:
-    - .windows-arm64-build-shaders-job
-  tags:
-    - windows,arm64,builder
 
 linux-x86_64-build-job:
   extends:
@@ -488,7 +469,7 @@ windows-x86_64-gpu-amd-test-job:
     - .windows-test-job
   needs:
     - windows-x86_64-build-rel-job
-    - windows-x86_64-build-shaders-job
+    - windows-build-shaders-job
   tags:
     - windows,x86_64,amd
 
@@ -500,7 +481,7 @@ windows-x86_64-gpu-nv-test-job:
     - .windows-test-job
   needs:
     - windows-x86_64-build-rel-job
-    - windows-x86_64-build-shaders-job
+    - windows-build-shaders-job
   tags:
     - windows,x86_64,nv
 
@@ -513,7 +494,7 @@ windows-x86_64-gpu-xe-test-job:
     - .windows-test-job
   needs:
     - windows-x86_64-build-rel-job
-    - windows-x86_64-build-shaders-job
+    - windows-build-shaders-job
   tags:
     - windows,x86_64,xe
 
@@ -525,7 +506,7 @@ windows-x86_64-gpu-arc-test-job:
     - .windows-test-job
   needs:
     - windows-x86_64-build-rel-job
-    - windows-x86_64-build-shaders-job
+    - windows-build-shaders-job
   tags:
     - windows,x86_64,arc
 
@@ -537,7 +518,7 @@ windows-x86_64-cpu-test-img-job:
     - .windows-test-img-job
   needs:
     - windows-x86_64-build-rel-job
-    - windows-x86_64-build-shaders-job
+    - windows-build-shaders-job
   tags:
     - windows,x86_64,fastcpu
   rules:
@@ -551,7 +532,7 @@ windows-x86_64-gpu-nv-test-img-job:
     - .windows-gpu-test-img-job
   needs:
     - windows-x86_64-build-rel-job
-    - windows-x86_64-build-shaders-job
+    - windows-build-shaders-job
   tags:
     - windows,x86_64,nv
   rules:
@@ -565,7 +546,7 @@ windows-x86_64-gpu-amd-test-img-job:
     - .windows-gpu-test-img-job
   needs:
     - windows-x86_64-build-rel-job
-    - windows-x86_64-build-shaders-job
+    - windows-build-shaders-job
   tags:
     - windows,x86_64,amd
   rules:
@@ -579,7 +560,7 @@ windows-x86_64-gpu-xe-test-img-job:
     - .windows-gpu-test-img-job
   needs:
     - windows-x86_64-build-rel-job
-    - windows-x86_64-build-shaders-job
+    - windows-build-shaders-job
   tags:
     - windows,x86_64,xe
   rules:
@@ -593,7 +574,7 @@ windows-x86_64-gpu-arc-test-img-job:
     - .windows-gpu-test-img-job
   needs:
     - windows-x86_64-build-rel-job
-    - windows-x86_64-build-shaders-job
+    - windows-build-shaders-job
   tags:
     - windows,x86_64,arc
   rules:
