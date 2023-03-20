@@ -6,7 +6,6 @@
 #include <SDL2/SDL_video.h>
 #endif
 
-#include <Sys/DynLib.h>
 #include <Sys/Time_.h>
 #include <SW/SW.h>
 
@@ -19,9 +18,8 @@
 #include <renderdoc/renderdoc_app.h>
 #endif
 
-#include "../DemoLib/eng/GameBase.h"
-#include "../DemoLib/eng/TimedInput.h"
-#include "../DemoLib/Viewer.h"
+#include <DemoLib/eng/GameBase.h>
+#include <DemoLib/Viewer.h>
 
 #pragma warning(disable : 4996)
 
@@ -145,12 +143,13 @@ int DemoApp::Run(int argc, char *argv[]) {
     bool nohwrt = false;
     bool nobindless = false;
     bool nocompression = false;
+    bool output_aux = false;
 
     for (size_t i = 1; i < argc; i++) {
         if ((strcmp(argv[i], "--width") == 0 || strcmp(argv[i], "-w") == 0) && (++i != argc)) {
-            w = atoi(argv[i]);
+            w = int(strtol(argv[i], nullptr, 10));
         } else if ((strcmp(argv[i], "--height") == 0 || strcmp(argv[i], "-h") == 0) && (++i != argc)) {
-            h = atoi(argv[i]);
+            h = int(strtol(argv[i], nullptr, 10));
         } else if ((strcmp(argv[i], "--scene") == 0 || strcmp(argv[i], "-s") == 0) && (++i != argc)) {
             app_params.scene_name = argv[i];
         } else if ((strcmp(argv[i], "--reference") == 0 || strcmp(argv[i], "-ref") == 0) && (++i != argc)) {
@@ -164,27 +163,29 @@ int DemoApp::Run(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "--nocompression") == 0) {
             nocompression = true;
         } else if (strcmp(argv[i], "--samples") == 0 && (++i != argc)) {
-            app_params.samples = atoi(argv[i]);
+            app_params.samples = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--psnr") == 0 && (++i != argc)) {
-            app_params.psnr = atof(argv[i]);
+            app_params.psnr = strtod(argv[i], nullptr);
         } else if (strcmp(argv[i], "--threshold") == 0 && (++i != argc)) {
-            app_params.threshold = atoi(argv[i]);
+            app_params.threshold = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--diff_depth") == 0 && (++i != argc)) {
-            app_params.diff_depth = atoi(argv[i]);
+            app_params.diff_depth = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--spec_depth") == 0 && (++i != argc)) {
-            app_params.spec_depth = atoi(argv[i]);
+            app_params.spec_depth = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--refr_depth") == 0 && (++i != argc)) {
-            app_params.refr_depth = atoi(argv[i]);
+            app_params.refr_depth = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--transp_depth") == 0 && (++i != argc)) {
-            app_params.transp_depth = atoi(argv[i]);
+            app_params.transp_depth = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--total_depth") == 0 && (++i != argc)) {
-            app_params.total_depth = atoi(argv[i]);
+            app_params.total_depth = int(strtol(argv[i], nullptr, 10));
         } else if ((strcmp(argv[i], "--device") == 0 || strcmp(argv[i], "-d") == 0) && (++i != argc)) {
             app_params.device_name = argv[i];
         } else if (strcmp(argv[i], "--max_tex_res") == 0 && (++i != argc)) {
-            app_params.max_tex_res = atoi(argv[i]);
+            app_params.max_tex_res = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--output_exr") == 0) {
             app_params.output_exr = true;
+        } else if (strcmp(argv[i], "--output_aux") == 0) {
+            app_params.output_aux = true;
         }
     }
 
@@ -293,8 +294,8 @@ void DemoApp::PollEvents() {
             break;
         case SDL_FINGERDOWN:
             evt.type = e.tfinger.fingerId == 0 ? InputManager::RAW_INPUT_P1_DOWN : InputManager::RAW_INPUT_P2_DOWN;
-            evt.point.x = e.tfinger.x * viewer_->width;
-            evt.point.y = e.tfinger.y * viewer_->height;
+            evt.point.x = e.tfinger.x * float(viewer_->width);
+            evt.point.y = e.tfinger.y * float(viewer_->height);
             break;
         case SDL_MOUSEBUTTONDOWN:
             evt.type = InputManager::RAW_INPUT_P1_DOWN;
@@ -303,8 +304,8 @@ void DemoApp::PollEvents() {
             break;
         case SDL_FINGERUP:
             evt.type = e.tfinger.fingerId == 0 ? InputManager::RAW_INPUT_P1_UP : InputManager::RAW_INPUT_P2_UP;
-            evt.point.x = e.tfinger.x * viewer_->width;
-            evt.point.y = e.tfinger.y * viewer_->height;
+            evt.point.x = e.tfinger.x * float(viewer_->width);
+            evt.point.y = e.tfinger.y * float(viewer_->height);
             break;
         case SDL_MOUSEBUTTONUP:
             evt.type = InputManager::RAW_INPUT_P1_UP;
@@ -317,10 +318,10 @@ void DemoApp::PollEvents() {
         }
         case SDL_FINGERMOTION:
             evt.type = e.tfinger.fingerId == 0 ? InputManager::RAW_INPUT_P1_MOVE : InputManager::RAW_INPUT_P2_MOVE;
-            evt.point.x = e.tfinger.x * viewer_->width;
-            evt.point.y = e.tfinger.y * viewer_->height;
-            evt.move.dx = e.tfinger.dx * viewer_->width;
-            evt.move.dy = e.tfinger.dy * viewer_->height;
+            evt.point.x = e.tfinger.x * float(viewer_->width);
+            evt.point.y = e.tfinger.y * float(viewer_->height);
+            evt.move.dx = e.tfinger.dx * float(viewer_->width);
+            evt.move.dy = e.tfinger.dy * float(viewer_->height);
             break;
         case SDL_MOUSEMOTION:
             evt.type = InputManager::RAW_INPUT_P1_MOVE;
@@ -366,6 +367,6 @@ void DemoApp::CreateViewer(int w, int h, const AppParams &app_params, const bool
     }
 
     viewer_ = {};
-    viewer_.reset(new Viewer(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2), nobindless, nocompression));
+    viewer_ = std::make_unique<Viewer>(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2), nobindless, nocompression);
     p_input_manager_ = viewer_->GetComponent<InputManager>(INPUT_MANAGER_KEY);
 }

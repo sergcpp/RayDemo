@@ -22,7 +22,7 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
 
     { // load config
         Sys::AssetFile config_file("assets/config.json");
-        size_t config_file_size = config_file.size();
+        const size_t config_file_size = config_file.size();
         std::unique_ptr<char[]> buf(new char[config_file_size]);
         config_file.Read(buf.get(), config_file_size);
 

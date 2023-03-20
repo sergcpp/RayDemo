@@ -137,8 +137,10 @@ void GSRayTest::Enter() {
     cam_desc.max_transp_depth = app_params->transp_depth;
     cam_desc.max_total_depth = total_depth_ = app_params->total_depth;
 
-    //cam_desc.output_base_color = true;
-    //cam_desc.output_depth_normals = true;
+    if (app_params->output_aux) {
+        cam_desc.output_base_color = true;
+        cam_desc.output_depth_normals = true;
+    }
 
     ray_scene_->SetCamera(current_cam_, cam_desc);
 
@@ -334,6 +336,24 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             if (TINYEXR_SUCCESS != SaveEXR(&raw_pixel_data->v[0], w, h, 4, 0, (base_name + ".exr").c_str(), &error)) {
                 ray_renderer_->log()->Error("Failed to write %s (%s)", (base_name + ".exr").c_str(), error);
             }
+
+            // TODO: Fix this!!!
+            pixel_data = ray_renderer_->get_pixels_ref();
+        }
+
+        if (app_params->output_aux) { // Output base color, normals, depth
+            const auto *base_color = ray_renderer_->get_aux_pixels_ref(Ray::BaseColor);
+            WritePNG(base_color, w, h, 3, false /* flip */, (base_name + "_base_color.png").c_str());
+
+            const auto *depth_normals = ray_renderer_->get_aux_pixels_ref(Ray::DepthNormals);
+            std::vector<Ray::color_rgba_t> depth_normals_rgba(w * h);
+            for (int i = 0; i < w * h; ++i) {
+                depth_normals_rgba[i].v[0] = depth_normals[i].v[0] * 0.5f + 0.5f;
+                depth_normals_rgba[i].v[1] = depth_normals[i].v[1] * 0.5f + 0.5f;
+                depth_normals_rgba[i].v[2] = depth_normals[i].v[2] * 0.5f + 0.5f;
+                depth_normals_rgba[i].v[3] = depth_normals[i].v[3] * 0.1f;
+            }
+            WritePNG(depth_normals_rgba.data(), w, h, 4, false /* flip */, (base_name + "_normals.png").c_str());
         }
 
         ray_renderer_->log()->Info("Written: %s (%i samples)", (base_name + ".png").c_str(),

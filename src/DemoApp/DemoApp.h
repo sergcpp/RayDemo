@@ -24,7 +24,7 @@ class DemoApp {
     bool quit_, capture_frame_ = false;
 
 #if !defined(__ANDROID__)
-    bool ConvertToRawButton(int32_t key, InputManager::RawInputButton &button);
+    static bool ConvertToRawButton(int32_t key, InputManager::RawInputButton &button);
     void PollEvents();
 #endif
 
