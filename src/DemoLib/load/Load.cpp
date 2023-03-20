@@ -1720,7 +1720,7 @@ void WritePNG(const Ray::color_rgba_t *data, const int w, const int h, const int
             out_data[(j * w + i) * bpp + 1] = float_to_byte(data[_j * w + i].v[1]);
             out_data[(j * w + i) * bpp + 0] = float_to_byte(data[_j * w + i].v[0]);
             if (bpp == 4) {
-                out_data[i * 4 + 3] = float_to_byte(data[_j * w + i].v[3]);
+                out_data[(j * w + i) * 4 + 3] = float_to_byte(data[_j * w + i].v[3]);
             }
         }
     }
