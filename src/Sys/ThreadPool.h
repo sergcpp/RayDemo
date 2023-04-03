@@ -5,9 +5,10 @@
 #include <condition_variable>
 #include <functional>
 #include <future>
+
+#include <deque>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <stdexcept>
 #include <thread>
 
@@ -40,6 +41,76 @@
 namespace Sys {
 enum class eThreadPriority { Low, Normal, High };
 
+struct Task {
+    std::function<void()> func;
+    SmallVector<short, 8> dependents;
+    std::atomic_int dependencies = {};
+
+    Task() = default;
+    explicit Task(const Task &rhs)
+        : func(rhs.func), dependents(rhs.dependents), dependencies(rhs.dependencies.load()) {}
+};
+
+struct TaskList {
+    SmallVector<Task, 16> tasks;
+    SmallVector<short, 16> tasks_order, tasks_pos;
+
+    template <class F, class... Args> short AddTask(F &&f, Args &&...args) {
+        using return_type = typename std::result_of<F(Args...)>::type;
+
+        const short ret = short(tasks.size());
+        Task &t = tasks.emplace_back();
+        t.func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+        return ret;
+    }
+
+    bool AddDependency(const short id, const short dep) {
+        if (id == dep) {
+            return false;
+        }
+        if (std::find(std::begin(tasks[dep].dependents), std::end(tasks[dep].dependents), id) ==
+            std::end(tasks[dep].dependents)) {
+            tasks[dep].dependents.push_back(id);
+            ++tasks[id].dependencies;
+            return true;
+        }
+        return false;
+    }
+
+    void Sort(const bool keep_close = false) {
+        tasks_order.clear();
+
+        SmallVector<short, 128> task_dependencies(tasks.size());
+        for (short i = 0; i < short(tasks.size()); ++i) {
+            task_dependencies[i] = tasks[i].dependencies;
+        }
+
+        for (short i = 0; i < short(tasks.size()); ++i) {
+            if (!tasks[i].dependencies) {
+                tasks_order.push_back(i);
+            }
+        }
+        for (short i = 0; i < short(tasks_order.size()); ++i) {
+            for (const short id : tasks[tasks_order[i]].dependents) {
+                if (--task_dependencies[id] == 0) {
+                    if (keep_close) {
+                        tasks_order.insert(std::begin(tasks_order) + i + 1, id);
+                    } else {
+                        tasks_order.push_back(id);
+                    }
+                }
+            }
+        }
+
+        tasks_pos.resize(tasks_order.size());
+        for (short i = 0; i < short(tasks_order.size()); ++i) {
+            tasks_pos[tasks_order[i]] = i;
+        }
+    }
+
+    bool HasCycles() const { return tasks_order.size() != tasks.size(); }
+};
+
 class ThreadPool {
   public:
     explicit ThreadPool(int threads_count, eThreadPriority priority = eThreadPriority::Normal,
@@ -48,6 +119,9 @@ class ThreadPool {
 
     template <class F, class... Args>
     std::future<typename std::result_of<F(Args...)>::type> Enqueue(F &&f, Args &&...args);
+
+    std::future<void> Enqueue(const TaskList &task_list);
+    std::future<void> Enqueue(TaskList &&task_list);
 
     int workers_count() const { return int(workers_.size()); }
 
@@ -61,10 +135,8 @@ class ThreadPool {
     }
 
   private:
-    // need to keep track of threads so we can join them
     Sys::SmallVector<std::thread, 64> workers_;
-    // the task queue
-    std::queue<std::function<void()>> tasks_;
+    std::deque<SmallVector<Task, 16>> task_lists_;
 
     // synchronization
     std::mutex q_mtx_;
@@ -86,18 +158,48 @@ inline ThreadPool::ThreadPool(const int threads_count, const eThreadPriority pri
 
             for (;;) {
                 std::function<void()> task;
+                SmallVectorImpl<Task> *cur_list = nullptr;
+                SmallVector<short, 8> dependents;
 
                 {
                     std::unique_lock<std::mutex> lock(q_mtx_);
-                    condition_.wait(lock, [this] { return stop_ || !tasks_.empty(); });
-                    if (stop_ && tasks_.empty()) {
+                    condition_.wait(lock, [this] { return stop_ || !task_lists_.empty(); });
+                    if (stop_ && task_lists_.empty()) {
                         return;
                     }
-                    task = std::move(tasks_.front());
-                    tasks_.pop();
+
+                    // Find task we can execute
+                    for (int l = 0; l < int(task_lists_.size()) && !task; ++l) {
+                        auto &list = task_lists_[l];
+                        for (int i = int(list.size()) - 1; i >= 0; --i) {
+                            if (list[i].func && list[i].dependencies == 0) {
+                                cur_list = &list;
+                                task = std::move(list[i].func);
+                                list[i].func = nullptr;
+                                dependents = std::move(list[i].dependents);
+                                break;
+                            }
+                        }
+                    }
+
+                    while (cur_list && !cur_list->empty() && !cur_list->back().func) {
+                        cur_list->pop_back();
+                    }
+
+                    while (!task_lists_.empty() && task_lists_.front().empty()) {
+                        task_lists_.pop_front();
+                    }
                 }
 
-                task();
+                if (task) {
+                    task();
+
+                    for (const int i : dependents) {
+                        if ((*cur_list)[i].dependencies.fetch_sub(1) == 1) {
+                            condition_.notify_one();
+                        }
+                    }
+                }
             }
         });
     }
@@ -143,101 +245,19 @@ std::future<typename std::result_of<F(Args...)>::type> ThreadPool::Enqueue(F &&f
             throw std::runtime_error("Enqueue on stopped ThreadPool");
         }
 
-        tasks_.emplace([task]() { (*task)(); });
+        task_lists_.emplace_back();
+        task_lists_.back().emplace_back();
+        task_lists_.back().back().func = [task]() { (*task)(); };
     }
     condition_.notify_one();
 
     return res;
 }
 
-// the destructor joins all threads
-inline ThreadPool::~ThreadPool() {
-    {
-        std::lock_guard<std::mutex> lock(q_mtx_);
-        stop_ = true;
-    }
-    condition_.notify_all();
-    for (std::thread &worker : workers_) {
-        worker.join();
-    }
-}
+inline std::future<void> ThreadPool::Enqueue(const TaskList &task_list) {
+    auto final_task = std::make_shared<std::packaged_task<void()>>([]() {});
 
-class QThreadPool {
-  public:
-    explicit QThreadPool(int threads_count, int q_count, const char *threads_name = nullptr);
-    ~QThreadPool();
-
-    template <class F, class... Args>
-    std::future<typename std::result_of<F(Args...)>::type> Enqueue(int q_index, F &&f, Args &&...args);
-    int workers_count() const { return int(workers_.size()); }
-    int queue_count() const { return int(tasks_.size()); }
-
-  private:
-    Sys::SmallVector<std::thread, 64> workers_;
-    Sys::SmallVector<std::queue<std::function<void()>>, 16> tasks_;
-    std::unique_ptr<std::atomic_bool[]> q_active_;
-
-    std::mutex q_mtx_;
-    std::condition_variable condition_;
-    bool stop_;
-};
-
-inline QThreadPool::QThreadPool(const int threads_count, const int q_count, const char *threads_name) : stop_(false) {
-    workers_.reserve(threads_count);
-    tasks_.resize(q_count);
-    q_active_.reset(new std::atomic_bool[q_count]);
-    for (int i = 0; i < q_count; ++i) {
-        q_active_[i] = false;
-    }
-    for (int i = 0; i < threads_count; ++i) {
-        workers_.emplace_back([this, i, threads_name] {
-            char name_buf[64];
-            if (threads_name) {
-                snprintf(name_buf, sizeof(name_buf), "%s_%i", threads_name, int(i));
-            } else {
-                snprintf(name_buf, sizeof(name_buf), "worker_thread_%i", int(i));
-            }
-            //__itt_thread_set_name(name_buf);
-
-            for (;;) {
-                std::function<void()> task;
-                int q_index = -1;
-
-                {
-                    std::unique_lock<std::mutex> lock(q_mtx_);
-                    condition_.wait(lock, [this, i, &q_index] {
-                        for (int j = 0; j < int(tasks_.size()); j++) {
-                            if (!q_active_[j] && !tasks_[j].empty()) {
-                                q_index = j;
-                                return true;
-                            }
-                        }
-
-                        return stop_;
-                    });
-                    if (stop_ && q_index == -1) {
-                        return;
-                    }
-                    task = std::move(tasks_[q_index].front());
-                    tasks_[q_index].pop();
-                    q_active_[q_index] = true;
-                }
-
-                task();
-                q_active_[q_index] = false;
-            }
-        });
-    }
-}
-
-template <class F, class... Args>
-std::future<typename std::result_of<F(Args...)>::type> QThreadPool::Enqueue(const int q_index, F &&f, Args &&...args) {
-    using return_type = typename std::result_of<F(Args...)>::type;
-
-    auto task =
-        std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-
-    std::future<return_type> res = task->get_future();
+    std::future<void> res = final_task->get_future();
     {
         std::unique_lock<std::mutex> lock(q_mtx_);
 
@@ -246,14 +266,58 @@ std::future<typename std::result_of<F(Args...)>::type> QThreadPool::Enqueue(cons
             throw std::runtime_error("Enqueue on stopped ThreadPool");
         }
 
-        tasks_[q_index].emplace([task]() { (*task)(); });
+        task_lists_.emplace_back();
+
+        task_lists_.back().emplace_back();
+        task_lists_.back().back().func = [final_task]() { (*final_task)(); };
+        task_lists_.back().back().dependencies = int(task_list.tasks_order.size());
+
+        for (int i = int(task_list.tasks_order.size()) - 1; i >= 0; --i) {
+            task_lists_.back().emplace_back(task_list.tasks[task_list.tasks_order[i]]);
+            for (short &k : task_lists_.back().back().dependents) {
+                k = int(task_list.tasks_order.size()) - task_list.tasks_pos[k];
+            }
+            task_lists_.back().back().dependents.push_back(0);
+        }
     }
-    condition_.notify_one();
+    condition_.notify_all();
 
     return res;
 }
 
-inline QThreadPool::~QThreadPool() {
+inline std::future<void> ThreadPool::Enqueue(TaskList &&task_list) {
+    auto final_task = std::make_shared<std::packaged_task<void()>>([]() {});
+
+    std::future<void> res = final_task->get_future();
+    {
+        std::unique_lock<std::mutex> lock(q_mtx_);
+
+        // don't allow enqueueing after stopping the pool
+        if (stop_) {
+            throw std::runtime_error("Enqueue on stopped ThreadPool");
+        }
+
+        task_lists_.emplace_back();
+
+        task_lists_.back().emplace_back();
+        task_lists_.back().back().func = [final_task]() { (*final_task)(); };
+        task_lists_.back().back().dependencies = int(task_list.tasks_order.size());
+
+        for (int i = int(task_list.tasks_order.size()) - 1; i >= 0; --i) {
+            task_lists_.back().emplace_back(std::move(task_list.tasks[task_list.tasks_order[i]]));
+            for (short &k : task_lists_.back().back().dependents) {
+                k = int(task_list.tasks_order.size()) - task_list.tasks_pos[k];
+            }
+            task_lists_.back().back().dependents.push_back(0);
+        }
+    }
+    condition_.notify_all();
+
+    return res;
+}
+
+// the destructor joins all threads
+inline ThreadPool::~ThreadPool() {
     {
         std::lock_guard<std::mutex> lock(q_mtx_);
         stop_ = true;

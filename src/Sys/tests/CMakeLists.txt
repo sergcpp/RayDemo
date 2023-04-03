@@ -22,6 +22,7 @@ add_executable(test_Sys main.cpp
                         test_pack.cpp
                         test_scope_exit.cpp
                         test_signal.cpp
+                        test_thread_pool.cpp
                         test_vector.cpp)
 
 target_link_libraries(test_Sys Sys ${LIBS})
