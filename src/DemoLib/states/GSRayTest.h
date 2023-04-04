@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Ray/RendererBase.h>
+#include <Sys/SmallVector.h>
 
 #include "../eng/GameState.h"
 #include "../ren/Camera.h"
@@ -13,6 +14,7 @@ class FontStorage;
 
 namespace Sys {
 class ThreadPool;
+struct TaskList;
 }
 
 namespace Gui {
@@ -34,6 +36,7 @@ class GSRayTest : public GameState {
     std::shared_ptr<Ray::SceneBase> ray_scene_;
 
     std::shared_ptr<Sys::ThreadPool> threads_;
+    std::unique_ptr<Sys::TaskList> render_tasks_, render_and_denoise_tasks_;
 
     bool animate_ = false;
     bool view_grabbed_ = false;
@@ -41,7 +44,7 @@ class GSRayTest : public GameState {
     Ren::Vec3f view_origin_ = {0, 20, 3}, view_dir_ = {-1, 0, 0}, view_up_ = {0, 1, 0}, view_target_ = {0, 0, 0};
 
     Ray::CameraHandle current_cam_ = Ray::InvalidCameraHandle;
-    float max_fwd_speed_, focal_distance_ = 0.4f;
+    float max_fwd_speed_ = 0.0f, focal_distance_ = 0.4f;
 
     Ren::Vec3f sun_dir_ = {0, 1, 0};
 
@@ -63,13 +66,14 @@ class GSRayTest : public GameState {
 
     std::vector<Ray::RendererBase::stats_t> stats_;
 
-    std::vector<Ray::RegionContext> region_contexts_;
+    std::vector<Sys::SmallVector<Ray::RegionContext, 128>> region_contexts_;
 
     void UpdateRegionContexts();
     void UpdateEnvironment(const Ren::Vec3f &sun_dir);
 
   public:
     explicit GSRayTest(GameBase *game);
+    ~GSRayTest();
 
     void Enter() override;
     void Exit() override;
