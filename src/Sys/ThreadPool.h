@@ -47,7 +47,7 @@ struct Task {
     std::atomic_int dependencies = {};
 
     Task() = default;
-    explicit Task(const Task &rhs)
+    Task(const Task &rhs)
         : func(rhs.func), dependents(rhs.dependents), dependencies(rhs.dependencies.load()) {}
 };
 
@@ -58,7 +58,7 @@ struct TaskList {
     template <class F, class... Args> short AddTask(F &&f, Args &&...args) {
         using return_type = typename std::result_of<F(Args...)>::type;
 
-        const short ret = short(tasks.size());
+        const auto ret = short(tasks.size());
         Task &t = tasks.emplace_back();
         t.func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
         return ret;
@@ -80,7 +80,7 @@ struct TaskList {
     void Sort(const bool keep_close = false) {
         tasks_order.clear();
 
-        SmallVector<short, 128> task_dependencies(tasks.size());
+        SmallVector<int, 128> task_dependencies(tasks.size());
         for (short i = 0; i < short(tasks.size()); ++i) {
             task_dependencies[i] = tasks[i].dependencies;
         }
@@ -275,7 +275,7 @@ inline std::future<void> ThreadPool::Enqueue(const TaskList &task_list) {
         for (int i = int(task_list.tasks_order.size()) - 1; i >= 0; --i) {
             task_lists_.back().emplace_back(task_list.tasks[task_list.tasks_order[i]]);
             for (short &k : task_lists_.back().back().dependents) {
-                k = int(task_list.tasks_order.size()) - task_list.tasks_pos[k];
+                k = short(task_list.tasks_order.size() - task_list.tasks_pos[k]);
             }
             task_lists_.back().back().dependents.push_back(0);
         }
@@ -306,7 +306,7 @@ inline std::future<void> ThreadPool::Enqueue(TaskList &&task_list) {
         for (int i = int(task_list.tasks_order.size()) - 1; i >= 0; --i) {
             task_lists_.back().emplace_back(std::move(task_list.tasks[task_list.tasks_order[i]]));
             for (short &k : task_lists_.back().back().dependents) {
-                k = int(task_list.tasks_order.size()) - task_list.tasks_pos[k];
+                k = short(task_list.tasks_order.size() - task_list.tasks_pos[k]);
             }
             task_lists_.back().back().dependents.push_back(0);
         }
