@@ -42,6 +42,8 @@ GSRayTest::GSRayTest(GameBase *game) : game_(game) {
     threads_ = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
 
+GSRayTest::~GSRayTest() = default;
+
 void GSRayTest::UpdateRegionContexts() {
     region_contexts_.clear();
 
@@ -53,16 +55,66 @@ void GSRayTest::UpdateRegionContexts() {
         const int BucketSize = 32;
 
         for (int y = 0; y < sz.second; y += BucketSize) {
+            region_contexts_.emplace_back();
             for (int x = 0; x < sz.first; x += BucketSize) {
                 const auto rect =
                     Ray::rect_t{x, y, std::min(sz.first - x, BucketSize), std::min(sz.second - y, BucketSize)};
 
-                region_contexts_.emplace_back(rect);
+                region_contexts_.back().emplace_back(rect);
             }
         }
+
+        auto render_job = [this](const int i, const int j) {
+#if !defined(NDEBUG) && defined(_WIN32)
+            _controlfp(_EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
+#endif
+            ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i][j]);
+        };
+
+        auto denoise_job = [this](const int i, const int j) {
+#if !defined(NDEBUG) && defined(_WIN32)
+            _controlfp(_EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
+#endif
+            ray_renderer_->DenoiseImage(region_contexts_[i][j]);
+        };
+
+        std::vector<Sys::SmallVector<short, 128>> render_task_ids;
+        
+        render_tasks_ = std::make_unique<Sys::TaskList>();
+        render_and_denoise_tasks_ = std::make_unique<Sys::TaskList>();
+
+        for (int i = 0; i < int(region_contexts_.size()); ++i) {
+            render_task_ids.emplace_back();
+            for (int j = 0; j < int(region_contexts_[i].size()); ++j) {
+                render_tasks_->AddTask(render_job, i, j);
+                render_task_ids.back().emplace_back(render_and_denoise_tasks_->AddTask(render_job, i, j));
+            }
+        }
+        for (int i = 0; i < int(region_contexts_.size()); ++i) {
+            for (int j = 0; j < int(region_contexts_[i].size()); ++j) {
+                const short id = render_and_denoise_tasks_->AddTask(denoise_job, i, j);
+
+                for (int k = -1; k <= 1; ++k) {
+                    if (i + k < 0 || i + k >= int(render_task_ids.size())) {
+                        continue;
+                    }
+                    for (int l = -1; l <= 1; ++l) {
+                        if (j + l < 0 || j + l >= int(render_task_ids[i + k].size())) {
+                            continue;
+                        }
+                        render_and_denoise_tasks_->AddDependency(id, render_task_ids[i + k][j + l]);
+                    }
+                }
+            }
+        }
+
+        render_tasks_->Sort();
+        render_and_denoise_tasks_->Sort();
+        assert(!render_and_denoise_tasks_->HasCycles());
     } else {
         const auto rect = Ray::rect_t{0, 0, sz.first, sz.second};
-        region_contexts_.emplace_back(rect);
+        region_contexts_.emplace_back();
+        region_contexts_.back().emplace_back(rect);
     }
 }
 
@@ -213,72 +265,43 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     const auto rt = ray_renderer_->type();
 
+    const bool denoise_image =
+        app_params->denoise_after != -1 && region_contexts_[0][0].iteration > app_params->denoise_after;
+
     if (Ray::RendererSupportsMultithreading(rt)) {
-        auto render_job = [this](const int i) {
-#if !defined(NDEBUG) && defined(_WIN32)
-            _controlfp(_EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
-#endif
-            ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i]);
-        };
-
-        std::vector<std::future<void>> events;
-
-        for (int i = 0; i < int(region_contexts_.size()); i++) {
-            events.push_back(threads_->Enqueue(render_job, i));
-        }
-
-        for (const auto &e : events) {
-            e.wait();
+        if (denoise_image) {
+            threads_->Enqueue(*render_and_denoise_tasks_).wait();
+        } else {
+            threads_->Enqueue(*render_tasks_).wait();
         }
     } else {
-        ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[0]);
-    }
-
-    const bool denoise_image =
-        app_params->denoise_after != -1 && region_contexts_[0].iteration > app_params->denoise_after;
-
-    if (denoise_image) {
-        if (Ray::RendererSupportsMultithreading(rt)) {
-            auto denoise_job = [this](const int i) { ray_renderer_->DenoiseImage(region_contexts_[i]); };
-
-            std::vector<std::future<void>> events;
-
-            for (int i = 0; i < int(region_contexts_.size()); i++) {
-                events.push_back(threads_->Enqueue(denoise_job, i));
-            }
-
-            for (const auto &e : events) {
-                e.wait();
-            }
-        } else {
-            ray_renderer_->DenoiseImage(region_contexts_[0]);
+        ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[0][0]);
+        if (denoise_image) {
+            ray_renderer_->DenoiseImage(region_contexts_[0][0]);
         }
     }
 
-    Ray::RendererBase::stats_t st = {};
-    ray_renderer_->GetStats(st);
-    ray_renderer_->ResetStats();
+    { // get stats
+        Ray::RendererBase::stats_t st = {};
+        ray_renderer_->GetStats(st);
+        ray_renderer_->ResetStats();
 
-    if (Ray::RendererSupportsMultithreading(rt)) {
-        st.time_primary_ray_gen_us /= threads_->workers_count();
-        st.time_primary_trace_us /= threads_->workers_count();
-        st.time_primary_shade_us /= threads_->workers_count();
-        st.time_primary_shadow_us /= threads_->workers_count();
-        st.time_secondary_sort_us /= threads_->workers_count();
-        st.time_secondary_trace_us /= threads_->workers_count();
-        st.time_secondary_shade_us /= threads_->workers_count();
-        st.time_secondary_shadow_us /= threads_->workers_count();
-        st.time_denoise_us /= threads_->workers_count();
-    }
+        if (Ray::RendererSupportsMultithreading(rt)) {
+            st.time_primary_ray_gen_us /= threads_->workers_count();
+            st.time_primary_trace_us /= threads_->workers_count();
+            st.time_primary_shade_us /= threads_->workers_count();
+            st.time_primary_shadow_us /= threads_->workers_count();
+            st.time_secondary_sort_us /= threads_->workers_count();
+            st.time_secondary_trace_us /= threads_->workers_count();
+            st.time_secondary_shade_us /= threads_->workers_count();
+            st.time_secondary_shadow_us /= threads_->workers_count();
+            st.time_denoise_us /= threads_->workers_count();
+        }
 
-    // LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
-    // LOGI("%llu\t%llu\t%llu\t%i", st.time_primary_ray_gen_us, st.time_primary_trace_us, st.time_primary_shade_us,
-    //     region_contexts_[0].iteration);
-    // LOGI("%llu\t%llu", st.time_secondary_sort_us, st.time_secondary_trace_us);
-
-    stats_.push_back(st);
-    if (stats_.size() > 128) {
-        stats_.erase(stats_.begin());
+        stats_.push_back(st);
+        if (stats_.size() > 128) {
+            stats_.erase(stats_.begin());
+        }
     }
 
     unsigned long long time_total = 0;
@@ -328,12 +351,12 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 
-    bool write_output = region_contexts_[0].iteration > 0;
+    bool write_output = region_contexts_[0][0].iteration > 0;
     // write output image periodically
-    write_output &= (region_contexts_[0].iteration % 128) == 0;
+    write_output &= (region_contexts_[0][0].iteration % 128) == 0;
     if (app_params->samples != -1) {
         // write output image once target sample count has been reached
-        write_output |= (region_contexts_[0].iteration == app_params->samples);
+        write_output |= (region_contexts_[0][0].iteration == app_params->samples);
     }
 
     if (write_output) {
@@ -380,7 +403,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         }
 
         ray_renderer_->log()->Info("Written: %s (%i samples)", (base_name + ".png").c_str(),
-                                   region_contexts_[0].iteration);
+                                   region_contexts_[0][0].iteration);
     }
 
     const bool should_compare_result = write_output && !app_params->ref_name.empty();
@@ -421,10 +444,10 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             psnr = std::floor(psnr * 100.0) / 100.0;
 
             ray_renderer_->log()->Info("PSNR: %.2f dB, Fireflies: %i (%i samples)", psnr, error_pixels,
-                                       region_contexts_[0].iteration);
+                                       region_contexts_[0][0].iteration);
             fflush(stdout);
 
-            if (app_params->threshold != -1 && region_contexts_[0].iteration >= app_params->samples) {
+            if (app_params->threshold != -1 && region_contexts_[0][0].iteration >= app_params->samples) {
                 ray_renderer_->log()->Info("Elapsed time: %.2fm",
                                            double(Sys::GetTimeMs() - test_start_time_) / 60000.0);
                 if (psnr < app_params->psnr || error_pixels > app_params->threshold) {
@@ -681,7 +704,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
         std::string stats4;
         stats4 += "pass:  ";
-        stats4 += std::to_string(region_contexts_[0].iteration);
+        stats4 += std::to_string(region_contexts_[0][0].iteration);
 
         std::string stats5;
         stats5 += "time:  ";
