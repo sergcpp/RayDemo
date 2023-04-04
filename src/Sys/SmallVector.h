@@ -69,7 +69,7 @@ template <typename T, int AlignmentOfT = alignof(T)> class SmallVectorImpl {
         }
 
         if (capacity_ & OwnerBit) {
-            aligned_free(begin_);
+            Sys::aligned_free(begin_);
         }
     }
 
@@ -103,7 +103,7 @@ template <typename T, int AlignmentOfT = alignof(T)> class SmallVectorImpl {
         }
 
         if (capacity_ & OwnerBit) {
-            aligned_free(begin_);
+            Sys::aligned_free(begin_);
             capacity_ = 0;
         }
 
@@ -132,7 +132,7 @@ template <typename T, int AlignmentOfT = alignof(T)> class SmallVectorImpl {
         }
 
         if (capacity_ & OwnerBit) {
-            aligned_free(begin_);
+            Sys::aligned_free(begin_);
             capacity_ = 0;
         }
 
@@ -217,6 +217,36 @@ template <typename T, int AlignmentOfT = alignof(T)> class SmallVectorImpl {
         (--end_)->~T();
     }
 
+    iterator insert(iterator pos, const T &el) {
+        const uintptr_t diff = (pos - begin_);
+        ensure_reserved(size_t(end_ - begin_) + 1);
+
+        pos = begin_ + diff;
+        for (T *it = end_; it > pos; --it) {
+            new (it) T(std::move(*(it - 1)));
+        }
+
+        ++end_;
+        new (pos) T(el);
+
+        return pos;
+    }
+
+    iterator insert(iterator pos, T &&el) {
+        const uintptr_t diff = (pos - begin_);
+        ensure_reserved(size_t(end_ - begin_) + 1);
+
+        pos = begin_ + diff;
+        for (T *it = end_; it > pos; --it) {
+            new (it) T(std::move(*(it - 1)));
+        }
+
+        ++end_;
+        new (pos) T(std::move(el));
+
+        return pos;
+    }
+
     void reserve(const size_t req_capacity) {
         const size_t cur_capacity = (capacity_ & CapacityMask);
         if (req_capacity <= cur_capacity) {
@@ -236,7 +266,7 @@ template <typename T, int AlignmentOfT = alignof(T)> class SmallVectorImpl {
         }
 
         if (capacity_ & OwnerBit) {
-            aligned_free(begin_);
+            Sys::aligned_free(begin_);
         }
 
         begin_ = new_begin;
@@ -346,6 +376,10 @@ class SmallVector : public SmallVectorImpl<T, AlignmentOfT> {
     }
 
     SmallVector &operator=(const SmallVectorImpl<T, AlignmentOfT> &rhs) {
+        SmallVectorImpl<T, AlignmentOfT>::operator=(rhs);
+        return (*this);
+    }
+    SmallVector &operator=(const SmallVector &rhs) {
         SmallVectorImpl<T, AlignmentOfT>::operator=(rhs);
         return (*this);
     }
