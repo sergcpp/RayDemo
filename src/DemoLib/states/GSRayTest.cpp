@@ -266,7 +266,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     const auto rt = ray_renderer_->type();
 
     const bool denoise_image =
-        app_params->denoise_after != -1 && region_contexts_[0][0].iteration > app_params->denoise_after;
+        app_params->denoise_after != -1 && region_contexts_[0][0].iteration >= app_params->denoise_after;
 
     if (Ray::RendererSupportsMultithreading(rt)) {
         if (denoise_image) {
