@@ -320,8 +320,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     int w, h;
     std::tie(w, h) = ray_renderer_->size();
-    const Ray::color_rgba_t *pixel_data =
-        denoise_image ? ray_renderer_->get_denoised_pixels_ref() : ray_renderer_->get_pixels_ref();
+    const Ray::color_rgba_t *pixel_data = ray_renderer_->get_denoised_pixels_ref();
 
 #if 0
     const auto *base_color = ray_renderer_->get_aux_pixels_ref(Ray::BaseColor);
