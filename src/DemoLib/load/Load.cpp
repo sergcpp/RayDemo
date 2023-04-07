@@ -440,9 +440,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 if (js_cam.Has("filter")) {
                     const JsString &js_filter = js_cam.at("filter").as_str();
                     if (js_filter.val == "box") {
-                        cam_desc.filter = Ray::Box;
+                        cam_desc.filter = Ray::eFilterType::Box;
                     } else if (js_filter.val == "tent") {
-                        cam_desc.filter = Ray::Tent;
+                        cam_desc.filter = Ray::eFilterType::Tent;
                     } else {
                         throw std::runtime_error("Unknown filter parameter!");
                     }
@@ -450,7 +450,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_cam.Has("srgb")) {
                     const JsLiteral &js_srgb = js_cam.at("srgb").as_lit();
-                    cam_desc.dtype = (js_srgb.val == JsLiteralType::True) ? Ray::SRGB : Ray::None;
+                    cam_desc.dtype =
+                        (js_srgb.val == JsLiteralType::True) ? Ray::eDeviceType::SRGB : Ray::eDeviceType::None;
                 }
 
                 if (view_targeted) {
@@ -854,15 +855,15 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 }
 
                 if (js_type.val == "diffuse") {
-                    node_desc.type = Ray::DiffuseNode;
+                    node_desc.type = Ray::eShadingNode::Diffuse;
                 } else if (js_type.val == "glossy") {
-                    node_desc.type = Ray::GlossyNode;
+                    node_desc.type = Ray::eShadingNode::Glossy;
                 } else if (js_type.val == "refractive") {
-                    node_desc.type = Ray::RefractiveNode;
+                    node_desc.type = Ray::eShadingNode::Refractive;
                 } else if (js_type.val == "emissive") {
-                    node_desc.type = Ray::EmissiveNode;
+                    node_desc.type = Ray::eShadingNode::Emissive;
                 } else if (js_type.val == "mix") {
-                    node_desc.type = Ray::MixNode;
+                    node_desc.type = Ray::eShadingNode::Mix;
 
                     const JsArray &mix_materials = js_mat_obj.at("materials").as_arr();
                     for (const auto &m : mix_materials.elements) {
@@ -876,7 +877,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         }
                     }
                 } else if (js_type.val == "transparent") {
-                    node_desc.type = Ray::TransparentNode;
+                    node_desc.type = Ray::eShadingNode::Transparent;
                 } else {
                     throw std::runtime_error("unknown material type");
                 }
@@ -917,8 +918,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             Ray::mesh_desc_t mesh_desc;
             mesh_desc.name = mesh_name;
-            mesh_desc.prim_type = Ray::TriangleList;
-            mesh_desc.layout = Ray::PxyzNxyzTuv;
+            mesh_desc.prim_type = Ray::ePrimType::TriangleList;
+            mesh_desc.layout = Ray::eVertexLayout::PxyzNxyzTuv;
             mesh_desc.vtx_attrs = &attrs[0];
             mesh_desc.vtx_attrs_count = attrs.size() / 8;
             mesh_desc.vtx_indices = &indices[0];
@@ -928,7 +929,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             for (size_t i = 0; i < groups.size(); i += 2) {
                 const JsString &js_mat_name = js_materials.at(i / 2).as_str();
                 const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
-                mesh_desc.shapes.push_back({mat_handle, mat_handle, groups[i], groups[i + 1]});
+                mesh_desc.shapes.emplace_back(mat_handle, mat_handle, groups[i], groups[i + 1]);
             }
 
             if (js_mesh_obj.Has("allow_spatial_splits")) {
@@ -1459,15 +1460,15 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 
     std::vector<float> attrs;
     attrs.resize(num_attrs);
-    in_file.read((char *)&attrs[0], (size_t)num_attrs * 4);
+    in_file.read((char *)&attrs[0], std::streamsize(num_attrs) * 4);
 
     std::vector<unsigned> indices;
     indices.resize((size_t)num_indices);
-    in_file.read((char *)&indices[0], (size_t)num_indices * 4);
+    in_file.read((char *)&indices[0], std::streamsize(num_indices) * 4);
 
     std::vector<unsigned> groups;
     groups.resize((size_t)num_groups);
-    in_file.read((char *)&groups[0], (size_t)num_groups * 4);
+    in_file.read((char *)&groups[0], std::streamsize(num_groups) * 4);
 
     return std::make_tuple(std::move(attrs), std::move(indices), std::move(groups));
 }
@@ -1481,7 +1482,7 @@ std::vector<Ray::color_rgba8_t> LoadTGA(const char *name, int &w, int &h) {
     }
 
     in_file.seekg(0, std::ios::end);
-    size_t in_file_size = (size_t)in_file.tellg();
+    std::streamsize in_file_size = in_file.tellg();
     in_file.seekg(0, std::ios::beg);
 
     std::vector<char> in_file_data(in_file_size);

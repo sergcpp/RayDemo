@@ -50,8 +50,7 @@ void GSRayTest::UpdateRegionContexts() {
     const auto rt = ray_renderer_->type();
     const auto sz = ray_renderer_->size();
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
-        rt == Ray::RendererAVX2 || rt == Ray::RendererAVX512 || rt == Ray::RendererNEON) {
+    if (Ray::RendererSupportsMultithreading(rt)) {
         const int BucketSize = 32;
 
         for (int y = 0; y < sz.second; y += BucketSize) {
@@ -387,10 +386,10 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         }
 
         if (app_params->output_aux) { // Output base color, normals, depth
-            const auto *base_color = ray_renderer_->get_aux_pixels_ref(Ray::BaseColor);
+            const auto *base_color = ray_renderer_->get_aux_pixels_ref(Ray::eAUXBuffer::BaseColor);
             WritePNG(base_color, w, h, 3, false /* flip */, (base_name + "_base_color.png").c_str());
 
-            const auto *depth_normals = ray_renderer_->get_aux_pixels_ref(Ray::DepthNormals);
+            const auto *depth_normals = ray_renderer_->get_aux_pixels_ref(Ray::eAUXBuffer::DepthNormals);
             std::vector<Ray::color_rgba_t> depth_normals_rgba(w * h);
             for (int i = 0; i < w * h; ++i) {
                 depth_normals_rgba[i].v[0] = depth_normals[i].v[0] * 0.5f + 0.5f;
