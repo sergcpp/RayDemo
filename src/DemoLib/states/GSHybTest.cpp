@@ -36,7 +36,8 @@ GSHybTest::GSHybTest(GameBase *game) : game_(game) {
     s.h = game->height;
     cpu_tracer_ = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(
         s, log.get(),
-        Ray::RendererAVX2 | Ray::RendererAVX | Ray::RendererSSE2 | Ray::RendererSSE41 | Ray::RendererRef));
+        Ray::Bitmask<Ray::eRendererType>{Ray::eRendererType::SIMD_AVX2} | Ray::eRendererType::SIMD_AVX |
+            Ray::eRendererType::SIMD_SSE2 | Ray::eRendererType::SIMD_SSE41 | Ray::eRendererType::Reference));
 
     threads_ = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
@@ -48,7 +49,7 @@ void GSHybTest::UpdateRegionContexts() {
     if (gpu_cpu_div_fac_ > 0.95f)
         gpu_cpu_div_fac_ = 0.95f;
 
-    const int gpu_start_hor = (int)(ctx_->h() * gpu_cpu_div_fac_);
+    const int gpu_start_hor = int(ctx_->h() * gpu_cpu_div_fac_);
 
     { // setup gpu renderers
         if (gpu_tracers_.size() == 2) {

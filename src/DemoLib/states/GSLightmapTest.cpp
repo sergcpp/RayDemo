@@ -41,7 +41,7 @@ void GSLightmapTest::UpdateRegionContexts() {
     const auto rt = ray_renderer_->type();
     const auto sz = ray_renderer_->size();
 
-    if (rt == Ray::RendererRef /*|| rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX || rt == Ray::RendererAVX2*/) {
+    if (Ray::RendererSupportsMultithreading(rt)) {
         const int BUCKET_SIZE = 128;
 
         for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
@@ -129,7 +129,7 @@ void GSLightmapTest::Enter() {
 
     { // add camera for lightmapping
         Ray::camera_desc_t cam_desc;
-        cam_desc.type = Ray::Geo;
+        cam_desc.type = Ray::eCamType::Geo;
         cam_desc.mi_index = 0;
         cam_desc.uv_index = 0;
         cam_desc.gamma = 2.2f;
@@ -144,30 +144,6 @@ void GSLightmapTest::Enter() {
     }
 
     UpdateRegionContexts();
-#if 0
-    int w, h;
-    auto pixels = LoadTGA("C:\\Users\\MA\\Documents\\untitled.tga", w, h);
-
-    {
-        std::ofstream out_file("test_img1.h", std::ios::binary);
-        out_file << "static const int img_w = " << w << ";\n";
-        out_file << "static const int img_h = " << h << ";\n";
-
-        out_file << "static const uint8_t img_data[] = {\n\t";
-
-        out_file << std::hex << std::setw(2) << std::setfill('0');
-
-        for (size_t i = 0; i < pixels.size(); i++) {
-            out_file << "0x" << std::setw(2) << (int)(pixels[i].r) << ", ";
-            out_file << "0x" << std::setw(2) << (int)(pixels[i].g) << ", ";
-            out_file << "0x" << std::setw(2) << (int)(pixels[i].b) << ", ";
-            out_file << "0x" << std::setw(2) << (int)(pixels[i].a) << ", ";
-            //if (i % 64 == 0 && i != 0) out_file << "\n\t";
-        }
-
-        out_file << "\n};\n";
-    }
-#endif
 }
 
 void GSLightmapTest::Exit() {}
@@ -196,8 +172,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
 
     const auto rt = ray_renderer_->type();
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
-        rt == Ray::RendererAVX2) {
+    if (Ray::RendererSupportsMultithreading(rt)) {
         auto render_job = [this](int i) { ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i]); };
 
         std::vector<std::future<void>> events;
@@ -219,8 +194,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
 
     // LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererSSE41 || rt == Ray::RendererAVX ||
-        rt == Ray::RendererAVX2) {
+    if (Ray::RendererSupportsMultithreading(rt)) {
         st.time_primary_ray_gen_us /= threads_->workers_count();
         st.time_primary_trace_us /= threads_->workers_count();
         st.time_primary_shade_us /= threads_->workers_count();
