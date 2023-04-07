@@ -47,8 +47,7 @@ struct Task {
     std::atomic_int dependencies = {};
 
     Task() = default;
-    Task(const Task &rhs)
-        : func(rhs.func), dependents(rhs.dependents), dependencies(rhs.dependencies.load()) {}
+    Task(const Task &rhs) : func(rhs.func), dependents(rhs.dependents), dependencies(rhs.dependencies.load()) {}
 };
 
 struct TaskList {
@@ -80,7 +79,7 @@ struct TaskList {
     void Sort(const bool keep_close = false) {
         tasks_order.clear();
 
-        SmallVector<int, 128> task_dependencies(tasks.size());
+        SmallVector<short, 128> task_dependencies(tasks.size());
         for (short i = 0; i < short(tasks.size()); ++i) {
             task_dependencies[i] = tasks[i].dependencies;
         }
@@ -137,6 +136,7 @@ class ThreadPool {
   private:
     Sys::SmallVector<std::thread, 64> workers_;
     std::deque<SmallVector<Task, 16>> task_lists_;
+    std::atomic_int active_tasks_ = {};
 
     // synchronization
     std::mutex q_mtx_;
@@ -163,7 +163,7 @@ inline ThreadPool::ThreadPool(const int threads_count, const eThreadPriority pri
 
                 {
                     std::unique_lock<std::mutex> lock(q_mtx_);
-                    condition_.wait(lock, [this] { return stop_ || !task_lists_.empty(); });
+                    condition_.wait(lock, [this] { return stop_ || active_tasks_ != 0; });
                     if (stop_ && task_lists_.empty()) {
                         return;
                     }
@@ -177,6 +177,7 @@ inline ThreadPool::ThreadPool(const int threads_count, const eThreadPriority pri
                                 task = std::move(list[i].func);
                                 list[i].func = nullptr;
                                 dependents = std::move(list[i].dependents);
+                                --active_tasks_;
                                 break;
                             }
                         }
@@ -189,6 +190,8 @@ inline ThreadPool::ThreadPool(const int threads_count, const eThreadPriority pri
                     while (!task_lists_.empty() && task_lists_.front().empty()) {
                         task_lists_.pop_front();
                     }
+
+                    assert(!task_lists_.empty() || active_tasks_ == 0);
                 }
 
                 if (task) {
@@ -196,6 +199,7 @@ inline ThreadPool::ThreadPool(const int threads_count, const eThreadPriority pri
 
                     for (const int i : dependents) {
                         if ((*cur_list)[i].dependencies.fetch_sub(1) == 1) {
+                            ++active_tasks_;
                             condition_.notify_one();
                         }
                     }
@@ -248,6 +252,8 @@ std::future<typename std::result_of<F(Args...)>::type> ThreadPool::Enqueue(F &&f
         task_lists_.emplace_back();
         task_lists_.back().emplace_back();
         task_lists_.back().back().func = [task]() { (*task)(); };
+
+        ++active_tasks_;
     }
     condition_.notify_one();
 
@@ -276,6 +282,9 @@ inline std::future<void> ThreadPool::Enqueue(const TaskList &task_list) {
             task_lists_.back().emplace_back(task_list.tasks[task_list.tasks_order[i]]);
             for (short &k : task_lists_.back().back().dependents) {
                 k = short(task_list.tasks_order.size() - task_list.tasks_pos[k]);
+            }
+            if (task_lists_.back().back().dependencies == 0) {
+                ++active_tasks_;
             }
             task_lists_.back().back().dependents.push_back(0);
         }
@@ -308,6 +317,9 @@ inline std::future<void> ThreadPool::Enqueue(TaskList &&task_list) {
             for (short &k : task_lists_.back().back().dependents) {
                 k = short(task_list.tasks_order.size() - task_list.tasks_pos[k]);
             }
+            if (task_lists_.back().back().dependencies == 0) {
+                ++active_tasks_;
+            }
             task_lists_.back().back().dependents.push_back(0);
         }
     }
@@ -326,6 +338,7 @@ inline ThreadPool::~ThreadPool() {
     for (std::thread &worker : workers_) {
         worker.join();
     }
+    assert(active_tasks_ == 0);
 }
 
 } // namespace Sys
