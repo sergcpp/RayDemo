@@ -9,6 +9,7 @@ void test_optional();
 void test_pack();
 void test_scope_exit();
 void test_signal();
+void test_thread_pool();
 void test_vector();
 
 int main() {
@@ -20,6 +21,7 @@ int main() {
     //test_pack();
     test_scope_exit();
     test_signal();
+    test_thread_pool();
     test_vector();
     puts("OK");
 }
