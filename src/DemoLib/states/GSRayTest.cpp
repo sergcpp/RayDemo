@@ -78,7 +78,7 @@ void GSRayTest::UpdateRegionContexts() {
         };
 
         std::vector<Sys::SmallVector<short, 128>> render_task_ids;
-        
+
         render_tasks_ = std::make_unique<Sys::TaskList>();
         render_and_denoise_tasks_ = std::make_unique<Sys::TaskList>();
 
@@ -111,9 +111,30 @@ void GSRayTest::UpdateRegionContexts() {
         render_and_denoise_tasks_->Sort();
         assert(!render_and_denoise_tasks_->HasCycles());
     } else {
+#if 1
         const auto rect = Ray::rect_t{0, 0, sz.first, sz.second};
         region_contexts_.emplace_back();
         region_contexts_.back().emplace_back(rect);
+#else
+        const int BucketSize = 32;
+
+        bool skip_tile = false;
+        for (int y = 0; y < sz.second; y += BucketSize) {
+            skip_tile = !skip_tile;
+
+            region_contexts_.emplace_back();
+            for (int x = 0; x < sz.first; x += BucketSize) {
+                skip_tile = !skip_tile;
+                if (skip_tile) {
+                    continue;
+                }
+
+                const auto rect =
+                    Ray::rect_t{x, y, std::min(sz.first - x, BucketSize), std::min(sz.second - y, BucketSize)};
+                region_contexts_.back().emplace_back(rect);
+            }
+        }
+#endif
     }
 }
 
@@ -201,30 +222,6 @@ void GSRayTest::Enter() {
 
     UpdateRegionContexts();
     test_start_time_ = Sys::GetTimeMs();
-#if 0
-    int w, h;
-    auto pixels = LoadTGA("C:\\Users\\MA\\Documents\\untitled.tga", w, h);
-
-    {
-        std::ofstream out_file("test_img1.h", std::ios::binary);
-        out_file << "static const int img_w = " << w << ";\n";
-        out_file << "static const int img_h = " << h << ";\n";
-
-        out_file << "static const uint8_t img_data[] = {\n\t";
-
-        out_file << std::hex << std::setw(2) << std::setfill('0');
-
-        for (size_t i = 0; i < pixels.size(); i++) {
-            out_file << "0x" << std::setw(2) << int(pixels[i].r) << ", ";
-            out_file << "0x" << std::setw(2) << int(pixels[i].g) << ", ";
-            out_file << "0x" << std::setw(2) << int(pixels[i].b) << ", ";
-            out_file << "0x" << std::setw(2) << int(pixels[i].a) << ", ";
-            //if (i % 64 == 0 && i != 0) out_file << "\n\t";
-        }
-
-        out_file << "\n};\n";
-    }
-#endif
 }
 
 void GSRayTest::Exit() {}
@@ -274,9 +271,17 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             threads_->Enqueue(*render_tasks_).wait();
         }
     } else {
-        ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[0][0]);
+        for (auto &regions_row : region_contexts_) {
+            for (auto &region : regions_row) {
+                ray_renderer_->RenderScene(ray_scene_.get(), region);
+            }
+        }
         if (denoise_image) {
-            ray_renderer_->DenoiseImage(region_contexts_[0][0]);
+            for (const auto &regions_row : region_contexts_) {
+                for (const auto &region : regions_row) {
+                    ray_renderer_->DenoiseImage(region);
+                }
+            }
         }
     }
 
