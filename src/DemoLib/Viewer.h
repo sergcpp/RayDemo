@@ -27,6 +27,8 @@ struct AppParams {
     int denoise_after = -1;
     bool output_exr = false;
     bool output_aux = false;
+    float clamp_direct = 0.0f;
+    float clamp_indirect = 10.0f;
 };
 
 class Viewer : public GameBase {
