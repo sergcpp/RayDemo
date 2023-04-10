@@ -189,6 +189,10 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.denoise_after = 1;
         } else if (strcmp(argv[i], "--denoise_after") == 0 && (++i != argc)) {
             app_params.denoise_after = int(strtol(argv[i], nullptr, 10));
+        } else if (strcmp(argv[i], "--clamp_direct") == 0 && (++i != argc)) {
+            app_params.clamp_direct = float(atof(argv[i]));
+        } else if (strcmp(argv[i], "--clamp_indirect") == 0 && (++i != argc)) {
+            app_params.clamp_indirect = float(atof(argv[i]));
         }
     }
 

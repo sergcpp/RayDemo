@@ -1,1 +1,1 @@
-DemoApp.exe -w 632 -h 840 -s assets/scenes/bathroom.json --nogpu --refr_depth 12 --total_depth 12 --denoise
+DemoApp.exe -w 632 -h 840 -s assets/scenes/bathroom.json --nogpu --refr_depth 12 --total_depth 12 --clamp_indirect 0.0 --denoise

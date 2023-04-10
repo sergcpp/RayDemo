@@ -214,6 +214,9 @@ void GSRayTest::Enter() {
         cam_desc.output_depth_normals = true;
     }
 
+    cam_desc.clamp_direct = app_params->clamp_direct;
+    cam_desc.clamp_indirect = app_params->clamp_indirect;
+
     ray_scene_->SetCamera(current_cam_, cam_desc);
 
     memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
