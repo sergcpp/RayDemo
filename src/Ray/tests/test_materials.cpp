@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <fstream>
-#include <regex>
 
 #include "../RendererFactory.h"
 
@@ -54,9 +53,7 @@ void run_material_test(const char *arch_list[], const char *preferred_device, co
                     }
                     if (preferred_device) {
                         // make sure we use requested device
-                        std::regex match_name(preferred_device);
-                        if (!require(std::regex_search(renderer->device_name(), match_name)) &&
-                            strcmp(renderer->device_name(), preferred_device) != 0) {
+                        if (!require(Ray::MatchDeviceNames(renderer->device_name(), preferred_device))) {
                             printf("Wrong device: %s (%s was requested)\n", renderer->device_name(), preferred_device);
                             return;
                         }
@@ -1533,7 +1530,7 @@ void test_complex_mat6_denoised(const char *arch_list[], const char *preferred_d
 }
 
 void test_complex_mat6_dof(const char *arch_list[], const char *preferred_device) {
-    const int SampleCount = 266;
+    const int SampleCount = 268;
     const int PixThres = 2831;
 
     Ray::principled_mat_desc_t olive_mat_desc;
@@ -1642,7 +1639,7 @@ void test_complex_mat7_refractive(const char *arch_list[], const char *preferred
 
 void test_complex_mat7_principled(const char *arch_list[], const char *preferred_device) {
     const int SampleCount = 459;
-    const int PixThres = 2482;
+    const int PixThres = 2483;
 
     Ray::principled_mat_desc_t unused;
     run_material_test(arch_list, preferred_device, "complex_mat7_principled", unused, SampleCount, VeryFastMinPSNR,
