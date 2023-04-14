@@ -221,13 +221,19 @@ inline bool ThreadPool::SetPriority(const int i, const eThreadPriority priority)
     const BOOL res = SetThreadPriority(workers_[i].native_handle(), win32_priority);
     return (res == TRUE);
 #else
-    int posix_policy = SCHED_OTHER;
+    int posix_policy;
+    sched_param param;
+    if (pthread_getschedparam(workers_[i].native_handle(), &posix_policy, &param) != 0) {
+        return false;
+    }
+
+    posix_policy = SCHED_RR;
 #ifndef __APPLE__
     if (priority == eThreadPriority::Low) {
         posix_policy = SCHED_IDLE;
     }
 #endif
-    const sched_param param = {};
+
     return (0 == pthread_setschedparam(workers_[i].native_handle(), posix_policy, &param));
 #endif
 }
