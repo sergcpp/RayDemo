@@ -309,7 +309,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 const JsObject &js_cam = js_cam_el.as_obj();
 
                 Ray::camera_desc_t cam_desc;
-                cam_desc.clamp = true;
 
                 bool view_targeted = false;
                 Ren::Vec3f view_origin, view_dir = {0, 0, -1}, view_up, view_target;
