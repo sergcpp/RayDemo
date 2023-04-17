@@ -447,10 +447,27 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     }
                 }
 
-                if (js_cam.Has("srgb")) {
-                    const JsLiteral &js_srgb = js_cam.at("srgb").as_lit();
-                    cam_desc.dtype =
-                        (js_srgb.val == JsLiteralType::True) ? Ray::eDeviceType::SRGB : Ray::eDeviceType::None;
+                if (js_cam.Has("view_transform")) {
+                    const JsString &js_view_transform = js_cam.at("view_transform").as_str();
+                    if (js_view_transform.val == "standard") {
+                        cam_desc.view_transform = Ray::eViewTransform::Standard;
+                    } else if (js_view_transform.val == "filmic") {
+                        cam_desc.view_transform = Ray::eViewTransform::Filmic;
+                    } else if (js_view_transform.val == "filmic_very_low_contrast") {
+                        cam_desc.view_transform = Ray::eViewTransform::Filmic_VeryLowContrast;
+                    } else if (js_view_transform.val == "filmic_low_contrast") {
+                        cam_desc.view_transform = Ray::eViewTransform::Filmic_LowContrast;
+                    } else if (js_view_transform.val == "filmic_med_low_contrast") {
+                        cam_desc.view_transform = Ray::eViewTransform::Filmic_MediumLowContrast;
+                    } else if (js_view_transform.val == "filmic_med_contrast") {
+                        cam_desc.view_transform = Ray::eViewTransform::Filmic_MediumContrast;
+                    } else if (js_view_transform.val == "filmic_med_high_contrast") {
+                        cam_desc.view_transform = Ray::eViewTransform::Filmic_MediumHighContrast;
+                    } else if (js_view_transform.val == "filmic_high_contrast") {
+                        cam_desc.view_transform = Ray::eViewTransform::Filmic_HighContrast;
+                    } else if (js_view_transform.val == "filmic_very_high_contrast") {
+                        cam_desc.view_transform = Ray::eViewTransform::Filmic_VeryHighContrast;
+                    }
                 }
 
                 if (view_targeted) {
