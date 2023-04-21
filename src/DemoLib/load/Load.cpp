@@ -452,7 +452,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     if (js_view_transform.val == "standard") {
                         cam_desc.view_transform = Ray::eViewTransform::Standard;
                     } else if (js_view_transform.val == "filmic") {
-                        cam_desc.view_transform = Ray::eViewTransform::Filmic;
+                        cam_desc.view_transform = Ray::eViewTransform::Filmic_MediumContrast;
                     } else if (js_view_transform.val == "filmic_very_low_contrast") {
                         cam_desc.view_transform = Ray::eViewTransform::Filmic_VeryLowContrast;
                     } else if (js_view_transform.val == "filmic_low_contrast") {
