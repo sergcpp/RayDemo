@@ -832,7 +832,7 @@ deploy-job:
       - macos-arm64/
     expire_in: 1 week
   tags:
-    - windows
+    - deployer
   rules:
     - if: $CI_COMMIT_BRANCH
 
@@ -893,6 +893,6 @@ deploy-job-full:
       - macos-arm64/
     expire_in: 1 week
   tags:
-    - windows
+    - deployer
   rules:
     - if: $CI_COMMIT_TAG
