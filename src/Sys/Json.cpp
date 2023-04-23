@@ -370,7 +370,7 @@ void JsObjectT<Alloc>::Write(std::ostream &out, JsFlags flags) const {
         }
     }
     if (!ident_str.empty()) {
-        ident_str = ident_str.substr(0, ident_str.length() - (flags.use_spaces ? 4 : 1));
+        ident_str.resize(ident_str.length() - (flags.use_spaces ? 4 : 1));
     }
     out << ident_str << '}';
 }
