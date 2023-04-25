@@ -65,14 +65,16 @@ void GSRayTest::UpdateRegionContexts() {
 
         auto render_job = [this](const int i, const int j) {
 #if !defined(NDEBUG) && defined(_WIN32)
-            _controlfp(_EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
+            unsigned old_value;
+            _controlfp_s(&old_value, _EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
 #endif
             ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i][j]);
         };
 
         auto denoise_job = [this](const int i, const int j) {
 #if !defined(NDEBUG) && defined(_WIN32)
-            _controlfp(_EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
+            unsigned old_value;
+            _controlfp_s(&old_value, _EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
 #endif
             ray_renderer_->DenoiseImage(region_contexts_[i][j]);
         };
