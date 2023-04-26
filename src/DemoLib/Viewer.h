@@ -15,7 +15,8 @@ struct AppParams {
     std::string scene_name;
     std::string ref_name;
     std::string device_name;
-    int samples = -1;
+    int min_samples = 128;
+    int max_samples = -1;
     double psnr = 0.0;
     int threshold = -1;
     int diff_depth = 4;
@@ -29,6 +30,7 @@ struct AppParams {
     bool output_aux = false;
     float clamp_direct = 0.0f;
     float clamp_indirect = 10.0f;
+    float variance_threshold = 0.0f;
 };
 
 class Viewer : public GameBase {
