@@ -219,6 +219,9 @@ void GSRayTest::Enter() {
     cam_desc.clamp_direct = app_params->clamp_direct;
     cam_desc.clamp_indirect = app_params->clamp_indirect;
 
+    cam_desc.min_samples = app_params->min_samples;
+    cam_desc.variance_threshold = app_params->variance_threshold;
+
     ray_scene_->SetCamera(current_cam_, cam_desc);
 
     memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
@@ -362,9 +365,9 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     bool write_output = region_contexts_[0][0].iteration > 0;
     // write output image periodically
     write_output &= (region_contexts_[0][0].iteration % 128) == 0;
-    if (app_params->samples != -1) {
+    if (app_params->max_samples != -1) {
         // write output image once target sample count has been reached
-        write_output |= (region_contexts_[0][0].iteration == app_params->samples);
+        write_output |= (region_contexts_[0][0].iteration == app_params->max_samples);
     }
 
     if (write_output) {
@@ -455,7 +458,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                                        region_contexts_[0][0].iteration);
             fflush(stdout);
 
-            if (app_params->threshold != -1 && region_contexts_[0][0].iteration >= app_params->samples) {
+            if (app_params->threshold != -1 && region_contexts_[0][0].iteration >= app_params->max_samples) {
                 ray_renderer_->log()->Info("Elapsed time: %.2fm",
                                            double(Sys::GetTimeMs() - test_start_time_) / 60000.0);
                 if (psnr < app_params->psnr || error_pixels > app_params->threshold) {

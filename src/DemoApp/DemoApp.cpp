@@ -161,8 +161,10 @@ int DemoApp::Run(int argc, char *argv[]) {
             nobindless = true;
         } else if (strcmp(argv[i], "--nocompression") == 0) {
             nocompression = true;
-        } else if (strcmp(argv[i], "--samples") == 0 && (++i != argc)) {
-            app_params.samples = int(strtol(argv[i], nullptr, 10));
+        } else if (strcmp(argv[i], "--min_samples") == 0 && (++i != argc)) {
+            app_params.min_samples = int(strtol(argv[i], nullptr, 10));
+        } else if (strcmp(argv[i], "--max_samples") == 0 && (++i != argc)) {
+            app_params.max_samples = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--psnr") == 0 && (++i != argc)) {
             app_params.psnr = strtod(argv[i], nullptr);
         } else if (strcmp(argv[i], "--threshold") == 0 && (++i != argc)) {
@@ -193,6 +195,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.clamp_direct = float(atof(argv[i]));
         } else if (strcmp(argv[i], "--clamp_indirect") == 0 && (++i != argc)) {
             app_params.clamp_indirect = float(atof(argv[i]));
+        } else if (strcmp(argv[i], "--variance_threshold") == 0 && (++i != argc)) {
+            app_params.variance_threshold = float(atof(argv[i]));
         }
     }
 
