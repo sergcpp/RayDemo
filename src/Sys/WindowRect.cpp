@@ -1,5 +1,8 @@
 #include "WindowRect.h"
 
+#include <cstdio>
+#include <cstdlib>
+
 #if defined(_WIN32)
 #ifndef NOMINMAX
 #define NOMINMAX
