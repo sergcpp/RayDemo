@@ -3,8 +3,6 @@
 #include <cassert>
 #include <cstring>
 
-#include <cstring>
-
 #include <algorithm>
 
 #include <fcntl.h>
