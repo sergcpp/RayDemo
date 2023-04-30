@@ -211,7 +211,7 @@ void GSRayTest::Enter() {
     cam_desc.max_transp_depth = app_params->transp_depth;
     cam_desc.max_total_depth = total_depth_ = app_params->total_depth;
 
-    if (app_params->output_aux) {
+    if (app_params->output_aux || app_params->denoise_after != -1) {
         cam_desc.output_base_color = true;
         cam_desc.output_depth_normals = true;
     }
