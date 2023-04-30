@@ -573,21 +573,25 @@ void Ray::Vk::Renderer::kernel_FilterVariance(VkCommandBuffer cmd_buf, const Tex
 }
 
 void Ray::Vk::Renderer::kernel_NLMFilter(VkCommandBuffer cmd_buf, const Texture2D &img_buf, const Texture2D &var_buf,
-                                         const float alpha, const float damping, const Texture2D &out_raw_img,
-                                         const eViewTransform view_transform, const float inv_gamma, const rect_t &rect,
-                                         const Texture2D &out_img) {
-    const TransitionInfo res_transitions[] = {{&img_buf, eResState::ShaderResource},
-                                              {&var_buf, eResState::ShaderResource},
-                                              {&tonemap_lut_, eResState::ShaderResource},
-                                              {&out_img, eResState::UnorderedAccess},
-                                              {&out_raw_img, eResState::UnorderedAccess}};
+                                         const float alpha, const float damping, const Texture2D &feature0_img,
+                                         float feature0_weight, const Texture2D &feature1_img, float feature1_weight,
+                                         const Texture2D &out_raw_img, const eViewTransform view_transform,
+                                         const float inv_gamma, const rect_t &rect, const Texture2D &out_img) {
+    const TransitionInfo res_transitions[] = {
+        {&img_buf, eResState::ShaderResource},      {&var_buf, eResState::ShaderResource},
+        {&tonemap_lut_, eResState::ShaderResource}, {&feature0_img, eResState::ShaderResource},
+        {&feature1_img, eResState::ShaderResource}, {&out_img, eResState::UnorderedAccess},
+        {&out_raw_img, eResState::UnorderedAccess}};
     TransitionResourceStates(cmd_buf, AllStages, AllStages, res_transitions);
 
-    const Binding bindings[] = {{eBindTarget::Tex2D, NLMFilter::IN_IMG_SLOT, img_buf},
-                                {eBindTarget::Tex2D, NLMFilter::VARIANCE_IMG_SLOT, var_buf},
-                                {eBindTarget::Tex3D, NLMFilter::TONEMAP_LUT_SLOT, tonemap_lut_},
-                                {eBindTarget::Image, NLMFilter::OUT_IMG_SLOT, out_img},
-                                {eBindTarget::Image, NLMFilter::OUT_RAW_IMG_SLOT, out_raw_img}};
+    const Binding bindings[] = {
+        {eBindTarget::Tex2D, NLMFilter::IN_IMG_SLOT, img_buf},
+        {eBindTarget::Tex2D, NLMFilter::VARIANCE_IMG_SLOT, var_buf},
+        {eBindTarget::Tex3D, NLMFilter::TONEMAP_LUT_SLOT, tonemap_lut_},
+        {eBindTarget::Tex2D, NLMFilter::FEATURE0_IMG_SLOT, feature0_img.ready() ? feature0_img : feature1_img},
+        {eBindTarget::Tex2D, NLMFilter::FEATURE1_IMG_SLOT, feature1_img},
+        {eBindTarget::Image, NLMFilter::OUT_IMG_SLOT, out_img},
+        {eBindTarget::Image, NLMFilter::OUT_RAW_IMG_SLOT, out_raw_img}};
 
     const uint32_t grp_count[3] = {
         uint32_t((rect.w + NLMFilter::LOCAL_GROUP_SIZE_X - 1) / NLMFilter::LOCAL_GROUP_SIZE_X),
@@ -604,9 +608,19 @@ void Ray::Vk::Renderer::kernel_NLMFilter(VkCommandBuffer cmd_buf, const Texture2
     uniform_params.damping = damping;
     uniform_params.inv_gamma = inv_gamma;
     uniform_params.tonemap_mode = (loaded_view_transform_ == eViewTransform::Standard) ? 0 : 1;
+    uniform_params.feature0_weight = feature0_img.ready() ? feature0_weight : feature1_weight;
+    uniform_params.feature1_weight = feature1_weight;
 
-    DispatchCompute(cmd_buf, pi_nlm_filter_, grp_count, bindings, &uniform_params, sizeof(uniform_params),
-                    ctx_->default_descr_alloc(), ctx_->log());
+    int pipeline_index = 0;
+    if (feature0_img.ready()) {
+        ++pipeline_index;
+    }
+    if (feature1_img.ready()) {
+        ++pipeline_index;
+    }
+
+    DispatchCompute(cmd_buf, pi_nlm_filter_[pipeline_index], grp_count, bindings, &uniform_params,
+                    sizeof(uniform_params), ctx_->default_descr_alloc(), ctx_->log());
 }
 
 void Ray::Vk::Renderer::kernel_DebugRT(VkCommandBuffer cmd_buf, const scene_data_t &sc_data, uint32_t node_index,

@@ -4435,10 +4435,13 @@ void Ray::Ref::ShadeSecondary(const pass_settings_t &ps, Span<const hit_data_t> 
     }
 }
 
-template <int WINDOW_SIZE, int NEIGHBORHOOD_SIZE>
-void Ray::Ref::NLMFilter(const color_rgba_t input[], const rect_t &rect, const int input_stride, const float alpha,
-                         const float damping, const color_rgba_t variance[], const rect_t &output_rect,
-                         const int output_stride, color_rgba_t output[]) {
+namespace Ray {
+namespace Ref {
+template <int WINDOW_SIZE, int NEIGHBORHOOD_SIZE, bool FEATURE1, bool FEATURE2>
+void JointNLMFilter(const color_rgba_t input[], const rect_t &rect, const int input_stride, const float alpha,
+                    const float damping, const color_rgba_t variance[], const color_rgba_t feature1[],
+                    const float feature1_weight, const color_rgba_t feature2[], const float feature2_weight,
+                    const rect_t &output_rect, const int output_stride, color_rgba_t output[]) {
     const int WindowRadius = (WINDOW_SIZE - 1) / 2;
     const float PatchDistanceNormFactor = NEIGHBORHOOD_SIZE * NEIGHBORHOOD_SIZE;
     const int NeighborRadius = (NEIGHBORHOOD_SIZE - 1) / 2;
@@ -4457,7 +4460,7 @@ void Ray::Ref::NLMFilter(const color_rgba_t input[], const rect_t &rect, const i
                 for (int l = -WindowRadius; l <= WindowRadius; ++l) {
                     const int jx = ix + l;
 
-                    simd_fvec4 distance = {};
+                    simd_fvec4 color_distance = {};
 
                     for (int q = -NeighborRadius; q <= NeighborRadius; ++q) {
                         for (int p = -NeighborRadius; p <= NeighborRadius; ++p) {
@@ -4468,16 +4471,43 @@ void Ray::Ref::NLMFilter(const color_rgba_t input[], const rect_t &rect, const i
                             const simd_fvec4 jvar = {variance[(jy + q) * input_stride + (jx + p)].v, simd_mem_aligned};
                             const simd_fvec4 min_var = min(ivar, jvar);
 
-                            distance += ((ipx - jpx) * (ipx - jpx) - alpha * (ivar + min_var)) /
-                                        (0.0001f + damping * damping * (ivar + jvar));
+                            color_distance += ((ipx - jpx) * (ipx - jpx) - alpha * (ivar + min_var)) /
+                                              (0.0001f + damping * damping * (ivar + jvar));
                         }
                     }
 
-                    const float patch_distance =
-                        0.25f * PatchDistanceNormFactor *
-                        (distance.get<0>() + distance.get<1>() + distance.get<2>() + distance.get<3>());
+                    const float patch_distance = 0.25f * PatchDistanceNormFactor *
+                                                 (color_distance.get<0>() + color_distance.get<1>() +
+                                                  color_distance.get<2>() + color_distance.get<3>());
+                    float weight = std::exp(-std::max(0.0f, patch_distance));
 
-                    const float weight = std::exp(-std::max(0.0f, patch_distance));
+                    if (FEATURE1 || FEATURE2) {
+                        simd_fvec4 feature_distance = {};
+                        if (FEATURE1) {
+                            const simd_fvec4 ipx = {feature1[iy * input_stride + ix].v, simd_mem_aligned};
+                            const simd_fvec4 jpx = {feature1[jy * input_stride + jx].v, simd_mem_aligned};
+
+                            feature_distance = feature1_weight * (ipx - jpx) * (ipx - jpx);
+                        }
+                        if (FEATURE2) {
+                            const simd_fvec4 ipx = {feature2[iy * input_stride + ix].v, simd_mem_aligned};
+                            const simd_fvec4 jpx = {feature2[jy * input_stride + jx].v, simd_mem_aligned};
+
+                            if (FEATURE1) {
+                                feature_distance = max(feature_distance, feature2_weight * (ipx - jpx) * (ipx - jpx));
+                            } else {
+                                feature_distance = feature2_weight * (ipx - jpx) * (ipx - jpx);
+                            }
+                        }
+
+                        const float feature_patch_distance =
+                            0.25f * (feature_distance.get<0>() + feature_distance.get<1>() + feature_distance.get<2>() +
+                                     feature_distance.get<3>());
+                        const float feature_weight =
+                            std::exp(-std::max(0.0f, std::min(10000.0f, feature_patch_distance)));
+
+                        weight = std::min(weight, feature_weight);
+                    }
 
                     sum_output += simd_fvec4{input[jy * input_stride + jx].v, simd_mem_aligned} * weight;
                     sum_weight += weight;
@@ -4493,19 +4523,49 @@ void Ray::Ref::NLMFilter(const color_rgba_t input[], const rect_t &rect, const i
         }
     }
 }
+} // namespace Ref
+} // namespace Ray
 
-template void Ray::Ref::NLMFilter<21 /* WINDOW_SIZE */, 5 /* NEIGHBORHOOD_SIZE */>(
+template <int WINDOW_SIZE, int NEIGHBORHOOD_SIZE>
+void Ray::Ref::JointNLMFilter(const color_rgba_t input[], const rect_t &rect, const int input_stride, const float alpha,
+                              const float damping, const color_rgba_t variance[], const color_rgba_t feature1[],
+                              const float feature1_weight, const color_rgba_t feature2[], const float feature2_weight,
+                              const rect_t &output_rect, const int output_stride, color_rgba_t output[]) {
+    if (feature1 && feature2) {
+        JointNLMFilter<WINDOW_SIZE, NEIGHBORHOOD_SIZE, true, true>(input, rect, input_stride, alpha, damping, variance,
+                                                                   feature1, feature1_weight, feature2, feature2_weight,
+                                                                   output_rect, output_stride, output);
+    } else if (feature1) {
+        JointNLMFilter<WINDOW_SIZE, NEIGHBORHOOD_SIZE, true, false>(input, rect, input_stride, alpha, damping, variance,
+                                                                    feature1, feature1_weight, nullptr, 0.0f,
+                                                                    output_rect, output_stride, output);
+    } else if (feature2) {
+        JointNLMFilter<WINDOW_SIZE, NEIGHBORHOOD_SIZE, false, true>(input, rect, input_stride, alpha, damping, variance,
+                                                                    nullptr, 0.0f, feature2, feature2_weight,
+                                                                    output_rect, output_stride, output);
+    } else {
+        JointNLMFilter<WINDOW_SIZE, NEIGHBORHOOD_SIZE, false, false>(input, rect, input_stride, alpha, damping,
+                                                                     variance, nullptr, 0.0f, nullptr, 0.0f,
+                                                                     output_rect, output_stride, output);
+    }
+}
+
+template void Ray::Ref::JointNLMFilter<21 /* WINDOW_SIZE */, 5 /* NEIGHBORHOOD_SIZE */>(
     const color_rgba_t input[], const rect_t &rect, int input_stride, float alpha, float damping,
-    const color_rgba_t variance[], const rect_t &output_rect, int output_stride, color_rgba_t output[]);
-template void Ray::Ref::NLMFilter<21 /* WINDOW_SIZE */, 3 /* NEIGHBORHOOD_SIZE */>(
+    const color_rgba_t variance[], const color_rgba_t feature1[], float feature1_weight, const color_rgba_t feature2[],
+    float feature2_weight, const rect_t &output_rect, int output_stride, color_rgba_t output[]);
+template void Ray::Ref::JointNLMFilter<21 /* WINDOW_SIZE */, 3 /* NEIGHBORHOOD_SIZE */>(
     const color_rgba_t input[], const rect_t &rect, int input_stride, float alpha, float damping,
-    const color_rgba_t variance[], const rect_t &output_rect, int output_stride, color_rgba_t output[]);
-template void Ray::Ref::NLMFilter<7 /* WINDOW_SIZE */, 3 /* NEIGHBORHOOD_SIZE */>(
+    const color_rgba_t variance[], const color_rgba_t feature1[], float feature1_weight, const color_rgba_t feature2[],
+    float feature2_weight, const rect_t &output_rect, int output_stride, color_rgba_t output[]);
+template void Ray::Ref::JointNLMFilter<7 /* WINDOW_SIZE */, 3 /* NEIGHBORHOOD_SIZE */>(
     const color_rgba_t input[], const rect_t &rect, int input_stride, float alpha, float damping,
-    const color_rgba_t variance[], const rect_t &output_rect, int output_stride, color_rgba_t output[]);
-template void Ray::Ref::NLMFilter<3 /* WINDOW_SIZE */, 1 /* NEIGHBORHOOD_SIZE */>(
+    const color_rgba_t variance[], const color_rgba_t feature1[], float feature1_weight, const color_rgba_t feature2[],
+    float feature2_weight, const rect_t &output_rect, int output_stride, color_rgba_t output[]);
+template void Ray::Ref::JointNLMFilter<3 /* WINDOW_SIZE */, 1 /* NEIGHBORHOOD_SIZE */>(
     const color_rgba_t input[], const rect_t &rect, int input_stride, float alpha, float damping,
-    const color_rgba_t variance[], const rect_t &output_rect, int output_stride, color_rgba_t output[]);
+    const color_rgba_t variance[], const color_rgba_t feature1[], float feature1_weight, const color_rgba_t feature2[],
+    float feature2_weight, const rect_t &output_rect, int output_stride, color_rgba_t output[]);
 
 namespace Ray {
 extern const int LUT_DIMS = 48;

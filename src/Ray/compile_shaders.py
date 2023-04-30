@@ -107,7 +107,9 @@ def main():
 
     # Denoise
     compile_shader(src_name="filter_variance")
-    compile_shader(src_name="nlm_filter")
+    compile_shader(src_name="nlm_filter", spv_name="nlm_filter", defines="-DUSE_FEATURE0=0 -DUSE_FEATURE1=0")
+    compile_shader(src_name="nlm_filter", spv_name="nlm_filter_f", defines="-DUSE_FEATURE0=1 -DUSE_FEATURE1=0")
+    compile_shader(src_name="nlm_filter", spv_name="nlm_filter_ff", defines="-DUSE_FEATURE0=1 -DUSE_FEATURE1=1")
 
     # Other
     compile_shader(src_name="prepare_indir_args")

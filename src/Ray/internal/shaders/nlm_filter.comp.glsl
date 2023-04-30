@@ -12,12 +12,25 @@ layout(binding = IN_IMG_SLOT) uniform sampler2D g_in_img;
 layout(binding = VARIANCE_IMG_SLOT) uniform sampler2D g_variance_img;
 layout(binding = TONEMAP_LUT_SLOT) uniform sampler3D g_tonemap_lut;
 
+#if USE_FEATURE0
+    layout(binding = FEATURE0_IMG_SLOT) uniform sampler2D g_feature0_img;
+#endif
+#if USE_FEATURE1
+    layout(binding = FEATURE1_IMG_SLOT) uniform sampler2D g_feature1_img;
+#endif
+
 layout(binding = OUT_IMG_SLOT, rgba32f) uniform writeonly image2D g_out_img;
 layout(binding = OUT_RAW_IMG_SLOT, rgba32f) uniform writeonly image2D g_out_raw_img;
 
 #define USE_SHARED_MEMORY 1
 shared uint g_temp_color0[16][16], g_temp_color1[16][16];
 shared uint g_temp_variance0[16][16], g_temp_variance1[16][16];
+#if USE_FEATURE0
+    shared uint g_temp_feature0[16][16];
+#endif
+#if USE_FEATURE1
+    shared uint g_temp_feature1[16][16];
+#endif
 
 const int WINDOW_SIZE = 7;
 const int NEIGHBORHOOD_SIZE = 3;
@@ -62,6 +75,28 @@ void main() {
     g_temp_variance0[8 + li.y][8 + li.x] = packHalf2x16(v11.xy);
     g_temp_variance1[8 + li.y][8 + li.x] = packHalf2x16(v11.zw);
 
+#if USE_FEATURE0
+    vec4 f0_00 = textureLodOffset(g_feature0_img, tex_coord, 0.0, ivec2(-4, -4));
+    g_temp_feature0[0 + li.y][0 + li.x] = packUnorm4x8(f0_00);
+    vec4 f0_01 = textureLodOffset(g_feature0_img, tex_coord, 0.0, ivec2(+4, -4));
+    g_temp_feature0[0 + li.y][8 + li.x] = packUnorm4x8(f0_01);
+    vec4 f0_10 = textureLodOffset(g_feature0_img, tex_coord, 0.0, ivec2(-4, +4));
+    g_temp_feature0[8 + li.y][0 + li.x] = packUnorm4x8(f0_10);
+    vec4 f0_11 = textureLodOffset(g_feature0_img, tex_coord, 0.0, ivec2(+4, +4));
+    g_temp_feature0[8 + li.y][8 + li.x] = packUnorm4x8(f0_11);
+#endif
+
+#if USE_FEATURE1
+    vec4 f1_00 = textureLodOffset(g_feature1_img, tex_coord, 0.0, ivec2(-4, -4));
+    g_temp_feature1[0 + li.y][0 + li.x] = packUnorm4x8(f0_00);
+    vec4 f1_01 = textureLodOffset(g_feature1_img, tex_coord, 0.0, ivec2(+4, -4));
+    g_temp_feature1[0 + li.y][8 + li.x] = packUnorm4x8(f0_01);
+    vec4 f1_10 = textureLodOffset(g_feature1_img, tex_coord, 0.0, ivec2(-4, +4));
+    g_temp_feature1[8 + li.y][0 + li.x] = packUnorm4x8(f0_10);
+    vec4 f1_11 = textureLodOffset(g_feature1_img, tex_coord, 0.0, ivec2(+4, +4));
+    g_temp_feature1[8 + li.y][8 + li.x] = packUnorm4x8(f0_11);
+#endif
+
     groupMemoryBarrier(); barrier();
 
     if (gl_GlobalInvocationID.x >= g_params.rect.z || gl_GlobalInvocationID.y >= g_params.rect.w) {
@@ -95,8 +130,33 @@ void main() {
 
             float patch_distance =
                 0.25 * PatchDistanceNormFactor * (distance.x + distance.y + distance.z + distance.w);
-
             float weight = exp(-max(0.0, patch_distance));
+
+#if USE_FEATURE0 || USE_FEATURE1
+#if USE_FEATURE0
+            vec4 feature_distance = vec4(0.0);
+            { // calc feature0 distance
+                vec4 ipx = unpackUnorm4x8(g_temp_feature0[li.y + 4][li.x + 4]);
+                vec4 jpx = unpackUnorm4x8(g_temp_feature0[li.y + 4 + k][li.x + 4 + l]);
+
+                feature_distance = g_params.feature0_weight * (ipx - jpx) * (ipx - jpx);
+            }
+#endif // USE_FEATURE0
+#if USE_FEATURE1
+            { // calc feature1 distance
+                vec4 ipx = unpackUnorm4x8(g_temp_feature1[li.y + 4][li.x + 4]);
+                vec4 jpx = unpackUnorm4x8(g_temp_feature1[li.y + 4 + k][li.x + 4 + l]);
+
+                feature_distance = max(feature_distance,
+                                       g_params.feature1_weight * (ipx - jpx) * (ipx - jpx));
+            }
+#endif // USE_FEATURE1
+            float feature_patch_distance =
+                0.25 * (feature_distance.x + feature_distance.y + feature_distance.z + feature_distance.w);
+            float feature_weight = exp(-max(0.0, feature_patch_distance));
+
+            weight = min(weight, feature_weight);
+#endif // USE_FEATURE0 || USE_FEATURE1
 
             sum_output += vec4(unpackHalf2x16(g_temp_color0[li.y + 4 + k][li.x + 4 + l]),
                                unpackHalf2x16(g_temp_color1[li.y + 4 + k][li.x + 4 + l])) * weight;

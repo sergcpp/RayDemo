@@ -21,6 +21,10 @@ Texture2D<float4> g_in_img : register(t2, space0);
 SamplerState _g_in_img_sampler : register(s2, space0);
 Texture2D<float4> g_variance_img : register(t3, space0);
 SamplerState _g_variance_img_sampler : register(s3, space0);
+Texture2D<float4> g_feature0_img : register(t5, space0);
+SamplerState _g_feature0_img_sampler : register(s5, space0);
+Texture2D<float4> g_feature1_img : register(t6, space0);
+SamplerState _g_feature1_img_sampler : register(s6, space0);
 RWTexture2D<float4> g_out_raw_img : register(u1, space0);
 Texture3D<float4> g_tonemap_lut : register(t4, space0);
 SamplerState _g_tonemap_lut_sampler : register(s4, space0);
@@ -38,6 +42,8 @@ groupshared uint g_temp_color0[16][16];
 groupshared uint g_temp_color1[16][16];
 groupshared uint g_temp_variance0[16][16];
 groupshared uint g_temp_variance1[16][16];
+groupshared uint g_temp_feature0[16][16];
+groupshared uint g_temp_feature1[16][16];
 
 uint spvPackHalf2x16(float2 value)
 {
@@ -48,6 +54,18 @@ uint spvPackHalf2x16(float2 value)
 float2 spvUnpackHalf2x16(uint value)
 {
     return f16tof32(uint2(value & 0xffff, value >> 16));
+}
+
+uint spvPackUnorm4x8(float4 value)
+{
+    uint4 Packed = uint4(round(saturate(value) * 255.0));
+    return Packed.x | (Packed.y << 8) | (Packed.z << 16) | (Packed.w << 24);
+}
+
+float4 spvUnpackUnorm4x8(uint value)
+{
+    uint4 Packed = uint4(value & 0xff, (value >> 8) & 0xff, (value >> 16) & 0xff, value >> 24);
+    return float4(Packed) / 255.0;
 }
 
 float3 reversible_tonemap(float3 c)
@@ -165,19 +183,31 @@ void comp_main()
         float4 _592 = g_variance_img.SampleLevel(_g_variance_img_sampler, _391, 0.0f, int2(4, 4));
         g_temp_variance0[_469][_445] = spvPackHalf2x16(_592.xy);
         g_temp_variance1[_469][_445] = spvPackHalf2x16(_592.zw);
+        uint _626 = spvPackUnorm4x8(g_feature0_img.SampleLevel(_g_feature0_img_sampler, _391, 0.0f, int2(-4, -4)));
+        g_temp_feature0[_410][_413] = _626;
+        uint _639 = spvPackUnorm4x8(g_feature0_img.SampleLevel(_g_feature0_img_sampler, _391, 0.0f, int2(4, -4)));
+        g_temp_feature0[_410][_445] = _639;
+        uint _652 = spvPackUnorm4x8(g_feature0_img.SampleLevel(_g_feature0_img_sampler, _391, 0.0f, int2(-4, 4)));
+        g_temp_feature0[_469][_413] = _652;
+        uint _665 = spvPackUnorm4x8(g_feature0_img.SampleLevel(_g_feature0_img_sampler, _391, 0.0f, int2(4, 4)));
+        g_temp_feature0[_469][_445] = _665;
+        g_temp_feature1[_410][_413] = _626;
+        g_temp_feature1[_410][_445] = _639;
+        g_temp_feature1[_469][_413] = _652;
+        g_temp_feature1[_469][_445] = _665;
         AllMemoryBarrier();
         GroupMemoryBarrierWithGroupSync();
-        bool _621 = gl_GlobalInvocationID.x >= _364_g_params.rect.z;
-        bool _630;
-        if (!_621)
+        bool _729 = gl_GlobalInvocationID.x >= _364_g_params.rect.z;
+        bool _738;
+        if (!_729)
         {
-            _630 = gl_GlobalInvocationID.y >= _364_g_params.rect.w;
+            _738 = gl_GlobalInvocationID.y >= _364_g_params.rect.w;
         }
         else
         {
-            _630 = _621;
+            _738 = _729;
         }
-        if (_630)
+        if (_738)
         {
             break;
         }
@@ -197,25 +227,30 @@ void comp_main()
                     [unroll]
                     for (int p = -1; p <= 1; )
                     {
-                        int _675 = _410 + 4;
-                        int _677 = _675 + q;
-                        int _680 = _413 + 4;
-                        int _682 = _680 + p;
-                        int _711 = (_675 + k) + q;
-                        int _718 = (_680 + l) + p;
-                        float4 _775 = float4(spvUnpackHalf2x16(g_temp_variance0[_677][_682]), spvUnpackHalf2x16(g_temp_variance1[_677][_682]));
-                        float4 _815 = float4(spvUnpackHalf2x16(g_temp_variance0[_711][_718]), spvUnpackHalf2x16(g_temp_variance1[_711][_718]));
-                        float4 _822 = float4(spvUnpackHalf2x16(g_temp_color0[_677][_682]), spvUnpackHalf2x16(g_temp_color1[_677][_682])) - float4(spvUnpackHalf2x16(g_temp_color0[_711][_718]), spvUnpackHalf2x16(g_temp_color1[_711][_718]));
-                        _distance += (mad(_822, _822, -((_775 + min(_775, _815)) * _364_g_params.alpha)) / (9.9999997473787516355514526367188e-05f.xxxx + ((_775 + _815) * (_364_g_params.damping * _364_g_params.damping))));
+                        int _783 = _410 + 4;
+                        int _785 = _783 + q;
+                        int _788 = _413 + 4;
+                        int _790 = _788 + p;
+                        int _819 = (_783 + k) + q;
+                        int _826 = (_788 + l) + p;
+                        float4 _883 = float4(spvUnpackHalf2x16(g_temp_variance0[_785][_790]), spvUnpackHalf2x16(g_temp_variance1[_785][_790]));
+                        float4 _923 = float4(spvUnpackHalf2x16(g_temp_variance0[_819][_826]), spvUnpackHalf2x16(g_temp_variance1[_819][_826]));
+                        float4 _930 = float4(spvUnpackHalf2x16(g_temp_color0[_785][_790]), spvUnpackHalf2x16(g_temp_color1[_785][_790])) - float4(spvUnpackHalf2x16(g_temp_color0[_819][_826]), spvUnpackHalf2x16(g_temp_color1[_819][_826]));
+                        _distance += (mad(_930, _930, -((_883 + min(_883, _923)) * _364_g_params.alpha)) / (9.9999997473787516355514526367188e-05f.xxxx + ((_883 + _923) * (_364_g_params.damping * _364_g_params.damping))));
                         p++;
                         continue;
                     }
                 }
-                float _873 = exp(-max(0.0f, 2.25f * (((_distance.x + _distance.y) + _distance.z) + _distance.w)));
-                int _878 = (_410 + 4) + k;
-                int _883 = (_413 + 4) + l;
-                sum_output += (float4(spvUnpackHalf2x16(g_temp_color0[_878][_883]), spvUnpackHalf2x16(g_temp_color1[_878][_883])) * _873);
-                sum_weight += _873;
+                int _986 = _410 + 4;
+                int _989 = _413 + 4;
+                int _998 = _986 + k;
+                int _1003 = _989 + l;
+                float4 _1012 = spvUnpackUnorm4x8(g_temp_feature0[_986][_989]) - spvUnpackUnorm4x8(g_temp_feature0[_998][_1003]);
+                float4 _1048 = spvUnpackUnorm4x8(g_temp_feature1[_986][_989]) - spvUnpackUnorm4x8(g_temp_feature1[_998][_1003]);
+                float4 _1054 = max((_1012 * _364_g_params.feature0_weight) * _1012, (_1048 * _364_g_params.feature1_weight) * _1048);
+                float _1076 = min(exp(-max(0.0f, 2.25f * (((_distance.x + _distance.y) + _distance.z) + _distance.w))), exp(-max(0.0f, 0.25f * (((_1054.x + _1054.y) + _1054.z) + _1054.w))));
+                sum_output += (float4(spvUnpackHalf2x16(g_temp_color0[_998][_1003]), spvUnpackHalf2x16(g_temp_color1[_998][_1003])) * _1076);
+                sum_weight += _1076;
             }
         }
         [flatten]
@@ -224,9 +259,9 @@ void comp_main()
             sum_output /= sum_weight.xxxx;
         }
         float4 param_4 = sum_output;
-        float4 _926 = reversible_tonemap_invert(param_4);
-        sum_output = _926;
-        g_out_raw_img[_376] = _926;
+        float4 _1129 = reversible_tonemap_invert(param_4);
+        sum_output = _1129;
+        g_out_raw_img[_376] = _1129;
         [branch]
         if (_364_g_params.tonemap_mode == 0)
         {
