@@ -3,12 +3,37 @@
 ## [Unreleased]
 
 ### Added
-
-- This CHANGELOG file
-
 ### Fixed
 ### Changed
 ### Removed
+
+## [0.5.0] - 2023-05-01
+
+### Added
+
+  - Cmdline denoising options (--denoise, --denoise_after)
+  - Cmdline options for clamping (--clamp_direct, --clamp_indirect)
+  - Cmdline options for adaptive sampling (--variance_threshold, --min_samples, --max_samples)
+  - EXR image output (using --output_exr cmdline argument)
+  - AUX buffers (albedo, normals, depth) output (using --output_aux cmdline argument)
+  - This CHANGELOG file
+
+### Fixed
+
+  - Normalmap difference between GPU and CPU in some scenes
+  - Incorrect ceiling normals in italian_flat scene
+  - Incorrect exposure in ai043_01 scene
+
+### Changed
+
+  - Scene is loaded using multiple threads
+  - Manual unity build replaced with build-in CMake mechanism
+  - ai043_01 scene uses original filmic tonemapping
+  - Cmdline option --samples is replaced with --min_samples, --max_samples
+
+### Removed
+
+  - Usage of Ren, Gui, Eng libs (minimalliy inlined for simplicity)
 
 ## [0.4.5] - 2023-02-13
 
@@ -135,7 +160,8 @@
   - BVH construction uses binning now for significant speedup
   - Shadow rays are traced in seperate stage
 
-[Unreleased]: https://gitlab.com/sergcpp/raydemo/-/compare/v0.4.5...master
+[Unreleased]: https://gitlab.com/sergcpp/raydemo/-/compare/v0.5.0...master
+[0.5.0]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.5.0
 [0.4.5]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.4.5
 [0.4.0]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.4.0
 [0.3.5]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.3.5
