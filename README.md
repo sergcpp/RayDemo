@@ -2,7 +2,11 @@
 
 Test application for a Ray library.
   - Library part can be found here: https://github.com/sergcpp/Ray
-  - Links to test scenes: https://benedikt-bitterli.me/resources/, https://www.blender.org/download/demo-files/
+  - Links to the test scenes:  \
+    https://benedikt-bitterli.me/resources/  \
+    https://www.blender.org/download/demo-files/  \
+    https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html  \
+    https://evermotion.org/shop/show_product/scene-1-ai43-archinteriors-for-blender/14564
 
 <div>
 <div float="left" >
