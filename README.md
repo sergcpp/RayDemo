@@ -1,6 +1,6 @@
 [![pipeline status](https://gitlab.com/sergcpp/raydemo/badges/master/pipeline.svg)](https://gitlab.com/sergcpp/raydemo/commits/master)
 
-Test application for a Ray library.
+Test application for a Ray library. Mostly needed for CI checks.
   - Library part can be found here: https://github.com/sergcpp/Ray
   - Links to the test scenes:  \
     https://benedikt-bitterli.me/resources/  \
@@ -10,10 +10,8 @@ Test application for a Ray library.
 
 <div>
 <div float="left" >
-  <img src="italian_flat.png" width="89.84%" />
-</div>
-<div float="left" >
-  <img src="ai043_01.png" width="89.84%" />
+  <img src="italian_flat.png" width="47.0%" />
+  <img src="ai043_01.png" width="42.4%" />
 </div>
 <div float="left" >
   <img src="bathroom.png" width="26.55%" />
