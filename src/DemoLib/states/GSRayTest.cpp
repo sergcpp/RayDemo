@@ -897,7 +897,7 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_RIGHT || evt.raw_key == 'd') {
             side_speed_ = max_fwd_speed_;
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_SPACE) {
-            animate_ = !animate_;
+            //animate_ = !animate_;
         } else if (evt.raw_key == 'e' || evt.raw_key == 'q') {
             Vec3f up = {1, 0, 0};
             Vec3f side = Normalize(Cross(sun_dir_, up));
