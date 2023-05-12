@@ -6,8 +6,8 @@
 #include <SDL2/SDL_video.h>
 #endif
 
-#include <Sys/Time_.h>
 #include <SW/SW.h>
+#include <Sys/Time_.h>
 
 #include <SDL2/SDL_events.h>
 
@@ -18,8 +18,8 @@
 #include <renderdoc/renderdoc_app.h>
 #endif
 
-#include <DemoLib/eng/GameBase.h>
 #include <DemoLib/Viewer.h>
+#include <DemoLib/eng/GameBase.h>
 
 #pragma warning(disable : 4996)
 
@@ -42,9 +42,7 @@ DLL_IMPORT int __stdcall SetProcessDPIAware();
 
 #ifdef _WIN32
 namespace Ray {
-namespace Vk {
-extern RENDERDOC_DevicePointer rdoc_device;
-} // namespace Vk
+extern RENDERDOC_DevicePointer g_rdoc_device;
 } // namespace Ray
 #endif
 
@@ -66,15 +64,14 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
         return -1;
     }
 
-    window_ = SDL_CreateWindow("View", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h,
-                               SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    window_ = SDL_CreateWindow("View", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_RESIZABLE);
     if (!window_) {
         const char *s = SDL_GetError();
         fprintf(stderr, "%s\n", s);
         return -1;
     }
 
-    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
+    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE);
     if (!renderer_) {
         const char *s = SDL_GetError();
         fprintf(stderr, "%s\n", s);
@@ -119,13 +116,13 @@ void DemoApp::Destroy() {
 void DemoApp::Frame() {
 #ifdef _WIN32
     if (capture_frame_ && rdoc_api) {
-        rdoc_api->StartFrameCapture(Ray::Vk::rdoc_device, NULL);
+        rdoc_api->StartFrameCapture(Ray::g_rdoc_device, NULL);
     }
 #endif
     viewer_->Frame();
 #ifdef _WIN32
     if (capture_frame_ && rdoc_api) {
-        const uint32_t ret = rdoc_api->EndFrameCapture(Ray::Vk::rdoc_device, NULL);
+        const uint32_t ret = rdoc_api->EndFrameCapture(Ray::g_rdoc_device, NULL);
         assert(ret == 1);
     }
 #endif
