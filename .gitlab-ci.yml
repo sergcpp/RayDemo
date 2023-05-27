@@ -116,7 +116,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
+    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON -DENABLE_VK_IMPL=OFF -DENABLE_DX_IMPL=ON
     - cd ..
     - cmake --build build --target DemoApp test_Ray test_SW test_Sys --config Release --parallel 16
     - cmake --build build --target DemoApp test_Ray test_SW test_Sys --config Debug --parallel 16
@@ -574,6 +574,17 @@ windows-arm64-cpu-test-job:
   tags:
     - windows,arm64,fastcpu
 
+windows-arm64-gpu-sqx-test-job:
+  variables:
+    BIN_DIR: windows-arm64
+    AUX_TEST_ARGS: '--nocpu'
+  extends:
+    - .windows-test-job
+  needs:
+    - windows-arm64-build-job
+  tags:
+    - windows,arm64,sqx
+
 windows-arm64-cpu-perf-test-job:
   variables:
     BIN_DIR: windows-arm64
@@ -768,6 +779,7 @@ deploy-job:
     - job: windows-x86_64-gpu-arc-test-img-job
       optional: true
     - windows-arm64-cpu-test-job
+    - windows-arm64-gpu-sqx-test-job
     - job: windows-arm64-cpu-test-img-job
       optional: true
     - linux-x86_64-cpu-test-job
@@ -825,6 +837,7 @@ deploy-job-full:
     - job: windows-x86_64-gpu-arc-test-img-job
       optional: true
     - windows-arm64-cpu-test-job
+    - windows-arm64-gpu-sqx-test-job
     - job: windows-arm64-cpu-test-img-job
       optional: true
     - linux-x86_64-cpu-test-job
