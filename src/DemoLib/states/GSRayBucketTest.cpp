@@ -267,9 +267,9 @@ void GSRayBucketTest::Draw(uint64_t dt_us) {
     int w, h;
 
     std::tie(w, h) = ray_renderer_->size();
-    const auto *pixel_data = ray_renderer_->get_pixels_ref();
+    const auto pixel_data = ray_renderer_->get_pixels_ref();
 
-    swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
+    swBlitPixels(0, 0, pixel_data.pitch, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data.ptr, 1);
 
     float pix_row[BUCKET_SIZE][4];
 

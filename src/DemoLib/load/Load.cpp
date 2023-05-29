@@ -1691,8 +1691,12 @@ std::vector<Ray::color_rgba8_t> Load_stb_image(const char *name, int &w, int &h)
 #define float_to_byte(val)                                                                                             \
     (((val) <= 0.0f) ? 0 : (((val) > (1.0f - 0.5f / 255.0f)) ? 255 : uint8_t((255.0f * (val)) + 0.5f)))
 
-void WriteTGA(const Ray::color_rgba_t *data, const int w, const int h, const int bpp, const bool flip_vertical,
-              const char *name) {
+void WriteTGA(const Ray::color_rgba_t *data, int pitch, const int w, const int h, const int bpp,
+              const bool flip_vertical, const char *name) {
+    if (!pitch) {
+        pitch = w;
+    }
+
     std::ofstream file(name, std::ios::binary);
 
     unsigned char header[18] = {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -1709,11 +1713,11 @@ void WriteTGA(const Ray::color_rgba_t *data, const int w, const int h, const int
     for (int j = 0; j < h; ++j) {
         const int _j = flip_vertical ? (h - j - 1) : j;
         for (int i = 0; i < w; ++i) {
-            out_data[(j * w + i) * bpp + 0] = float_to_byte(data[_j * w + i].v[2]);
-            out_data[(j * w + i) * bpp + 1] = float_to_byte(data[_j * w + i].v[1]);
-            out_data[(j * w + i) * bpp + 2] = float_to_byte(data[_j * w + i].v[0]);
+            out_data[(j * w + i) * bpp + 0] = float_to_byte(data[_j * pitch + i].v[2]);
+            out_data[(j * w + i) * bpp + 1] = float_to_byte(data[_j * pitch + i].v[1]);
+            out_data[(j * w + i) * bpp + 2] = float_to_byte(data[_j * pitch + i].v[0]);
             if (bpp == 4) {
-                out_data[i * 4 + 3] = float_to_byte(data[_j * w + i].v[3]);
+                out_data[i * 4 + 3] = float_to_byte(data[_j * pitch + i].v[3]);
             }
         }
     }
@@ -1727,17 +1731,21 @@ void WriteTGA(const Ray::color_rgba_t *data, const int w, const int h, const int
     file.write(footer, sizeof(footer));
 }
 
-void WritePNG(const Ray::color_rgba_t *data, const int w, const int h, const int bpp, const bool flip_vertical,
-              const char *name) {
+void WritePNG(const Ray::color_rgba_t *data, int pitch, const int w, const int h, const int bpp,
+              const bool flip_vertical, const char *name) {
+    if (!pitch) {
+        pitch = w;
+    }
+
     auto out_data = std::unique_ptr<uint8_t[]>{new uint8_t[size_t(w) * h * bpp]};
     for (int j = 0; j < h; ++j) {
         const int _j = flip_vertical ? (h - j - 1) : j;
         for (int i = 0; i < w; ++i) {
-            out_data[(j * w + i) * bpp + 2] = float_to_byte(data[_j * w + i].v[2]);
-            out_data[(j * w + i) * bpp + 1] = float_to_byte(data[_j * w + i].v[1]);
-            out_data[(j * w + i) * bpp + 0] = float_to_byte(data[_j * w + i].v[0]);
+            out_data[(j * w + i) * bpp + 2] = float_to_byte(data[_j * pitch + i].v[2]);
+            out_data[(j * w + i) * bpp + 1] = float_to_byte(data[_j * pitch + i].v[1]);
+            out_data[(j * w + i) * bpp + 0] = float_to_byte(data[_j * pitch + i].v[0]);
             if (bpp == 4) {
-                out_data[(j * w + i) * 4 + 3] = float_to_byte(data[_j * w + i].v[3]);
+                out_data[(j * w + i) * 4 + 3] = float_to_byte(data[_j * pitch + i].v[3]);
             }
         }
     }
