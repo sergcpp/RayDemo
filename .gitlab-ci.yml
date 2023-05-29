@@ -611,6 +611,19 @@ windows-arm64-cpu-test-img-job:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
+windows-arm64-gpu-sqx-test-img-job:
+  variables:
+    BIN_DIR: windows-arm64
+    AUX_TEST_ARGS: '--nocpu'
+  extends:
+    - .windows-test-img-job
+  needs:
+    - windows-arm64-build-job
+  tags:
+    - windows,arm64,sqx
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
 linux-x86_64-cpu-test-job:
   variables:
     BIN_DIR: linux-x86_64
@@ -782,6 +795,8 @@ deploy-job:
     - windows-arm64-gpu-sqx-test-job
     - job: windows-arm64-cpu-test-img-job
       optional: true
+    - job: windows-arm64-gpu-sqx-test-img-job
+      optional: true
     - linux-x86_64-cpu-test-job
     - linux-x86_64-gpu-nv-test-job
     - linux-x86_64-gpu-amd-test-job
@@ -839,6 +854,8 @@ deploy-job-full:
     - windows-arm64-cpu-test-job
     - windows-arm64-gpu-sqx-test-job
     - job: windows-arm64-cpu-test-img-job
+      optional: true
+    - job: windows-arm64-gpu-sqx-test-img-job
       optional: true
     - linux-x86_64-cpu-test-job
     - linux-x86_64-gpu-nv-test-job
