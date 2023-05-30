@@ -18,8 +18,6 @@
 GameBase::GameBase(const int w, const int h, const char * /*local_dir*/) : width(w), height(h) {
     terminated = false;
 
-    //Sys::InitWorker();
-
     auto log =
 #if !defined(__ANDROID__)
         std::make_shared<LogStdout>();
