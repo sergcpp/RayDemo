@@ -574,7 +574,7 @@ windows-arm64-cpu-test-job:
   tags:
     - windows,arm64,fastcpu
 
-windows-arm64-gpu-sqx-test-job:
+windows-arm64-gpu-adreno-test-job:
   variables:
     BIN_DIR: windows-arm64
     AUX_TEST_ARGS: '--nocpu'
@@ -583,7 +583,7 @@ windows-arm64-gpu-sqx-test-job:
   needs:
     - windows-arm64-build-job
   tags:
-    - windows,arm64,sqx
+    - windows,arm64,adreno
 
 windows-arm64-cpu-perf-test-job:
   variables:
@@ -611,7 +611,7 @@ windows-arm64-cpu-test-img-job:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
-windows-arm64-gpu-sqx-test-img-job:
+windows-arm64-gpu-adreno-test-img-job:
   variables:
     BIN_DIR: windows-arm64
     AUX_TEST_ARGS: '--nocpu'
@@ -620,7 +620,7 @@ windows-arm64-gpu-sqx-test-img-job:
   needs:
     - windows-arm64-build-job
   tags:
-    - windows,arm64,sqx
+    - windows,arm64,adreno
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
@@ -792,10 +792,10 @@ deploy-job:
     - job: windows-x86_64-gpu-arc-test-img-job
       optional: true
     - windows-arm64-cpu-test-job
-    - windows-arm64-gpu-sqx-test-job
+    - windows-arm64-gpu-adreno-test-job
     - job: windows-arm64-cpu-test-img-job
       optional: true
-    - job: windows-arm64-gpu-sqx-test-img-job
+    - job: windows-arm64-gpu-adreno-test-img-job
       optional: true
     - linux-x86_64-cpu-test-job
     - linux-x86_64-gpu-nv-test-job
@@ -852,10 +852,10 @@ deploy-job-full:
     - job: windows-x86_64-gpu-arc-test-img-job
       optional: true
     - windows-arm64-cpu-test-job
-    - windows-arm64-gpu-sqx-test-job
+    - windows-arm64-gpu-adreno-test-job
     - job: windows-arm64-cpu-test-img-job
       optional: true
-    - job: windows-arm64-gpu-sqx-test-img-job
+    - job: windows-arm64-gpu-adreno-test-img-job
       optional: true
     - linux-x86_64-cpu-test-job
     - linux-x86_64-gpu-nv-test-job
