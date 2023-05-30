@@ -44,6 +44,7 @@ DLL_IMPORT int __stdcall SetProcessDPIAware();
 namespace Ray {
 extern RENDERDOC_DevicePointer g_rdoc_device;
 } // namespace Ray
+bool InitAndDestroyFakeGLContext();
 #endif
 
 DemoApp::DemoApp() : quit_(false) { g_app = this; }
@@ -56,6 +57,10 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
 #ifdef _WIN32
     int dpi_result = SetProcessDPIAware();
     (void)dpi_result;
+
+    // Stupid workaround that should not exist.
+    // Make sure vulkan will be able to use discrete Intel GPU when dual Xe/Arc GPUs are available.
+    InitAndDestroyFakeGLContext();
 #endif
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -378,3 +383,51 @@ void DemoApp::CreateViewer(int w, int h, const AppParams &app_params, const bool
     viewer_ = std::make_unique<Viewer>(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2), nobindless, nocompression);
     p_input_manager_ = viewer_->GetComponent<InputManager>(INPUT_MANAGER_KEY);
 }
+
+//
+// Dirty workaround for Intel discrete GPU
+//
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+
+bool InitAndDestroyFakeGLContext() {
+    HWND fake_window = ::CreateWindowEx(NULL, NULL, "FakeWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+                                        256, 256, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
+
+    HDC fake_dc = GetDC(fake_window);
+
+    PIXELFORMATDESCRIPTOR pixel_format = {};
+    pixel_format.nSize = sizeof(pixel_format);
+    pixel_format.nVersion = 1;
+    pixel_format.dwFlags = PFD_SUPPORT_OPENGL;
+    pixel_format.iPixelType = PFD_TYPE_RGBA;
+    pixel_format.cColorBits = 24;
+    pixel_format.cAlphaBits = 8;
+    pixel_format.cDepthBits = 0;
+
+    int pix_format_id = ChoosePixelFormat(fake_dc, &pixel_format);
+    if (pix_format_id == 0) {
+        printf("ChoosePixelFormat() failed\n");
+        return false;
+    }
+
+    if (!SetPixelFormat(fake_dc, pix_format_id, &pixel_format)) {
+        // printf("SetPixelFormat() failed (0x%08x)\n", GetLastError());
+        return false;
+    }
+
+    HGLRC fake_rc = wglCreateContext(fake_dc);
+
+    wglDeleteContext(fake_rc);
+    ReleaseDC(fake_window, fake_dc);
+    DestroyWindow(fake_window);
+
+    return true;
+}
+#endif
