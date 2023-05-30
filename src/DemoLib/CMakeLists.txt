@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(DemoLib)
 
-set(LIBS turbojpeg-static)
+IF(WIN32)
+    set(LIBS turbojpeg-static opengl32)
+ELSE()
+    set(LIBS turbojpeg-static)
+ENDIF()
 
 set(SOURCE_FILES    Viewer.h
                     Viewer.cpp)
