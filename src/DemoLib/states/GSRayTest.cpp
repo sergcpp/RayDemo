@@ -389,9 +389,16 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         if (app_params->output_exr) { // Write untonemapped image
             const auto raw_pixel_data = ray_renderer_->get_raw_pixels_ref();
 
+            std::vector<Ray::color_rgba_t> raw_pixel_data_out(w * h);
+            for (int y = 0; y < h; ++y) {
+                for (int x = 0; x < w; ++x) {
+                    raw_pixel_data_out[y * w + x] = raw_pixel_data.ptr[y * raw_pixel_data.pitch + x];
+                }
+            }
+
             const char *error = nullptr;
             if (TINYEXR_SUCCESS !=
-                SaveEXR(&raw_pixel_data.ptr->v[0], w, h, 4, 0, (base_name + ".exr").c_str(), &error)) {
+                SaveEXR(&raw_pixel_data_out[0].v[0], w, h, 4, 0, (base_name + ".exr").c_str(), &error)) {
                 ray_renderer_->log()->Error("Failed to write %s (%s)", (base_name + ".exr").c_str(), error);
             }
 
@@ -406,11 +413,16 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
             const auto depth_normals = ray_renderer_->get_aux_pixels_ref(Ray::eAUXBuffer::DepthNormals);
             std::vector<Ray::color_rgba_t> depth_normals_rgba(w * h);
-            for (int i = 0; i < w * h; ++i) {
-                depth_normals_rgba[i].v[0] = depth_normals.ptr[i].v[0] * 0.5f + 0.5f;
-                depth_normals_rgba[i].v[1] = depth_normals.ptr[i].v[1] * 0.5f + 0.5f;
-                depth_normals_rgba[i].v[2] = depth_normals.ptr[i].v[2] * 0.5f + 0.5f;
-                depth_normals_rgba[i].v[3] = depth_normals.ptr[i].v[3] * 0.1f;
+            for (int y = 0; y < h; ++y) {
+                for (int x = 0; x < w; ++x) {
+                    depth_normals_rgba[y * w + x].v[0] =
+                        depth_normals.ptr[y * depth_normals.pitch + x].v[0] * 0.5f + 0.5f;
+                    depth_normals_rgba[y * w + x].v[1] =
+                        depth_normals.ptr[y * depth_normals.pitch + x].v[1] * 0.5f + 0.5f;
+                    depth_normals_rgba[y * w + x].v[2] =
+                        depth_normals.ptr[y * depth_normals.pitch + x].v[2] * 0.5f + 0.5f;
+                    depth_normals_rgba[y * w + x].v[3] = depth_normals.ptr[y * depth_normals.pitch + x].v[3] * 0.1f;
+                }
             }
             WritePNG(depth_normals_rgba.data(), w, w, h, 4, false /* flip */, (base_name + "_normals.png").c_str());
         }
