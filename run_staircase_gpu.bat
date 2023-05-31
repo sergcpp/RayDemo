@@ -1,1 +1,1 @@
-DemoApp.exe -w 720 -h 900 -s assets/scenes/staircase.json --variance_threshold 0.025 --denoise
+DemoApp.exe -w 720 -h 900 -s assets/scenes/staircase.json --variance_threshold 0.015 --denoise
