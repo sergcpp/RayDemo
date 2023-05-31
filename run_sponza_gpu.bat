@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/sponza.json -w 960 -h 540 --variance_threshold 0.025 --denoise
+DemoApp.exe -s assets/scenes/sponza.json -w 960 -h 540 --variance_threshold 0.015 --denoise
