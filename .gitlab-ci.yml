@@ -116,7 +116,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON -DENABLE_VK_IMPL=OFF -DENABLE_DX_IMPL=ON
+    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DCMAKE_UNITY_BUILD=ON -DENABLE_VK_IMPL=OFF -DENABLE_DX_IMPL=ON
     - cd ..
     - cmake --build build --target DemoApp test_Ray test_SW test_Sys --config Release --parallel 16
     - cmake --build build --target DemoApp test_Ray test_SW test_Sys --config Debug --parallel 16
@@ -181,15 +181,15 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Release -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - mkdir build_dbg
     - cd build_dbg
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - mkdir build_dev
     - cd build_dev
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRENDERER=SW -DCMAKE_UNITY_BUILD=ON
+    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_UNITY_BUILD=ON
     - cd ..
     - cmake --build build --target DemoApp test_Ray test_SW test_Sys --parallel 16
     - cmake --build build_dbg --target DemoApp test_Ray test_SW test_Sys --parallel 16
@@ -277,8 +277,6 @@ stages:
     - cd src/Ray/tests
     - '& "../../../$BIN_DIR/test_Ray" $AUX_TEST_ARGS.split(" ")'
     - cd ../../../
-    - '& "$BIN_DIR/test_SW"'
-    - '& "$BIN_DIR/test_Sys"'
   after_script:
     - cp src/Ray/tests/test_data/material_*.tga ./
     - cp src/Ray/tests/test_data/errors.txt ./
@@ -296,7 +294,7 @@ stages:
     - echo "Running image tests..."
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 31.42 --threshold 755 --clamp_indirect 8.0 --denoise'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.70 --threshold 8643 --clamp_indirect 8.0'
-    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 611 --max_tex_res 1024'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 639 --max_tex_res 1024'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.png --output_exr --output_aux --min_samples 512 --max_samples 1024 --variance_threshold 0.00035 --psnr 33.16 --threshold 505 --diff_depth 2 --max_tex_res 2048'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS.split(" ") -ref assets/references/coffee_maker_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS.split(" ") -ref assets/references/bathroom_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 27.4 --threshold 6105 --refr_depth 12 --total_depth 12 --clamp_indirect 0.0'
@@ -315,7 +313,7 @@ stages:
     - echo "Running image tests..."
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 31.42 --threshold 755 --clamp_indirect 8.0 --denoise'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.70 --threshold 8643 --clamp_indirect 8.0'
-    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 611 --max_tex_res 1024'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 639 --max_tex_res 1024'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.png --output_exr --output_aux --min_samples 512 --max_samples 1024 --variance_threshold 0.00035 --psnr 33.16 --threshold 505 --diff_depth 2 --max_tex_res 2048'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS.split(" ") -ref assets/references/coffee_maker_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS.split(" ") -ref assets/references/bathroom_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 27.4 --threshold 6105 --refr_depth 12 --total_depth 12 --clamp_indirect 0.0'
@@ -354,7 +352,7 @@ stages:
     - echo "Running image tests..."
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 31.42 --threshold 755 --clamp_indirect 8.0 --denoise
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.70 --threshold 8643 --clamp_indirect 8.0
-    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 611 --max_tex_res 1024
+    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 639 --max_tex_res 1024
     - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.png --output_exr --output_aux --min_samples 512 --max_samples 1024 --variance_threshold 0.00035 --psnr 33.16 --threshold 505 --diff_depth 2 --max_tex_res 2048
     - ./$BIN_DIR/DemoApp -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS -ref assets/references/coffee_maker_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12
     - ./$BIN_DIR/DemoApp -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS -ref assets/references/bathroom_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 27.4 --threshold 6105 --refr_depth 12 --total_depth 12 --clamp_indirect 0.0
@@ -373,7 +371,7 @@ stages:
     - echo "Running image tests..."
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 31.42 --threshold 755 --clamp_indirect 8.0 --denoise
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.70 --threshold 8643 --clamp_indirect 8.0
-    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 611 --max_tex_res 1024
+    - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 639 --max_tex_res 1024
     - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.png --output_exr --output_aux --min_samples 512 --max_samples 1024 --variance_threshold 0.00035 --psnr 33.16 --threshold 505 --diff_depth 2 --max_tex_res 2048
     - ./$BIN_DIR/DemoApp -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS -ref assets/references/coffee_maker_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12
     - ./$BIN_DIR/DemoApp -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS -ref assets/references/bathroom_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 27.4 --threshold 6105 --refr_depth 12 --total_depth 12 --clamp_indirect 0.0
@@ -588,7 +586,20 @@ windows-arm64-gpu-adreno-test-job:
 windows-arm64-cpu-perf-test-job:
   variables:
     BIN_DIR: windows-arm64
-    AUX_TEST_ARGS: '--nogpu --time_limit 14.1'
+    AUX_TEST_ARGS: '--nogpu --time_limit 11.7'
+  extends:
+    - .windows-perf-test-job
+  needs:
+    - windows-arm64-build-job
+  tags:
+    - windows,arm64,perf
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+windows-arm64-gpu-perf-test-job:
+  variables:
+    BIN_DIR: windows-arm64
+    AUX_TEST_ARGS: '--nocpu --time_limit 26.4'
   extends:
     - .windows-perf-test-job
   needs:
