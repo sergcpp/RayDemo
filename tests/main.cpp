@@ -1,22 +1,25 @@
 
 #include <cfloat>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include <atomic>
 #include <chrono>
 
+void test_simd();
+void test_hashmap();
+void test_scope_exit();
+void test_sparse_storage();
 void test_tex_storage();
+
+void test_aux_channels(const char *arch_list[], const char *preferred_device);
 void test_oren_mat0(const char *arch_list[], const char *preferred_device);
 void test_oren_mat1(const char *arch_list[], const char *preferred_device);
 void test_oren_mat2(const char *arch_list[], const char *preferred_device);
-void test_oren_mat3(const char *arch_list[], const char *preferred_device);
-void test_oren_mat4(const char *arch_list[], const char *preferred_device);
 void test_diff_mat0(const char *arch_list[], const char *preferred_device);
 void test_diff_mat1(const char *arch_list[], const char *preferred_device);
 void test_diff_mat2(const char *arch_list[], const char *preferred_device);
-void test_diff_mat3(const char *arch_list[], const char *preferred_device);
-void test_diff_mat4(const char *arch_list[], const char *preferred_device);
 void test_sheen_mat0(const char *arch_list[], const char *preferred_device);
 void test_sheen_mat1(const char *arch_list[], const char *preferred_device);
 void test_sheen_mat2(const char *arch_list[], const char *preferred_device);
@@ -24,13 +27,9 @@ void test_sheen_mat3(const char *arch_list[], const char *preferred_device);
 void test_glossy_mat0(const char *arch_list[], const char *preferred_device);
 void test_glossy_mat1(const char *arch_list[], const char *preferred_device);
 void test_glossy_mat2(const char *arch_list[], const char *preferred_device);
-void test_glossy_mat3(const char *arch_list[], const char *preferred_device);
-void test_glossy_mat4(const char *arch_list[], const char *preferred_device);
 void test_spec_mat0(const char *arch_list[], const char *preferred_device);
 void test_spec_mat1(const char *arch_list[], const char *preferred_device);
 void test_spec_mat2(const char *arch_list[], const char *preferred_device);
-void test_spec_mat3(const char *arch_list[], const char *preferred_device);
-void test_spec_mat4(const char *arch_list[], const char *preferred_device);
 void test_aniso_mat0(const char *arch_list[], const char *preferred_device);
 void test_aniso_mat1(const char *arch_list[], const char *preferred_device);
 void test_aniso_mat2(const char *arch_list[], const char *preferred_device);
@@ -42,46 +41,30 @@ void test_aniso_mat7(const char *arch_list[], const char *preferred_device);
 void test_tint_mat0(const char *arch_list[], const char *preferred_device);
 void test_tint_mat1(const char *arch_list[], const char *preferred_device);
 void test_tint_mat2(const char *arch_list[], const char *preferred_device);
-void test_tint_mat3(const char *arch_list[], const char *preferred_device);
-void test_tint_mat4(const char *arch_list[], const char *preferred_device);
 void test_plastic_mat0(const char *arch_list[], const char *preferred_device);
 void test_plastic_mat1(const char *arch_list[], const char *preferred_device);
 void test_plastic_mat2(const char *arch_list[], const char *preferred_device);
-void test_plastic_mat3(const char *arch_list[], const char *preferred_device);
-void test_plastic_mat4(const char *arch_list[], const char *preferred_device);
 void test_metal_mat0(const char *arch_list[], const char *preferred_device);
 void test_metal_mat1(const char *arch_list[], const char *preferred_device);
 void test_metal_mat2(const char *arch_list[], const char *preferred_device);
-void test_metal_mat3(const char *arch_list[], const char *preferred_device);
-void test_metal_mat4(const char *arch_list[], const char *preferred_device);
 void test_emit_mat0(const char *arch_list[], const char *preferred_device);
 void test_emit_mat1(const char *arch_list[], const char *preferred_device);
 void test_coat_mat0(const char *arch_list[], const char *preferred_device);
 void test_coat_mat1(const char *arch_list[], const char *preferred_device);
 void test_coat_mat2(const char *arch_list[], const char *preferred_device);
-void test_coat_mat3(const char *arch_list[], const char *preferred_device);
-void test_coat_mat4(const char *arch_list[], const char *preferred_device);
 void test_refr_mis0(const char *arch_list[], const char *preferred_device);
 void test_refr_mis1(const char *arch_list[], const char *preferred_device);
 void test_refr_mis2(const char *arch_list[], const char *preferred_device);
-void test_refr_mis3(const char *arch_list[], const char *preferred_device);
-void test_refr_mis4(const char *arch_list[], const char *preferred_device);
 void test_refr_mat0(const char *arch_list[], const char *preferred_device);
 void test_refr_mat1(const char *arch_list[], const char *preferred_device);
 void test_refr_mat2(const char *arch_list[], const char *preferred_device);
 void test_refr_mat3(const char *arch_list[], const char *preferred_device);
-void test_refr_mat4(const char *arch_list[], const char *preferred_device);
-void test_refr_mat5(const char *arch_list[], const char *preferred_device);
 void test_trans_mat0(const char *arch_list[], const char *preferred_device);
 void test_trans_mat1(const char *arch_list[], const char *preferred_device);
 void test_trans_mat2(const char *arch_list[], const char *preferred_device);
 void test_trans_mat3(const char *arch_list[], const char *preferred_device);
 void test_trans_mat4(const char *arch_list[], const char *preferred_device);
 void test_trans_mat5(const char *arch_list[], const char *preferred_device);
-void test_trans_mat6(const char *arch_list[], const char *preferred_device);
-void test_trans_mat7(const char *arch_list[], const char *preferred_device);
-void test_trans_mat8(const char *arch_list[], const char *preferred_device);
-void test_trans_mat9(const char *arch_list[], const char *preferred_device);
 void test_alpha_mat0(const char *arch_list[], const char *preferred_device);
 void test_alpha_mat1(const char *arch_list[], const char *preferred_device);
 void test_alpha_mat2(const char *arch_list[], const char *preferred_device);
@@ -93,6 +76,11 @@ void test_complex_mat2(const char *arch_list[], const char *preferred_device);
 void test_complex_mat3(const char *arch_list[], const char *preferred_device);
 void test_complex_mat4(const char *arch_list[], const char *preferred_device);
 void test_complex_mat5(const char *arch_list[], const char *preferred_device);
+void test_complex_mat5_clipped(const char *arch_list[], const char *preferred_device);
+void test_complex_mat5_adaptive(const char *arch_list[], const char *preferred_device);
+void test_complex_mat5_filmic(const char *arch_list[], const char *preferred_device);
+void test_complex_mat5_regions(const char *arch_list[], const char *preferred_device);
+void test_complex_mat5_denoised(const char *arch_list[], const char *preferred_device);
 void test_complex_mat5_dof(const char *arch_list[], const char *preferred_device);
 void test_complex_mat5_mesh_lights(const char *arch_list[], const char *preferred_device);
 void test_complex_mat5_sphere_light(const char *arch_list[], const char *preferred_device);
@@ -100,6 +88,7 @@ void test_complex_mat5_spot_light(const char *arch_list[], const char *preferred
 void test_complex_mat5_sun_light(const char *arch_list[], const char *preferred_device);
 void test_complex_mat5_hdr_light(const char *arch_list[], const char *preferred_device);
 void test_complex_mat6(const char *arch_list[], const char *preferred_device);
+void test_complex_mat6_denoised(const char *arch_list[], const char *preferred_device);
 void test_complex_mat6_dof(const char *arch_list[], const char *preferred_device);
 void test_complex_mat6_mesh_lights(const char *arch_list[], const char *preferred_device);
 void test_complex_mat6_sphere_light(const char *arch_list[], const char *preferred_device);
@@ -109,9 +98,6 @@ void test_complex_mat6_hdr_light(const char *arch_list[], const char *preferred_
 void test_complex_mat7_refractive(const char *arch_list[], const char *preferred_device);
 void test_complex_mat7_principled(const char *arch_list[], const char *preferred_device);
 void assemble_material_test_images(const char *arch_list[]);
-void test_simd();
-void test_mesh_lights();
-void test_texture();
 
 bool g_stop_on_fail = false;
 bool g_tests_success = true;
@@ -120,6 +106,14 @@ bool g_catch_flt_exceptions = false;
 bool g_determine_sample_count = false;
 
 #ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+
 bool InitAndDestroyFakeGLContext();
 #endif
 
@@ -136,6 +130,7 @@ int main(int argc, char *argv[]) {
     bool full_tests = false, nogpu = false, nocpu = false, run_detail_tests_on_fail = false;
     const char *device_name = nullptr;
     const char *preferred_arch[] = {nullptr, nullptr};
+    double time_limit_m = std::numeric_limits<double>::max();
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--nogpu") == 0) {
@@ -150,20 +145,28 @@ int main(int argc, char *argv[]) {
             run_detail_tests_on_fail = true;
         } else if (strcmp(argv[i], "--arch") == 0 && (++i != argc)) {
             preferred_arch[0] = argv[i];
+        } else if (strcmp(argv[i], "--time_limit") == 0 && (++i != argc)) {
+            time_limit_m = atof(argv[i]);
+#ifdef _WIN32
+            SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+#endif
         }
     }
 
 #if defined(_WIN32) && !defined(__clang__)
     const bool enable_fp_exceptions = !nocpu || full_tests;
     if (enable_fp_exceptions) {
-        _controlfp(_EM_INEXACT, _MCW_EM);
+        unsigned old_value;
+        _controlfp_s(&old_value, _EM_INEXACT, _MCW_EM);
         g_catch_flt_exceptions = true;
     }
 #endif
 
     test_simd();
+    test_hashmap();
+    test_scope_exit();
+    test_sparse_storage();
     test_tex_storage();
-    // test_mesh_lights();
 
 #ifdef _WIN32
     // Stupid workaround that should not exist.
@@ -171,11 +174,11 @@ int main(int argc, char *argv[]) {
     InitAndDestroyFakeGLContext();
 #endif
 
-    static const char *ArchListFull[] = {"REF", "SSE2", "SSE41", "AVX", "AVX2", "AVX512", "NEON", "VK", nullptr};
+    static const char *ArchListFull[] = {"REF", "SSE2", "SSE41", "AVX", "AVX2", "AVX512", "NEON", "VK", "DX", nullptr};
     static const char *ArchListFullNoGPU[] = {"REF", "SSE2", "SSE41", "AVX", "AVX2", "AVX512", "NEON", nullptr};
-    static const char *ArchListDefault[] = {"AVX2", "NEON", "VK", nullptr};
+    static const char *ArchListDefault[] = {"AVX2", "NEON", "VK", "DX", nullptr};
     static const char *ArchListDefaultNoGPU[] = {"AVX2", "NEON", nullptr};
-    static const char *ArchListGPUOnly[] = {"VK", nullptr};
+    static const char *ArchListGPUOnly[] = {"DX", "VK", nullptr};
 
     bool detailed_material_tests_needed = full_tests;
     bool tests_success_final = g_tests_success;
@@ -198,12 +201,18 @@ int main(int argc, char *argv[]) {
     if (g_tests_success) {
         const auto t2 = high_resolution_clock::now();
         puts("---------------");
+        test_aux_channels(arch_list, device_name);
         test_complex_mat0(arch_list, device_name);
         test_complex_mat1(arch_list, device_name);
         test_complex_mat2(arch_list, device_name);
         test_complex_mat3(arch_list, device_name);
         test_complex_mat4(arch_list, device_name);
         test_complex_mat5(arch_list, device_name);
+        test_complex_mat5_clipped(arch_list, device_name);
+        test_complex_mat5_adaptive(arch_list, device_name);
+        test_complex_mat5_filmic(arch_list, device_name);
+        test_complex_mat5_regions(arch_list, device_name);
+        test_complex_mat5_denoised(arch_list, device_name);
         test_complex_mat5_dof(arch_list, device_name);
         test_complex_mat5_mesh_lights(arch_list, device_name);
         test_complex_mat5_sphere_light(arch_list, device_name);
@@ -211,6 +220,7 @@ int main(int argc, char *argv[]) {
         test_complex_mat5_sun_light(arch_list, device_name);
         test_complex_mat5_hdr_light(arch_list, device_name);
         test_complex_mat6(arch_list, device_name);
+        test_complex_mat6_denoised(arch_list, device_name);
         test_complex_mat6_dof(arch_list, device_name);
         test_complex_mat6_mesh_lights(arch_list, device_name);
         test_complex_mat6_sphere_light(arch_list, device_name);
@@ -237,8 +247,6 @@ int main(int argc, char *argv[]) {
             test_oren_mat0(arch_list, device_name);
             test_oren_mat1(arch_list, device_name);
             test_oren_mat2(arch_list, device_name);
-            test_oren_mat3(arch_list, device_name);
-            test_oren_mat4(arch_list, device_name);
             printf("Finished oren_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -248,8 +256,6 @@ int main(int argc, char *argv[]) {
             test_diff_mat0(arch_list, device_name);
             test_diff_mat1(arch_list, device_name);
             test_diff_mat2(arch_list, device_name);
-            test_diff_mat3(arch_list, device_name);
-            test_diff_mat4(arch_list, device_name);
             printf("Finished diff_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -269,8 +275,6 @@ int main(int argc, char *argv[]) {
             test_glossy_mat0(arch_list, device_name);
             test_glossy_mat1(arch_list, device_name);
             test_glossy_mat2(arch_list, device_name);
-            test_glossy_mat3(arch_list, device_name);
-            test_glossy_mat4(arch_list, device_name);
             printf("Finished glossy_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -280,8 +284,6 @@ int main(int argc, char *argv[]) {
             test_spec_mat0(arch_list, device_name);
             test_spec_mat1(arch_list, device_name);
             test_spec_mat2(arch_list, device_name);
-            test_spec_mat3(arch_list, device_name);
-            test_spec_mat4(arch_list, device_name);
             printf("Finished spec_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -305,8 +307,6 @@ int main(int argc, char *argv[]) {
             test_metal_mat0(arch_list, device_name);
             test_metal_mat1(arch_list, device_name);
             test_metal_mat2(arch_list, device_name);
-            test_metal_mat3(arch_list, device_name);
-            test_metal_mat4(arch_list, device_name);
             printf("Finished metal_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -316,8 +316,6 @@ int main(int argc, char *argv[]) {
             test_plastic_mat0(arch_list, device_name);
             test_plastic_mat1(arch_list, device_name);
             test_plastic_mat2(arch_list, device_name);
-            test_plastic_mat3(arch_list, device_name);
-            test_plastic_mat4(arch_list, device_name);
             printf("Finished plastic_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -327,8 +325,6 @@ int main(int argc, char *argv[]) {
             test_tint_mat0(arch_list, device_name);
             test_tint_mat1(arch_list, device_name);
             test_tint_mat2(arch_list, device_name);
-            test_tint_mat3(arch_list, device_name);
-            test_tint_mat4(arch_list, device_name);
             printf("Finished tint_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -346,8 +342,6 @@ int main(int argc, char *argv[]) {
             test_coat_mat0(arch_list, device_name);
             test_coat_mat1(arch_list, device_name);
             test_coat_mat2(arch_list, device_name);
-            test_coat_mat3(arch_list, device_name);
-            test_coat_mat4(arch_list, device_name);
             printf("Finished coat_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -357,8 +351,6 @@ int main(int argc, char *argv[]) {
             test_refr_mis0(arch_list, device_name);
             test_refr_mis1(arch_list, device_name);
             test_refr_mis2(arch_list, device_name);
-            test_refr_mis3(arch_list, device_name);
-            test_refr_mis4(arch_list, device_name);
             printf("Finished refr_mis tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -369,8 +361,6 @@ int main(int argc, char *argv[]) {
             test_refr_mat1(arch_list, device_name);
             test_refr_mat2(arch_list, device_name);
             test_refr_mat3(arch_list, device_name);
-            test_refr_mat4(arch_list, device_name);
-            test_refr_mat5(arch_list, device_name);
             printf("Finished refr_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -383,10 +373,6 @@ int main(int argc, char *argv[]) {
             test_trans_mat3(arch_list, device_name);
             test_trans_mat4(arch_list, device_name);
             test_trans_mat5(arch_list, device_name);
-            test_trans_mat6(arch_list, device_name);
-            test_trans_mat7(arch_list, device_name);
-            test_trans_mat8(arch_list, device_name);
-            test_trans_mat9(arch_list, device_name);
             printf("Finished trans_mat tests in %.2f minutes\n",
                    duration<double>(high_resolution_clock::now() - t2).count() / 60.0);
         }
@@ -403,9 +389,10 @@ int main(int argc, char *argv[]) {
         }
     }
     assemble_material_test_images(arch_list);
-    // test_texture();
 
-    printf("FINISHED ALL TESTS in %.2f minutes\n", duration<double>(high_resolution_clock::now() - t1).count() / 60.0);
+    const double test_duration_m = duration<double>(high_resolution_clock::now() - t1).count() / 60.0;
+
+    printf("FINISHED ALL TESTS in %.2f minutes\n", test_duration_m);
 
     if (g_log_contains_errors) {
         printf("LOG CONTAINS ERRORS!\n");
@@ -413,6 +400,7 @@ int main(int argc, char *argv[]) {
 
     tests_success_final &= !g_log_contains_errors;
     tests_success_final &= g_tests_success;
+    tests_success_final &= (test_duration_m <= time_limit_m);
     if (tests_success_final) {
         puts("SUCCESS");
     } else {
@@ -425,12 +413,10 @@ int main(int argc, char *argv[]) {
 // Dirty workaround for Intel discrete GPU
 //
 #ifdef _WIN32
-#include <Windows.h>
-
 extern "C" {
 // Enable High Performance Graphics while using Integrated Graphics
-__declspec(dllexport) int32_t NvOptimusEnablement = 0x00000001;     // Nvidia
-__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1; // AMD
+__declspec(dllexport) int32_t NvOptimusEnablement = 1;                  // Nvidia
+__declspec(dllexport) int32_t AmdPowerXpressRequestHighPerformance = 1; // AMD
 }
 
 bool InitAndDestroyFakeGLContext() {
@@ -455,7 +441,7 @@ bool InitAndDestroyFakeGLContext() {
     }
 
     if (!SetPixelFormat(fake_dc, pix_format_id, &pixel_format)) {
-        printf("SetPixelFormat() failed\n");
+        // printf("SetPixelFormat() failed (0x%08x)\n", GetLastError());
         return false;
     }
 

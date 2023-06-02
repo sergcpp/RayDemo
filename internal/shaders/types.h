@@ -18,7 +18,9 @@ const int RAND_DIM_LIGHT_PICK = 3;
 const int RAND_DIM_LIGHT_U = 4;
 const int RAND_DIM_LIGHT_V = 5;
 const int RAND_DIM_TERMINATE = 6;
-const int RAND_DIM_BOUNCE_COUNT = 7; // separate for each bounce
+const int RAND_DIM_TEX_U = 7;
+const int RAND_DIM_TEX_V = 8;
+const int RAND_DIM_BOUNCE_COUNT = 9; // separate for each bounce
 
 const int MAX_STACK_SIZE = 48;
 
@@ -44,7 +46,7 @@ const int MIX_MAT2 = 4;
 const int MATERIAL_SOLID_BIT = 32768; // 0b1000000000000000
 const int MATERIAL_INDEX_BITS = 16383; // 0b0011111111111111
 
-#define MAX_DIST 3.402823466e+30
+#define MAX_DIST 3.402823466e+30f
 
 #define HIT_EPS 0.000001
 
@@ -146,7 +148,7 @@ struct bvh_node_t {
 };
 
 struct vertex_t {
-    float p[3], n[3], b[3], t[2][2];
+    float p[3], n[3], b[3], t[2];
 };
 
 struct mesh_t {
@@ -223,6 +225,14 @@ struct atlas_texture_t {
     UINT_TYPE atlas;
     UINT_TYPE page[(NUM_MIP_LEVELS + 3) / 4];
     UINT_TYPE pos[NUM_MIP_LEVELS];
+};
+
+struct ray_chunk_t {
+    UINT_TYPE hash, base, size;
+};
+
+struct ray_hash_t {
+    UINT_TYPE hash, index;
 };
 
 INTERFACE_END

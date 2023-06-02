@@ -12,14 +12,24 @@
 
 namespace Ray {
 namespace NS {
-/*#ifndef vdivq_f32 force_inline float32x4_t vdivq_f32(float32x4_t num, float32x4_t den) {
+#if !defined(__aarch64__) && !defined(_M_ARM64)
+force_inline float32x4_t vdivq_f32(float32x4_t num, float32x4_t den) {
     const float32x4_t q_inv0 = vrecpeq_f32(den);
     const float32x4_t q_step0 = vrecpsq_f32(q_inv0, den);
 
     const float32x4_t q_inv1 = vmulq_f32(q_step0, q_inv0);
     return vmulq_f32(num, q_inv1);
 }
-#endif*/
+#endif
+
+template <int imm> force_inline int32x4_t slli(int32x4_t a) {
+    if (imm == 0) {
+        return a;
+    } else if (imm & ~15) {
+        return vdupq_n_s32(0);
+    }
+    return vextq_s8(vdupq_n_s8(0), vreinterpretq_s32_s64(a), ((imm <= 0 || imm > 15) ? 0 : (16 - imm)));
+}
 
 template <> class simd_vec<int, 4>;
 
@@ -224,8 +234,8 @@ template <> class simd_vec<float, 4> {
         return temp;
     }
 
-    force_inline void copy_to(float *f) const { vst1q_f32(f, vec_); }
-    force_inline void copy_to(float *f, simd_mem_aligned_tag) const {
+    force_inline void store_to(float *f) const { vst1q_f32(f, vec_); }
+    force_inline void store_to(float *f, simd_mem_aligned_tag) const {
         float *_f = (float *)__builtin_assume_aligned(f, 16);
         vst1q_f32(_f, vec_);
     }
@@ -432,6 +442,12 @@ template <> class simd_vec<float, 4> {
 
     friend force_inline simd_vec<float, 4> vectorcall normalize(const simd_vec<float, 4> v1) {
         return v1 / v1.length();
+    }
+
+    friend force_inline simd_vec<float, 4> vectorcall inclusive_scan(simd_vec<float, 4> v1) {
+        v1.vec_ = vaddq_f32(v1.vec_, vreinterpretq_f32_s32(slli<4>(vreinterpretq_s32_f32(v1.vec_))));
+        v1.vec_ = vaddq_f32(v1.vec_, vreinterpretq_f32_s32(slli<8>(vreinterpretq_s32_f32(v1.vec_))));
+        return v1;
     }
 
 #ifndef NDEBUG
@@ -659,9 +675,9 @@ template <> class simd_vec<int, 4> {
         return ret;
     }
 
-    force_inline void copy_to(int *f) const { vst1q_s32((int32_t *)f, vec_); }
+    force_inline void store_to(int *f) const { vst1q_s32((int32_t *)f, vec_); }
 
-    force_inline void copy_to(int *f, simd_mem_aligned_tag) const {
+    force_inline void store_to(int *f, simd_mem_aligned_tag) const {
         const int *_f = (const int *)__builtin_assume_aligned(f, 16);
         vst1q_s32((int32_t *)_f, vec_);
     }
@@ -942,6 +958,12 @@ template <> class simd_vec<int, 4> {
         UNROLLED_FOR(i, 4, { res &= (comp1[i] == comp2[i]); })
         return res;
 #endif
+    }
+
+    friend force_inline simd_vec<int, 4> vectorcall inclusive_scan(simd_vec<int, 4> v1) {
+        v1.vec_ = vaddq_s32(v1.vec_, slli<4>(v1.vec_));
+        v1.vec_ = vaddq_s32(v1.vec_, slli<8>(v1.vec_));
+        return v1;
     }
 
 #ifndef NDEBUG

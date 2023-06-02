@@ -12,6 +12,12 @@ layout(std430, binding = HALTON_SEQ_BUF_SLOT) readonly buffer Halton {
     float g_halton[];
 };
 
+layout(binding = REQUIRED_SAMPLES_IMG_SLOT) uniform usampler2D g_required_samples_img;
+
+layout(std430, binding = INOUT_COUNTERS_BUF_SLOT) buffer InoutCounters {
+    uint g_inout_counters[];
+};
+
 layout(std430, binding = OUT_RAYS_BUF_SLOT) writeonly buffer OutRays {
     ray_data_t g_out_rays[];
 };
@@ -31,16 +37,25 @@ float ngon_rad(const float theta, const float n) {
 }
 
 void main() {
-    if (gl_GlobalInvocationID.x >= g_params.img_size.x || gl_GlobalInvocationID.y >= g_params.img_size.y) {
+    if (gl_GlobalInvocationID.x >= g_params.rect.z || gl_GlobalInvocationID.y >= g_params.rect.w) {
         return;
     }
 
+    int x = int(g_params.rect.x + gl_GlobalInvocationID.x);
+    int y = int(g_params.rect.y + gl_GlobalInvocationID.y);
+
+#if ADAPTIVE
+    if (texelFetch(g_required_samples_img, ivec2(x, y), 0).r < g_params.iteration) {
+        return;
+    }
+    uint index = atomicAdd(g_inout_counters[0], 1);
+#else
+    atomicAdd(g_inout_counters[0], 1);
+    int index = int(gl_GlobalInvocationID.y * g_params.rect.z + gl_GlobalInvocationID.x);
+#endif
+
     float k = float(g_params.img_size.x) / float(g_params.img_size.y);
 
-    int x = int(gl_GlobalInvocationID.x);
-    int y = int(gl_GlobalInvocationID.y);
-
-    int index = y * int(g_params.img_size.x) + x;
     int hash_val = hash((x << 16) | y);
 
     float _x = float(x);
@@ -48,7 +63,7 @@ void main() {
 
     vec2 sample_off = vec2(construct_float(hash_val), construct_float(hash(hash_val)));
 
-    if (g_params.cam_filter == FILTER_TENT) {
+    if ((g_params.cam_filter_and_lens_blades >> 8) == FILTER_TENT) {
         float rx = fract(g_halton[g_params.hi + RAND_DIM_FILTER_U] + sample_off.x);
         [[flatten]] if (rx < 0.5) {
             rx = sqrt(2.0 * rx) - 1.0;
@@ -87,8 +102,8 @@ void main() {
                 theta = 0.5 * PI - 0.25 * PI * (offset[0] / offset[1]);
             }
 
-            if (g_params.cam_lens_blades > 0) {
-                r *= ngon_rad(theta, float(g_params.cam_lens_blades));
+            if ((g_params.cam_filter_and_lens_blades & 0xff) > 0) {
+                r *= ngon_rad(theta, float(g_params.cam_filter_and_lens_blades & 0xff));
             }
 
             theta += g_params.cam_lens_rotation;
@@ -104,7 +119,7 @@ void main() {
     vec3 _origin = g_params.cam_origin.xyz + g_params.cam_side.xyz * offset.x + g_params.cam_up.xyz * offset.y;
     vec3 _d = get_pix_dir(_x, _y, _origin, k);
 
-    _origin += _d * (g_params.cam_clip_start / dot(_d, g_params.cam_fwd.xyz));
+    _origin += _d * (g_params.cam_fwd.w / dot(_d, g_params.cam_fwd.xyz));
 
     ray_data_t new_ray;
     new_ray.o[0] = _origin[0];

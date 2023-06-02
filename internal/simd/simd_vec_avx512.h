@@ -19,6 +19,9 @@
 #define _mm512_movemask_epi32(a)                                                                                       \
     (int)_mm512_cmpneq_epi32_mask(_mm512_setzero_si512(), _mm512_and_si512(_mm512_set1_epi32(0x80000000U), a))
 
+// https://adms-conf.org/2020-camera-ready/ADMS20_05.pdf
+#define _mm512_slli_si512(x, k) _mm512_alignr_epi32(x, _mm512_setzero_si512(), 16 - k)
+
 #ifndef NDEBUG
 #define validate_mask(m) __assert_valid_mask(m)
 #else
@@ -142,8 +145,8 @@ template <> class simd_vec<float, 16> {
         return temp;
     }
 
-    force_inline void copy_to(float *f) const { _mm512_storeu_ps(f, vec_); }
-    force_inline void copy_to(float *f, simd_mem_aligned_tag) const { _mm512_store_ps(f, vec_); }
+    force_inline void store_to(float *f) const { _mm512_storeu_ps(f, vec_); }
+    force_inline void store_to(float *f, simd_mem_aligned_tag) const { _mm512_store_ps(f, vec_); }
 
     force_inline void vectorcall blend_to(const simd_vec<float, 16> mask, const simd_vec<float, 16> v1) {
         validate_mask(mask);
@@ -203,8 +206,8 @@ template <> class simd_vec<float, 16> {
 
     friend force_inline simd_vec<float, 16> vectorcall clamp(simd_vec<float, 16> v1, float min, float max);
     friend force_inline simd_vec<float, 16> vectorcall pow(simd_vec<float, 16> v1, simd_vec<float, 16> v2);
-
     friend force_inline simd_vec<float, 16> vectorcall normalize(simd_vec<float, 16> v1);
+    friend force_inline simd_vec<float, 16> vectorcall inclusive_scan(simd_vec<float, 16> v1);
 
     friend force_inline simd_vec<float, 16> vectorcall fmadd(simd_vec<float, 16> a, simd_vec<float, 16> b,
                                                              simd_vec<float, 16> c);
@@ -396,8 +399,8 @@ template <> class simd_vec<int, 16> {
         return ret;
     }
 
-    force_inline void copy_to(int *f) const { _mm512_storeu_si512((__m512i *)f, vec_); }
-    force_inline void copy_to(int *f, simd_mem_aligned_tag) const { _mm512_store_si512((__m512i *)f, vec_); }
+    force_inline void store_to(int *f) const { _mm512_storeu_si512((__m512i *)f, vec_); }
+    force_inline void store_to(int *f, simd_mem_aligned_tag) const { _mm512_store_si512((__m512i *)f, vec_); }
 
     force_inline void vectorcall blend_to(const simd_vec<int, 16> mask, const simd_vec<int, 16> v1) {
         validate_mask(mask);
@@ -658,11 +661,31 @@ template <> class simd_vec<int, 16> {
         return _mm512_cmpeq_epi32_mask(v1.vec_, v2.vec_) == 0xFFFF;
     }
 
+    friend simd_vec<int, 16> vectorcall inclusive_scan(simd_vec<int, 16> v1);
+
     friend force_inline simd_vec<float, 16> vectorcall gather(const float *base_addr, simd_vec<int, 16> vindex);
     friend force_inline simd_vec<int, 16> vectorcall gather(const int *base_addr, simd_vec<int, 16> vindex);
 
     friend force_inline void vectorcall scatter(float *base_addr, simd_vec<int, 16> vindex, simd_vec<float, 16> v);
+    friend force_inline void vectorcall scatter(float *base_addr, simd_vec<int, 16> vindex, const float v) {
+        scatter(base_addr, vindex, simd_vec<float, 16>{v});
+    }
+    friend force_inline void vectorcall scatter(float *base_addr, simd_vec<int, 16> mask, simd_vec<int, 16> vindex,
+                                                simd_vec<float, 16> v);
+    friend force_inline void vectorcall scatter(float *base_addr, simd_vec<int, 16> mask, simd_vec<int, 16> vindex,
+                                                const float v) {
+        scatter(base_addr, mask, vindex, simd_vec<float, 16>{v});
+    }
     friend force_inline void vectorcall scatter(int *base_addr, simd_vec<int, 16> vindex, simd_vec<int, 16> v);
+    friend force_inline void vectorcall scatter(int *base_addr, simd_vec<int, 16> vindex, const int v) {
+        scatter(base_addr, vindex, simd_vec<int, 16>{v});
+    }
+    friend force_inline void vectorcall scatter(int *base_addr, simd_vec<int, 16> mask, simd_vec<int, 16> vindex,
+                                                simd_vec<int, 16> v);
+    friend force_inline void vectorcall scatter(int *base_addr, simd_vec<int, 16> mask, simd_vec<int, 16> vindex,
+                                                const int v) {
+        scatter(base_addr, mask, vindex, simd_vec<int, 16>{v});
+    }
 
 #ifndef NDEBUG
     friend void vectorcall __assert_valid_mask(const simd_vec<int, 16> mask) {
@@ -924,6 +947,22 @@ force_inline simd_vec<float, 16> vectorcall pow(const simd_vec<float, 16> v1, co
 
 force_inline simd_vec<float, 16> vectorcall normalize(const simd_vec<float, 16> v1) { return v1 / v1.length(); }
 
+force_inline simd_vec<float, 16> vectorcall inclusive_scan(simd_vec<float, 16> v1) {
+    v1.vec_ = _mm512_add_ps(v1.vec_, _mm512_castsi512_ps(_mm512_slli_si512(_mm512_castps_si512(v1.vec_), 1)));
+    v1.vec_ = _mm512_add_ps(v1.vec_, _mm512_castsi512_ps(_mm512_slli_si512(_mm512_castps_si512(v1.vec_), 2)));
+    v1.vec_ = _mm512_add_ps(v1.vec_, _mm512_castsi512_ps(_mm512_slli_si512(_mm512_castps_si512(v1.vec_), 4)));
+    v1.vec_ = _mm512_add_ps(v1.vec_, _mm512_castsi512_ps(_mm512_slli_si512(_mm512_castps_si512(v1.vec_), 8)));
+    return v1;
+}
+
+force_inline simd_vec<int, 16> vectorcall inclusive_scan(simd_vec<int, 16> v1) {
+    v1.vec_ = _mm512_add_epi32(v1.vec_, _mm512_slli_si512(v1.vec_, 1));
+    v1.vec_ = _mm512_add_epi32(v1.vec_, _mm512_slli_si512(v1.vec_, 2));
+    v1.vec_ = _mm512_add_epi32(v1.vec_, _mm512_slli_si512(v1.vec_, 4));
+    v1.vec_ = _mm512_add_epi32(v1.vec_, _mm512_slli_si512(v1.vec_, 8));
+    return v1;
+}
+
 force_inline simd_vec<float, 16> vectorcall fmadd(const simd_vec<float, 16> a, const simd_vec<float, 16> b,
                                                   const simd_vec<float, 16> c) {
     simd_vec<float, 16> ret;
@@ -980,8 +1019,18 @@ force_inline void vectorcall scatter(float *base_addr, simd_vec<int, 16> vindex,
     _mm512_i32scatter_ps(base_addr, vindex.vec_, v.vec_, sizeof(float));
 }
 
+force_inline void vectorcall scatter(float *base_addr, simd_vec<int, 16> mask, simd_vec<int, 16> vindex,
+                                     simd_vec<float, 16> v) {
+    _mm512_mask_i32scatter_ps(base_addr, mask.movemask(), vindex.vec_, v.vec_, sizeof(float));
+}
+
 force_inline void vectorcall scatter(int *base_addr, simd_vec<int, 16> vindex, simd_vec<int, 16> v) {
     _mm512_i32scatter_epi32(base_addr, vindex.vec_, v.vec_, sizeof(int));
+}
+
+force_inline void vectorcall scatter(int *base_addr, simd_vec<int, 16> mask, simd_vec<int, 16> vindex,
+                                     simd_vec<int, 16> v) {
+    _mm512_mask_i32scatter_epi32(base_addr, mask.movemask(), vindex.vec_, v.vec_, sizeof(int));
 }
 
 } // namespace NS

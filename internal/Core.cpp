@@ -281,13 +281,13 @@ bool Ray::PreprocessTri(const float *p, int stride, tri_accel_t *out_acc) {
 }
 
 uint32_t Ray::PreprocessMesh(const float *attrs, Span<const uint32_t> vtx_indices, const eVertexLayout layout,
-                             const int base_vertex, const uint32_t tris_start, const bvh_settings_t &s,
-                             std::vector<bvh_node_t> &out_nodes, std::vector<tri_accel_t> &out_tris,
-                             std::vector<uint32_t> &out_tri_indices, aligned_vector<mtri_accel_t> &out_tris2) {
+                             const int base_vertex, const bvh_settings_t &s, std::vector<bvh_node_t> &out_nodes,
+                             aligned_vector<tri_accel_t> &out_tris, std::vector<uint32_t> &out_tri_indices,
+                             aligned_vector<mtri_accel_t> &out_tris2) {
     assert(!vtx_indices.empty() && vtx_indices.size() % 3 == 0);
 
-    std::vector<prim_t> primitives;
-    std::vector<tri_accel_t> triangles;
+    aligned_vector<prim_t> primitives;
+    aligned_vector<tri_accel_t> triangles;
     std::vector<uint32_t> real_indices;
 
     primitives.reserve(vtx_indices.size() / 3);
@@ -295,7 +295,7 @@ uint32_t Ray::PreprocessMesh(const float *attrs, Span<const uint32_t> vtx_indice
     real_indices.reserve(vtx_indices.size() / 3);
 
     const float *positions = attrs;
-    const size_t attr_stride = AttrStrides[layout];
+    const size_t attr_stride = AttrStrides[int(layout)];
 
     for (int j = 0; j < int(vtx_indices.size()); j += 3) {
         Ref::simd_fvec4 p[3] = {{0.0f}, {0.0f}, {0.0f}};
@@ -348,7 +348,7 @@ uint32_t Ray::PreprocessMesh(const float *attrs, Span<const uint32_t> vtx_indice
             out_tris2[i / 8].v_plane[k][i % 8] = triangles[j].v_plane[k];
         }
 
-        out_tri_indices[i] = uint32_t(real_indices[j] + tris_start);
+        out_tri_indices[i] = uint32_t(real_indices[j]);
     }
 
     return num_out_nodes;
@@ -533,7 +533,7 @@ uint32_t Ray::PreprocessPrims_SAH(Span<const prim_t> prims, const float *positio
             : indices(std::move(_indices)), min(_min), max(_max) {}
     };
 
-    std::deque<prims_coll_t> prim_lists;
+    std::deque<prims_coll_t, aligned_allocator<prims_coll_t, alignof(prims_coll_t)>> prim_lists;
     prim_lists.emplace_back();
 
     size_t num_nodes = out_nodes.size();
@@ -666,7 +666,7 @@ uint32_t Ray::PreprocessPrims_HLBVH(Span<const prim_t> prims, std::vector<bvh_no
                                               indices_start, start_bit, bottom_nodes);
     }
 
-    std::vector<prim_t> top_prims;
+    aligned_vector<prim_t> top_prims;
     for (const treelet_t &tr : treelets) {
         const bvh_node_t &node = bottom_nodes[tr.node_index];
 
@@ -928,13 +928,13 @@ bool Ray::NaiivePluckerTest(const float p[9], const float o[3], const float d[3]
     return (t0 <= 0 && t1 <= 0 && t2 <= 0) || (t0 >= 0 && t1 >= 0 && t2 >= 0);
 }
 
-void Ray::ConstructCamera(const eCamType type, const eFilterType filter, eDeviceType dtype, const float origin[3],
-                          const float fwd[3], const float up[3], const float shift[2], const float fov,
-                          const float sensor_height, const float exposure, const float gamma,
+void Ray::ConstructCamera(const eCamType type, const eFilterType filter, const eViewTransform view_transform,
+                          const float origin[3], const float fwd[3], const float up[3], const float shift[2],
+                          const float fov, const float sensor_height, const float exposure, const float gamma,
                           const float focus_distance, const float fstop, const float lens_rotation,
                           const float lens_ratio, const int lens_blades, const float clip_start, const float clip_end,
                           camera_t *cam) {
-    if (type == Persp) {
+    if (type == eCamType::Persp) {
         auto o = Ref::simd_fvec3{origin}, f = Ref::simd_fvec3{fwd}, u = Ref::simd_fvec3{up};
 
         if (u.length2() < FLT_EPS) {
@@ -950,7 +950,7 @@ void Ray::ConstructCamera(const eCamType type, const eFilterType filter, eDevice
 
         cam->type = type;
         cam->filter = filter;
-        cam->dtype = dtype;
+        cam->view_transform = view_transform;
         cam->ltype = eLensUnits::FOV;
         cam->fov = fov;
         cam->exposure = exposure;
@@ -964,12 +964,12 @@ void Ray::ConstructCamera(const eCamType type, const eFilterType filter, eDevice
         cam->lens_blades = lens_blades;
         cam->clip_start = clip_start;
         cam->clip_end = clip_end;
-        memcpy(&cam->origin[0], value_ptr(o), 3 * sizeof(float));
-        memcpy(&cam->fwd[0], value_ptr(f), 3 * sizeof(float));
-        memcpy(&cam->side[0], value_ptr(s), 3 * sizeof(float));
-        memcpy(&cam->up[0], value_ptr(u), 3 * sizeof(float));
+        o.store_to(cam->origin);
+        f.store_to(cam->fwd);
+        s.store_to(cam->side);
+        u.store_to(cam->up);
         memcpy(&cam->shift[0], shift, 2 * sizeof(float));
-    } else if (type == Ortho) {
+    } else if (type == eCamType::Ortho) {
         // TODO!
     }
 }

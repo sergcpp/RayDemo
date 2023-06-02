@@ -12,7 +12,9 @@ LAYOUT_PARAMS uniform UniformParams {
     Params g_params;
 };
 
-#if !HWRT
+#if HWRT
+layout(binding = TLAS_SLOT) uniform accelerationStructureEXT g_tlas;
+#else // HWRT
 layout(std430, binding = TRIS_BUF_SLOT) readonly buffer Tris {
     tri_accel_t g_tris[];
 };
@@ -40,9 +42,7 @@ layout(std430, binding = MI_INDICES_BUF_SLOT) readonly buffer MiIndices {
 layout(std430, binding = TRANSFORMS_BUF_SLOT) readonly buffer Transforms {
     transform_t g_transforms[];
 };
-#else
-layout(binding = TLAS_SLOT) uniform accelerationStructureEXT g_tlas;
-#endif
+#endif // HWRT
 
 layout(std430, binding = TRI_MATERIALS_BUF_SLOT) readonly buffer TriMaterials {
     uint g_tri_materials[];
@@ -56,11 +56,11 @@ layout(std430, binding = RAYS_BUF_SLOT) buffer Rays {
     ray_data_t g_rays[];
 };
 
-#if !PRIMARY
+#if INDIRECT
 layout(std430, binding = COUNTERS_BUF_SLOT) readonly buffer Counters {
     uint g_counters[];
 };
-#endif
+#endif // INDIRECT
 
 layout(std430, binding = VERTICES_BUF_SLOT) readonly buffer Vertices {
     vertex_t g_vertices[];
@@ -90,7 +90,7 @@ layout(std430, binding = OUT_HITS_BUF_SLOT) writeonly buffer Hits {
 
 shared uint g_stack[LOCAL_GROUP_SIZE_X * LOCAL_GROUP_SIZE_Y][MAX_STACK_SIZE];
 
-void Traverse_MicroTree_WithStack(vec3 ro, vec3 rd, vec3 inv_d, int obj_index, uint node_index,
+void Traverse_BLAS_WithStack(vec3 ro, vec3 rd, vec3 inv_d, int obj_index, uint node_index,
                                   uint stack_size, inout hit_data_t inter) {
     vec3 neg_inv_do = -inv_d * ro;
 
@@ -118,7 +118,7 @@ void Traverse_MicroTree_WithStack(vec3 ro, vec3 rd, vec3 inv_d, int obj_index, u
     }
 }
 
-void Traverse_MacroTree_WithStack(vec3 orig_ro, vec3 orig_rd, vec3 orig_inv_rd, uint node_index,
+void Traverse_TLAS_WithStack(vec3 orig_ro, vec3 orig_rd, vec3 orig_inv_rd, uint node_index,
                                   inout hit_data_t inter) {
     vec3 orig_neg_inv_do = -orig_inv_rd * orig_ro;
 
@@ -153,7 +153,7 @@ void Traverse_MacroTree_WithStack(vec3 orig_ro, vec3 orig_rd, vec3 orig_inv_rd, 
                 vec3 rd = (tr.inv_xform * vec4(orig_rd, 0.0)).xyz;
                 vec3 inv_d = safe_invert(rd);
 
-                Traverse_MicroTree_WithStack(ro, rd, inv_d, int(g_mi_indices[i]), m.node_index,
+                Traverse_BLAS_WithStack(ro, rd, inv_d, int(g_mi_indices[i]), m.node_index,
                                              stack_size, inter);
             }
         }
@@ -164,16 +164,16 @@ void Traverse_MacroTree_WithStack(vec3 orig_ro, vec3 orig_rd, vec3 orig_inv_rd, 
 layout (local_size_x = LOCAL_GROUP_SIZE_X, local_size_y = LOCAL_GROUP_SIZE_Y, local_size_z = 1) in;
 
 void main() {
-#if PRIMARY
-    if (gl_GlobalInvocationID.x >= g_params.img_size.x || gl_GlobalInvocationID.y >= g_params.img_size.y) {
+#if !INDIRECT
+    if (gl_GlobalInvocationID.x >= g_params.rect.z || gl_GlobalInvocationID.y >= g_params.rect.w) {
         return;
     }
 
-    const int x = int(gl_GlobalInvocationID.x);
-    const int y = int(gl_GlobalInvocationID.y);
+    const int x = int(g_params.rect.x + gl_GlobalInvocationID.x);
+    const int y = int(g_params.rect.y + gl_GlobalInvocationID.y);
 
-    const int index = y * int(g_params.img_size.x) + x;
-#else
+    const int index = int(gl_GlobalInvocationID.y * g_params.rect.z + gl_GlobalInvocationID.x);
+#else // !INDIRECT
     const int index = int(gl_WorkGroupID.x * 64 + gl_LocalInvocationIndex);
     if (index >= g_counters[1]) {
         return;
@@ -181,7 +181,7 @@ void main() {
 
     const int x = (g_rays[index].xy >> 16) & 0xffff;
     const int y = (g_rays[index].xy & 0xffff);
-#endif
+#endif // !INDIRECT
 
     vec3 ro = vec3(g_rays[index].o[0], g_rays[index].o[1], g_rays[index].o[2]);
     vec3 rd = vec3(g_rays[index].d[0], g_rays[index].d[1], g_rays[index].d[2]);
@@ -190,20 +190,17 @@ void main() {
     hit_data_t inter;
     inter.mask = 0;
     inter.obj_index = inter.prim_index = 0;
-#if PRIMARY
-    inter.t = g_params.cam_clip_end;
-#else
-    inter.t = MAX_DIST;
-#endif
+    inter.t = g_params.inter_t;
     inter.u = inter.v = 0.0;
 
-    const float rand_offset = construct_float(hash(g_rays[index].xy));
+    const vec2 rand_offset = vec2(construct_float(hash(g_rays[index].xy)),
+                                  construct_float(hash(hash(g_rays[index].xy))));
     int rand_index = g_params.hi + total_depth(g_rays[index]) * RAND_DIM_BOUNCE_COUNT;
 
     while (true) {
         const float t_val = inter.t;
 #if !HWRT
-        Traverse_MacroTree_WithStack(ro, rd, inv_d, g_params.node_index, inter);
+        Traverse_TLAS_WithStack(ro, rd, inv_d, g_params.node_index, inter);
         if (inter.prim_index < 0) {
             inter.prim_index = -int(g_tri_indices[-inter.prim_index - 1]) - 1;
         } else {
@@ -264,15 +261,18 @@ void main() {
         const vertex_t v3 = g_vertices[g_vtx_indices[tri_index * 3 + 2]];
 
         const float w = 1.0 - inter.u - inter.v;
-        const vec2 uvs = vec2(v1.t[0][0], v1.t[0][1]) * w + vec2(v2.t[0][0], v2.t[0][1]) * inter.u + vec2(v3.t[0][0], v3.t[0][1]) * inter.v;
+        const vec2 uvs = vec2(v1.t[0], v1.t[1]) * w + vec2(v2.t[0], v2.t[1]) * inter.u + vec2(v3.t[0], v3.t[1]) * inter.v;
 
-        float trans_r = fract(g_random_seq[rand_index + RAND_DIM_BSDF_PICK] + rand_offset);
+        float trans_r = fract(g_random_seq[rand_index + RAND_DIM_BSDF_PICK] + rand_offset[0]);
+
+        const vec2 tex_rand = vec2(fract(g_random_seq[rand_index + RAND_DIM_TEX_U] + rand_offset[0]),
+                                   fract(g_random_seq[rand_index + RAND_DIM_TEX_V] + rand_offset[1]));
 
         // resolve mix material
         while (mat.type == MixNode) {
             float mix_val = mat.tangent_rotation_or_strength;
             if (mat.textures[BASE_TEXTURE] != 0xffffffff) {
-                mix_val *= SampleBilinear(mat.textures[BASE_TEXTURE], uvs, 0).r;
+                mix_val *= SampleBilinear(mat.textures[BASE_TEXTURE], uvs, 0, tex_rand).r;
             }
 
             if (trans_r > mix_val) {
@@ -295,7 +295,7 @@ void main() {
 #endif
 
         const float lum = max(g_rays[index].c[0], max(g_rays[index].c[1], g_rays[index].c[2]));
-        const float p = fract(g_random_seq[rand_index + RAND_DIM_TERMINATE] + rand_offset);
+        const float p = fract(g_random_seq[rand_index + RAND_DIM_TERMINATE] + rand_offset[0]);
         const float q = can_terminate_path ? max(0.05, 1.0 - lum) : 0.0;
         if (p < q || lum == 0.0 || (g_rays[index].depth >> 24) + 1 >= g_params.max_transp_depth) {
             // terminate ray
@@ -318,7 +318,7 @@ void main() {
         rand_index += RAND_DIM_BOUNCE_COUNT;
     }
 
-    inter.t += length(vec3(g_rays[index].o[0], g_rays[index].o[1], g_rays[index].o[2]) - ro);
+    inter.t += distance(vec3(g_rays[index].o[0], g_rays[index].o[1], g_rays[index].o[2]), ro);
 
     g_out_hits[index] = inter;
 }

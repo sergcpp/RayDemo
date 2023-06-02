@@ -11,11 +11,13 @@
 #define force_inline __attribute__((always_inline)) inline
 #define assume_aligned(ptr, sz) (__builtin_assume_aligned((const void *)ptr, sz))
 #define vectorcall
+#define restrict __restrict__
 #endif
 #ifdef _MSC_VER
 #define force_inline __forceinline
 #define vectorcall __vectorcall
 #define assume_aligned(ptr, sz) (__assume((((const char *)ptr) - ((const char *)0)) % (sz) == 0), (ptr))
+#define restrict __restrict
 
 #include <intrin.h>
 
@@ -158,14 +160,10 @@ struct material_t {
     uint32_t textures[MAX_MATERIAL_TEXTURES];
     float base_color[3];
     uint32_t flags;
-    uint32_t type;
+    eShadingNode type;
     union {
-        struct {
-            float tangent_rotation;
-        };
-        struct {
-            float strength;
-        };
+        float tangent_rotation;
+        float strength;
     };
     uint16_t roughness_unorm;
     uint16_t anisotropic_unorm;
@@ -297,8 +295,8 @@ bool PreprocessTri(const float *p, int stride, tri_accel_t *out_acc);
 
 // Builds BVH for mesh and precomputes triangle data
 uint32_t PreprocessMesh(const float *attrs, Span<const uint32_t> vtx_indices, eVertexLayout layout, int base_vertex,
-                        uint32_t tris_start, const bvh_settings_t &s, std::vector<bvh_node_t> &out_nodes,
-                        std::vector<tri_accel_t> &out_tris, std::vector<uint32_t> &out_indices,
+                        const bvh_settings_t &s, std::vector<bvh_node_t> &out_nodes,
+                        aligned_vector<tri_accel_t> &out_tris, std::vector<uint32_t> &out_indices,
                         aligned_vector<mtri_accel_t> &out_tris2);
 
 // Recursively builds linear bvh for a set of primitives
@@ -323,10 +321,10 @@ uint32_t FlattenBVH_Recursive(const bvh_node_t *nodes, uint32_t node_index, uint
 
 bool NaiivePluckerTest(const float p[9], const float o[3], const float d[3]);
 
-void ConstructCamera(eCamType type, eFilterType filter, eDeviceType dtype, const float origin[3], const float fwd[3],
-                     const float up[3], const float shift[2], float fov, float sensor_height, float exposure,
-                     float gamma, float focus_distance, float fstop, float lens_rotation, float lens_ratio,
-                     int lens_blades, float clip_start, float clip_end, camera_t *cam);
+void ConstructCamera(eCamType type, eFilterType filter, eViewTransform view_transform, const float origin[3],
+                     const float fwd[3], const float up[3], const float shift[2], float fov, float sensor_height,
+                     float exposure, float gamma, float focus_distance, float fstop, float lens_rotation,
+                     float lens_ratio, int lens_blades, float clip_start, float clip_end, camera_t *cam);
 
 // Applies 4x4 matrix matrix transform to bounding box
 void TransformBoundingBox(const float bbox_min[3], const float bbox_max[3], const float *xform, float out_bbox_min[3],
@@ -335,7 +333,7 @@ void TransformBoundingBox(const float bbox_min[3], const float bbox_max[3], cons
 void InverseMatrix(const float mat[16], float out_mat[16]);
 
 // Arrays of prime numbers, used to generate halton sequence for sampling
-const int PrimesCount = 228;
+const int PrimesCount = 292;
 extern const int g_primes[];
 
 const int HALTON_COUNT = PrimesCount;
@@ -354,7 +352,9 @@ const int RAND_DIM_LIGHT_PICK = 3;
 const int RAND_DIM_LIGHT_U = 4;
 const int RAND_DIM_LIGHT_V = 5;
 const int RAND_DIM_TERMINATE = 6;
-const int RAND_DIM_BOUNCE_COUNT = 7; // separate for each bounce
+const int RAND_DIM_TEX_U = 7;
+const int RAND_DIM_TEX_V = 8;
+const int RAND_DIM_BOUNCE_COUNT = 9; // separate for each bounce
 
 // Sampling stages must be independent from each other (otherwise it may lead to artifacts), so different halton
 // sequences at each ray bounce must be used. This leads to limited number of bounces. Can be easily fixed by generating
@@ -362,9 +362,9 @@ const int RAND_DIM_BOUNCE_COUNT = 7; // separate for each bounce
 static_assert(RAND_DIM_BASE_COUNT + MAX_BOUNCES * RAND_DIM_BOUNCE_COUNT <= HALTON_COUNT, "!");
 
 struct vertex_t {
-    float p[3], n[3], b[3], t[2][2];
+    float p[3], n[3], b[3], t[2];
 };
-static_assert(sizeof(vertex_t) == 52, "!");
+static_assert(sizeof(vertex_t) == 44, "!");
 
 struct mesh_t {
     float bbox_min[3], bbox_max[3];
@@ -429,6 +429,10 @@ extern const char phi_table[][17];
 
 struct ray_chunk_t {
     uint32_t hash, base, size;
+};
+
+struct ray_hash_t {
+    uint32_t hash, index;
 };
 
 /*struct pass_info_t {

@@ -31,6 +31,16 @@
 #pragma pop_macro("NS")
 
 namespace Ray {
+namespace Cpu {
+class TexStorageBase;
+template <typename T, int N> class TexStorageLinear;
+template <typename T, int N> class TexStorageTiled;
+template <typename T, int N> class TexStorageSwizzled;
+using TexStorageRGBA = TexStorageSwizzled<uint8_t, 4>;
+using TexStorageRGB = TexStorageSwizzled<uint8_t, 3>;
+using TexStorageRG = TexStorageSwizzled<uint8_t, 2>;
+using TexStorageR = TexStorageSwizzled<uint8_t, 1>;
+} // namespace Cpu
 namespace Ref {
 struct ray_data_t {
     // origin and direction
@@ -61,10 +71,6 @@ struct shadow_ray_t {
     int xy;
 };
 static_assert(sizeof(shadow_ray_t) == 48, "!");
-
-const int RPDimX = 1;
-const int RPDimY = 1;
-const int RPSize = RPDimX * RPDimY;
 
 struct hit_data_t {
     int mask;
@@ -97,15 +103,6 @@ struct light_sample_t {
 };
 static_assert(sizeof(light_sample_t) == 64, "!");
 
-class TexStorageBase;
-template <typename T, int N> class TexStorageLinear;
-template <typename T, int N> class TexStorageTiled;
-template <typename T, int N> class TexStorageSwizzled;
-using TexStorageRGBA = TexStorageSwizzled<uint8_t, 4>;
-using TexStorageRGB = TexStorageSwizzled<uint8_t, 3>;
-using TexStorageRG = TexStorageSwizzled<uint8_t, 2>;
-using TexStorageR = TexStorageSwizzled<uint8_t, 1>;
-
 force_inline int hash(int x) {
     unsigned ret = reinterpret_cast<const unsigned &>(x);
     ret = ((ret >> 16) ^ ret) * 0x45d9f3b;
@@ -136,19 +133,19 @@ force_inline int total_depth(const shadow_ray_t &r) {
 }
 
 // Generation of rays
-void GeneratePrimaryRays(int iteration, const camera_t &cam, const rect_t &r, int w, int h, const float *random_seq,
-                         aligned_vector<ray_data_t> &out_rays);
+void GeneratePrimaryRays(const camera_t &cam, const rect_t &r, int w, int h, const float random_seq[], int iteration,
+                         const uint16_t required_samples[], aligned_vector<ray_data_t> &out_rays);
 void SampleMeshInTextureSpace(int iteration, int obj_index, int uv_layer, const mesh_t &mesh, const transform_t &tr,
                               const uint32_t *vtx_indices, const vertex_t *vertices, const rect_t &r, int w, int h,
                               const float *random_seq, aligned_vector<ray_data_t> &out_rays,
                               aligned_vector<hit_data_t> &out_inters);
 
 // Sorting of rays
-void SortRays_CPU(ray_data_t *rays, size_t rays_count, const float root_min[3], const float cell_size[3],
-                  uint32_t *hash_values, uint32_t *scan_values, ray_chunk_t *chunks, ray_chunk_t *chunks_temp);
-void SortRays_GPU(ray_data_t *rays, size_t rays_count, const float root_min[3], const float cell_size[3],
-                  uint32_t *hash_values, int *head_flags, uint32_t *scan_values, ray_chunk_t *chunks,
-                  ray_chunk_t *chunks_temp, uint32_t *skeleton);
+int SortRays_CPU(Span<ray_data_t> rays, const float root_min[3], const float cell_size[3], uint32_t *hash_values,
+                 uint32_t *scan_values, ray_chunk_t *chunks, ray_chunk_t *chunks_temp);
+int SortRays_GPU(Span<ray_data_t> rays, const float root_min[3], const float cell_size[3], uint32_t *hash_values,
+                 int *head_flags, uint32_t *scan_values, ray_chunk_t *chunks, ray_chunk_t *chunks_temp,
+                 uint32_t *skeleton);
 
 // Intersect primitives
 bool IntersectTris_ClosestHit(const float ro[3], const float rd[3], const tri_accel_t *tris, int tri_start, int tri_end,
@@ -163,45 +160,38 @@ bool IntersectTris_AnyHit(const float ro[3], const float rd[3], const mtri_accel
                           int obj_index, hit_data_t &out_inter);
 
 // traditional bvh traversal with stack for outer nodes
-bool Traverse_MacroTree_WithStack_ClosestHit(const float ro[3], const float rd[3], const bvh_node_t *nodes,
-                                             uint32_t root_index, const mesh_instance_t *mesh_instances,
-                                             const uint32_t *mi_indices, const mesh_t *meshes,
-                                             const transform_t *transforms, const tri_accel_t *tris,
-                                             const uint32_t *tri_indices, hit_data_t &inter);
-bool Traverse_MacroTree_WithStack_ClosestHit(const float ro[3], const float rd[3], const mbvh_node_t *oct_nodes,
-                                             uint32_t root_index, const mesh_instance_t *mesh_instances,
-                                             const uint32_t *mi_indices, const mesh_t *meshes,
-                                             const transform_t *transforms, const mtri_accel_t *mtris,
-                                             const uint32_t *tri_indices, hit_data_t &inter);
+bool Traverse_TLAS_WithStack_ClosestHit(const float ro[3], const float rd[3], const bvh_node_t *nodes,
+                                        uint32_t root_index, const mesh_instance_t *mesh_instances,
+                                        const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
+                                        const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
+bool Traverse_TLAS_WithStack_ClosestHit(const float ro[3], const float rd[3], const mbvh_node_t *oct_nodes,
+                                        uint32_t root_index, const mesh_instance_t *mesh_instances,
+                                        const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
+                                        const mtri_accel_t *mtris, const uint32_t *tri_indices, hit_data_t &inter);
 // returns whether hit was solid
-bool Traverse_MacroTree_WithStack_AnyHit(const float ro[3], const float rd[3], const bvh_node_t *nodes,
-                                         uint32_t root_index, const mesh_instance_t *mesh_instances,
-                                         const uint32_t *mi_indices, const mesh_t *meshes,
-                                         const transform_t *transforms, const mtri_accel_t *mtris,
-                                         const tri_mat_data_t *materials, const uint32_t *tri_indices,
-                                         hit_data_t &inter);
-bool Traverse_MacroTree_WithStack_AnyHit(const float ro[3], const float rd[3], const mbvh_node_t *nodes,
-                                         uint32_t root_index, const mesh_instance_t *mesh_instances,
-                                         const uint32_t *mi_indices, const mesh_t *meshes,
-                                         const transform_t *transforms, const tri_accel_t *tris,
-                                         const tri_mat_data_t *materials, const uint32_t *tri_indices,
-                                         hit_data_t &inter);
+bool Traverse_TLAS_WithStack_AnyHit(const float ro[3], const float rd[3], const bvh_node_t *nodes, uint32_t root_index,
+                                    const mesh_instance_t *mesh_instances, const uint32_t *mi_indices,
+                                    const mesh_t *meshes, const transform_t *transforms, const mtri_accel_t *mtris,
+                                    const tri_mat_data_t *materials, const uint32_t *tri_indices, hit_data_t &inter);
+bool Traverse_TLAS_WithStack_AnyHit(const float ro[3], const float rd[3], const mbvh_node_t *nodes, uint32_t root_index,
+                                    const mesh_instance_t *mesh_instances, const uint32_t *mi_indices,
+                                    const mesh_t *meshes, const transform_t *transforms, const tri_accel_t *tris,
+                                    const tri_mat_data_t *materials, const uint32_t *tri_indices, hit_data_t &inter);
 // traditional bvh traversal with stack for inner nodes
-bool Traverse_MicroTree_WithStack_ClosestHit(const float ro[3], const float rd[3], const float inv_d[3],
-                                             const bvh_node_t *nodes, uint32_t root_index, const tri_accel_t *tris,
-                                             int obj_index, hit_data_t &inter);
-bool Traverse_MicroTree_WithStack_ClosestHit(const float ro[3], const float rd[3], const float inv_d[3],
-                                             const mbvh_node_t *nodes, uint32_t root_index, const mtri_accel_t *mtris,
-                                             int obj_index, hit_data_t &inter);
+bool Traverse_BLAS_WithStack_ClosestHit(const float ro[3], const float rd[3], const float inv_d[3],
+                                        const bvh_node_t *nodes, uint32_t root_index, const tri_accel_t *tris,
+                                        int obj_index, hit_data_t &inter);
+bool Traverse_BLAS_WithStack_ClosestHit(const float ro[3], const float rd[3], const float inv_d[3],
+                                        const mbvh_node_t *nodes, uint32_t root_index, const mtri_accel_t *mtris,
+                                        int obj_index, hit_data_t &inter);
 // returns whether hit was solid
-bool Traverse_MicroTree_WithStack_AnyHit(const float ro[3], const float rd[3], const float inv_d[3],
-                                         const bvh_node_t *nodes, uint32_t root_index, const mtri_accel_t *mtris,
-                                         const tri_mat_data_t *materials, const uint32_t *tri_indices, int obj_index,
-                                         hit_data_t &inter);
-bool Traverse_MicroTree_WithStack_AnyHit(const float ro[3], const float rd[3], const float inv_d[3],
-                                         const mbvh_node_t *nodes, uint32_t root_index, const tri_accel_t *tris,
-                                         const tri_mat_data_t *materials, const uint32_t *tri_indices, int obj_index,
-                                         hit_data_t &inter);
+bool Traverse_BLAS_WithStack_AnyHit(const float ro[3], const float rd[3], const float inv_d[3], const bvh_node_t *nodes,
+                                    uint32_t root_index, const mtri_accel_t *mtris, const tri_mat_data_t *materials,
+                                    const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
+bool Traverse_BLAS_WithStack_AnyHit(const float ro[3], const float rd[3], const float inv_d[3],
+                                    const mbvh_node_t *nodes, uint32_t root_index, const tri_accel_t *tris,
+                                    const tri_mat_data_t *materials, const uint32_t *tri_indices, int obj_index,
+                                    hit_data_t &inter);
 
 // BRDFs
 float BRDF_PrincipledDiffuse(const simd_fvec4 &V, const simd_fvec4 &N, const simd_fvec4 &L, const simd_fvec4 &H,
@@ -253,37 +243,49 @@ simd_fvec4 TransformDirection(const simd_fvec4 &p, const float *xform);
 simd_fvec4 TransformNormal(const simd_fvec4 &n, const float *inv_xform);
 
 // Sample Texture
-simd_fvec4 SampleNearest(const TexStorageBase *const textures[], uint32_t index, const simd_fvec2 &uvs, int lod);
-simd_fvec4 SampleBilinear(const TexStorageBase *const textures[], uint32_t index, const simd_fvec2 &uvs, int lod);
-simd_fvec4 SampleBilinear(const TexStorageBase &storage, uint32_t tex, const simd_fvec2 &iuvs, int lod);
-simd_fvec4 SampleTrilinear(const TexStorageBase *const textures[], uint32_t index, const simd_fvec2 &uvs, float lod);
-simd_fvec4 SampleAnisotropic(const TexStorageBase *const textures[], uint32_t index, const simd_fvec2 &uvs,
+simd_fvec4 SampleNearest(const Cpu::TexStorageBase *const textures[], uint32_t index, const simd_fvec2 &uvs, int lod);
+simd_fvec4 SampleBilinear(const Cpu::TexStorageBase *const textures[], uint32_t index, const simd_fvec2 &uvs, int lod,
+                          const simd_fvec2 &rand);
+simd_fvec4 SampleBilinear(const Cpu::TexStorageBase &storage, uint32_t tex, const simd_fvec2 &iuvs, int lod,
+                          const simd_fvec2 &rand);
+simd_fvec4 SampleTrilinear(const Cpu::TexStorageBase *const textures[], uint32_t index, const simd_fvec2 &uvs,
+                           float lod, const simd_fvec2 &rand);
+simd_fvec4 SampleAnisotropic(const Cpu::TexStorageBase *const textures[], uint32_t index, const simd_fvec2 &uvs,
                              const simd_fvec2 &duv_dx, const simd_fvec2 &duv_dy);
-simd_fvec4 SampleLatlong_RGBE(const TexStorageRGBA &storage, uint32_t index, const simd_fvec4 &dir, float y_rotation);
+simd_fvec4 SampleLatlong_RGBE(const Cpu::TexStorageRGBA &storage, uint32_t index, const simd_fvec4 &dir,
+                              float y_rotation, const simd_fvec2 &rand);
 
 // Trace rays through scene hierarchy
-void IntersectScene(ray_data_t &r, int min_transp_depth, int max_transp_depth, const float *random_seq,
-                    const scene_data_t &sc, uint32_t root_index, const TexStorageBase *const textures[],
-                    hit_data_t &inter);
+void IntersectScene(Span<ray_data_t> rays, int min_transp_depth, int max_transp_depth, const float *random_seq,
+                    const scene_data_t &sc, uint32_t root_index, const Cpu::TexStorageBase *const textures[],
+                    Span<hit_data_t> out_inter);
 simd_fvec4 IntersectScene(const shadow_ray_t &r, int max_transp_depth, const scene_data_t &sc, uint32_t node_index,
-                          const TexStorageBase *const textures[]);
+                          const float *random_seq, const Cpu::TexStorageBase *const textures[]);
 
 // Pick point on any light source for evaluation
 void SampleLightSource(const simd_fvec4 &P, const simd_fvec4 &T, const simd_fvec4 &B, const simd_fvec4 &N,
-                       const scene_data_t &sc, const TexStorageBase *const textures[], const float random_seq[],
+                       const scene_data_t &sc, const Cpu::TexStorageBase *const textures[], const float random_seq[],
                        const float sample_off[2], light_sample_t &ls);
 
 // Account for visible lights contribution
-void IntersectAreaLights(const ray_data_t &ray, const light_t lights[], Span<const uint32_t> visible_lights,
-                         const transform_t transforms[], hit_data_t &inout_inter);
+void IntersectAreaLights(Span<const ray_data_t> rays, const light_t lights[], Span<const uint32_t> visible_lights,
+                         const transform_t transforms[], Span<hit_data_t> inout_inters);
 float IntersectAreaLights(const shadow_ray_t &ray, const light_t lights[], Span<const uint32_t> blocker_lights,
                           const transform_t transforms[]);
 
+void TraceRays(Span<ray_data_t> rays, int min_transp_depth, int max_transp_depth, const scene_data_t &sc,
+               uint32_t node_index, bool trace_lights, const Cpu::TexStorageBase *const textures[],
+               const float random_seq[], Span<hit_data_t> out_inter);
+void TraceShadowRays(Span<const shadow_ray_t> rays, int max_transp_depth, float _clamp_val, const scene_data_t &sc,
+                     uint32_t node_index, const float random_seq[], const Cpu::TexStorageBase *const textures[],
+                     int img_w, color_rgba_t *out_color);
+
 // Get environment collor at direction
-simd_fvec4 Evaluate_EnvColor(const ray_data_t &ray, const environment_t &env, const TexStorageRGBA &tex_storage);
+simd_fvec4 Evaluate_EnvColor(const ray_data_t &ray, const environment_t &env, const Cpu::TexStorageRGBA &tex_storage,
+                             const simd_fvec2 &rand);
 // Get light color at intersection point
 simd_fvec4 Evaluate_LightColor(const ray_data_t &ray, const hit_data_t &inter, const environment_t &env,
-                               const TexStorageRGBA &tex_storage, const light_t *lights);
+                               const Cpu::TexStorageRGBA &tex_storage, const light_t *lights, const simd_fvec2 &rand);
 
 // Evaluate individual nodes
 simd_fvec4 Evaluate_DiffuseNode(const light_sample_t &ls, const ray_data_t &ray, const surface_t &surf,
@@ -348,10 +350,72 @@ void Sample_PrincipledNode(const pass_settings_t &ps, const ray_data_t &ray, con
                            float rand_u, float rand_v, float mix_rand, float mix_weight, ray_data_t &new_ray);
 
 // Shade
-Ray::pixel_color_t ShadeSurface(const pass_settings_t &ps, const hit_data_t &inter, const ray_data_t &ray,
-                                const float *random_seq, const scene_data_t &sc, uint32_t node_index,
-                                const TexStorageBase *const textures[], ray_data_t *out_secondary_rays,
-                                int *out_secondary_rays_count, shadow_ray_t *out_shadow_rays,
-                                int *out_shadow_rays_count);
+color_rgba_t ShadeSurface(const pass_settings_t &ps, const hit_data_t &inter, const ray_data_t &ray,
+                          const float *random_seq, const scene_data_t &sc, uint32_t node_index,
+                          const Cpu::TexStorageBase *const textures[], ray_data_t *out_secondary_rays,
+                          int *out_secondary_rays_count, shadow_ray_t *out_shadow_rays, int *out_shadow_rays_count,
+                          color_rgba_t *out_base_color, color_rgba_t *out_depth_normal);
+void ShadePrimary(const pass_settings_t &ps, Span<const hit_data_t> inters, Span<const ray_data_t> rays,
+                  const float *random_seq, const scene_data_t &sc, uint32_t node_index,
+                  const Cpu::TexStorageBase *const textures[], ray_data_t *out_secondary_rays,
+                  int *out_secondary_rays_count, shadow_ray_t *out_shadow_rays, int *out_shadow_rays_count, int img_w,
+                  float mix_factor, color_rgba_t *out_color, color_rgba_t *out_base_color,
+                  color_rgba_t *out_depth_normal);
+void ShadeSecondary(const pass_settings_t &ps, Span<const hit_data_t> inters, Span<const ray_data_t> rays,
+                    const float *random_seq, const scene_data_t &sc, uint32_t node_index,
+                    const Cpu::TexStorageBase *const textures[], ray_data_t *out_secondary_rays,
+                    int *out_secondary_rays_count, shadow_ray_t *out_shadow_rays, int *out_shadow_rays_count, int img_w,
+                    color_rgba_t *out_color);
+
+// Denoise
+template <int WINDOW_SIZE = 7, int NEIGHBORHOOD_SIZE = 3>
+void JointNLMFilter(const color_rgba_t input[], const rect_t &rect, int input_stride, float alpha, float damping,
+                    const color_rgba_t variance[], const color_rgba_t feature0[], float feature0_weight,
+                    const color_rgba_t feature1[], float feature1_weight, const rect_t &output_rect, int output_stride,
+                    color_rgba_t output[]);
+
+// Tonemap
+
+// https://gpuopen.com/learn/optimized-reversible-tonemapper-for-resolve/
+force_inline simd_fvec4 vectorcall reversible_tonemap(const simd_fvec4 c) {
+    return c / (std::max(c.get<0>(), std::max(c.get<1>(), c.get<2>())) + 1.0f);
+}
+
+force_inline simd_fvec4 vectorcall reversible_tonemap_invert(const simd_fvec4 c) {
+    return c / (1.0f - std::max(c.get<0>(), std::max(c.get<1>(), c.get<2>())));
+}
+
+struct tonemap_params_t {
+    eViewTransform view_transform;
+    float inv_gamma;
+};
+
+force_inline simd_fvec4 vectorcall TonemapStandard(simd_fvec4 c) {
+    UNROLLED_FOR(i, 3, {
+        if (c.get<i>() < 0.0031308f) {
+            c.set<i>(12.92f * c.get<i>());
+        } else {
+            c.set<i>(1.055f * std::pow(c.get<i>(), (1.0f / 2.4f)) - 0.055f);
+        }
+    })
+    return c;
+}
+
+simd_fvec4 vectorcall TonemapFilmic(eViewTransform view_transform, simd_fvec4 color);
+
+force_inline simd_fvec4 vectorcall Tonemap(const tonemap_params_t &params, simd_fvec4 c) {
+    if (params.view_transform == eViewTransform::Standard) {
+        c = TonemapStandard(c);
+    } else {
+        c = TonemapFilmic(params.view_transform, c);
+    }
+
+    if (params.inv_gamma != 1.0f) {
+        c = pow(c, simd_fvec4{params.inv_gamma, params.inv_gamma, params.inv_gamma, 1.0f});
+    }
+
+    return clamp(c, 0.0f, 1.0f);
+}
+
 } // namespace Ref
 } // namespace Ray
