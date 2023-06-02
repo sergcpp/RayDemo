@@ -169,8 +169,22 @@ template <> class simd_vec<float, 8> {
         return ret;
     }
 
-    force_inline void copy_to(float *f) const { _mm256_storeu_ps(f, vec_); }
-    force_inline void copy_to(float *f, simd_mem_aligned_tag) const { _mm256_store_ps(f, vec_); }
+#if defined(USE_AVX2) || defined(USE_AVX512)
+    friend force_inline simd_vec<float, 8> vectorcall inclusive_scan(simd_vec<float, 8> v1) {
+        v1.vec_ = _mm256_add_ps(v1.vec_, _mm256_castsi256_ps(_mm256_slli_si256(_mm256_castps_si256(v1.vec_), 4)));
+        v1.vec_ = _mm256_add_ps(v1.vec_, _mm256_castsi256_ps(_mm256_slli_si256(_mm256_castps_si256(v1.vec_), 8)));
+
+        __m256 temp = _mm256_shuffle_ps(v1.vec_, v1.vec_, _MM_SHUFFLE(3, 3, 3, 3));
+        temp = _mm256_permute2f128_ps(_mm256_setzero_ps(), temp, 0x20);
+
+        v1.vec_ = _mm256_add_ps(v1.vec_, temp);
+
+        return v1;
+    }
+#endif
+
+    force_inline void store_to(float *f) const { _mm256_storeu_ps(f, vec_); }
+    force_inline void store_to(float *f, simd_mem_aligned_tag) const { _mm256_store_ps(f, vec_); }
 
     force_inline void vectorcall blend_to(const simd_vec<float, 8> mask, const simd_vec<float, 8> v1) {
         validate_mask(mask);
@@ -467,8 +481,8 @@ template <> class simd_vec<int, 8> {
         return ret;
     }
 
-    force_inline void copy_to(int *f) const { _mm256_storeu_si256((__m256i *)f, vec_); }
-    force_inline void copy_to(int *f, simd_mem_aligned_tag) const { _mm256_store_si256((__m256i *)f, vec_); }
+    force_inline void store_to(int *f) const { _mm256_storeu_si256((__m256i *)f, vec_); }
+    force_inline void store_to(int *f, simd_mem_aligned_tag) const { _mm256_store_si256((__m256i *)f, vec_); }
 
     force_inline void vectorcall blend_to(const simd_vec<int, 8> mask, const simd_vec<int, 8> v1) {
         validate_mask(mask);
@@ -835,8 +849,26 @@ template <> class simd_vec<int, 8> {
     }
 
 #if defined(USE_AVX2) || defined(USE_AVX512)
+    friend force_inline simd_vec<int, 8> vectorcall inclusive_scan(simd_vec<int, 8> v1) {
+        v1.vec_ = _mm256_add_epi32(v1.vec_, _mm256_slli_si256(v1.vec_, 4));
+        v1.vec_ = _mm256_add_epi32(v1.vec_, _mm256_slli_si256(v1.vec_, 8));
+
+        __m256i temp = _mm256_shuffle_epi32(v1.vec_, _MM_SHUFFLE(3, 3, 3, 3));
+        temp = _mm256_permute2x128_si256(_mm256_setzero_si256(), temp, 0x20);
+
+        v1.vec_ = _mm256_add_epi32(v1.vec_, temp);
+
+        return v1;
+    }
+#endif
+
+#if defined(USE_AVX2) || defined(USE_AVX512)
     friend force_inline simd_vec<float, 8> vectorcall gather(const float *base_addr, simd_vec<int, 8> vindex);
+    friend force_inline simd_vec<float, 8> vectorcall gather(simd_vec<float, 8> src, const float *base_addr,
+                                                             simd_vec<int, 8> mask, simd_vec<int, 8> vindex);
     friend force_inline simd_vec<int, 8> vectorcall gather(const int *base_addr, simd_vec<int, 8> vindex);
+    friend force_inline simd_vec<int, 8> vectorcall gather(simd_vec<int, 8> src, const int *base_addr,
+                                                           simd_vec<int, 8> mask, simd_vec<int, 8> vindex);
 #endif
 
 #ifndef NDEBUG
@@ -1186,9 +1218,24 @@ force_inline simd_vec<float, 8> vectorcall gather(const float *base_addr, const 
     return ret;
 }
 
+force_inline simd_vec<float, 8> vectorcall gather(simd_vec<float, 8> src, const float *base_addr, simd_vec<int, 8> mask,
+                                                  simd_vec<int, 8> vindex) {
+    simd_vec<float, 8> ret;
+    ret.vec_ =
+        _mm256_mask_i32gather_ps(src.vec_, base_addr, vindex.vec_, _mm256_castsi256_ps(mask.vec_), sizeof(float));
+    return ret;
+}
+
 force_inline simd_vec<int, 8> vectorcall gather(const int *base_addr, const simd_vec<int, 8> vindex) {
     simd_vec<int, 8> ret;
     ret.vec_ = _mm256_i32gather_epi32(base_addr, vindex.vec_, sizeof(int));
+    return ret;
+}
+
+force_inline simd_vec<int, 8> vectorcall gather(simd_vec<int, 8> src, const int *base_addr, simd_vec<int, 8> mask,
+                                                simd_vec<int, 8> vindex) {
+    simd_vec<int, 8> ret;
+    ret.vec_ = _mm256_mask_i32gather_epi32(src.vec_, base_addr, vindex.vec_, mask.vec_, sizeof(int));
     return ret;
 }
 #endif

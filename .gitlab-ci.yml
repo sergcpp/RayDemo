@@ -12,7 +12,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A x64 -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
+    - cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_UNITY_BUILD=ON -DENABLE_REF_IMPL=ON
     - cd ..
     - cmake --build build --target ALL_BUILD --config Release --parallel 16
     - cmake --build build --target ALL_BUILD --config Asan --parallel 16
@@ -35,7 +35,7 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
+    - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DCMAKE_UNITY_BUILD=ON -DENABLE_REF_IMPL=ON -DENABLE_VK_IMPL=OFF -DENABLE_DX_IMPL=ON
     - cd ..
     - cmake --build build --target ALL_BUILD --config Release --parallel 16
     - cmake --build build --target ALL_BUILD --config Debug --parallel 16
@@ -58,15 +58,15 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=ON -DENABLE_REF_IMPL=ON
     - cd ..
     - mkdir build_dbg
     - cd build_dbg
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_UNITY_BUILD=ON -DENABLE_REF_IMPL=ON
     - cd ..
     - mkdir build_dev
     - cd build_dev
-    - cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_UNITY_BUILD=ON -DENABLE_REF_IMPL=ON
     - cd ..
     - cmake --build build --target all --parallel 16
     - cmake --build build_dbg --target all --parallel 16
@@ -80,7 +80,7 @@ stages:
       - linux-x86_64/
     expire_in: 1 week
 
-.macos-x86_64-build-job:
+.macos-universal-build-job:
   stage: build
   tags:
     - macos
@@ -88,56 +88,26 @@ stages:
     - echo "Compiling the code..."
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Release -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
+    - cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=ON -DENABLE_REF_IMPL=ON
     - cd ..
     - mkdir build_dbg
     - cd build_dbg
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
+    - cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_UNITY_BUILD=ON -DENABLE_REF_IMPL=ON
     - cd ..
     - mkdir build_dev
     - cd build_dev
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
+    - cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_UNITY_BUILD=ON -DENABLE_REF_IMPL=ON
     - cd ..
     - cmake --build build --target all --parallel 16
     - cmake --build build_dbg --target all --parallel 16
     - cmake --build build_dev --target all --parallel 16
     - echo "Compile complete."
-    - mkdir macos-x86_64
-    - cp build/tests/test_Ray macos-x86_64
-    - cp build_dbg/tests/test_Ray-dbg macos-x86_64
+    - mkdir macos-universal
+    - cp build/tests/test_Ray macos-universal
+    - cp build_dbg/tests/test_Ray-dbg macos-universal
   artifacts:
     paths:
-      - macos-x86_64/
-    expire_in: 1 week
-
-.macos-arm64-build-job:
-  stage: build
-  tags:
-    - macos
-  script:
-    - echo "Compiling the code..."
-    - mkdir build
-    - cd build
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Release -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
-    - cd ..
-    - mkdir build_dbg
-    - cd build_dbg
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Debug -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
-    - cd ..
-    - mkdir build_dev
-    - cd build_dev
-    - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_UNITYBUILD=ON -DENABLE_REF_IMPL=ON
-    - cd ..
-    - cmake --build build --target all --parallel 16
-    - cmake --build build_dbg --target all --parallel 16
-    - cmake --build build_dev --target all --parallel 16
-    - echo "Compile complete."
-    - mkdir macos-arm64
-    - cp build/tests/test_Ray macos-arm64
-    - cp build_dbg/tests/test_Ray-dbg macos-arm64
-  artifacts:
-    paths:
-      - macos-arm64/
+      - macos-universal/
     expire_in: 1 week
 
 .windows-test-job:
@@ -146,6 +116,24 @@ stages:
     - echo "Running tests..."
     - cd tests
     - '& "../$BIN_DIR/test_Ray" $TEST_ARGS.split(" ") $AUX_TEST_ARGS.split(" ")'
+    - cd ../
+  after_script:
+    - cp tests/test_data/material_*.tga ./
+    - cp tests/test_data/errors.txt ./
+  artifacts:
+    when: always
+    name: "$env:CI_JOB_NAME"
+    paths:
+      - material_*.tga
+      - errors.txt
+    expire_in: 1 week
+
+.windows-perf-test-job:
+  stage: test
+  script:
+    - echo "Running tests..."
+    - cd tests
+    - '& "../$BIN_DIR/test_Ray" $AUX_TEST_ARGS.split(" ")'
     - cd ../
   after_script:
     - cp tests/test_data/material_*.tga ./
@@ -230,17 +218,11 @@ linux-x86_64-build-job:
   tags:
     - linux,builder
 
-macos-x86_64-build-job:
+macos-universal-build-job:
   extends:
-    - .macos-x86_64-build-job
+    - .macos-universal-build-job
   tags:
-    - macos,x86_64,builder
-
-macos-arm64-build-job:
-  extends:
-    - .macos-arm64-build-job
-  tags:
-    - macos,arm64,builder
+    - macos,builder
 
 windows-x86_64-cpu-test-job:
   variables:
@@ -375,7 +357,6 @@ windows-x86_64-gpu-xe-test-job:
   variables:
     BIN_DIR: windows-x86_64
     AUX_TEST_ARGS: '-d Xe --nocpu'
-  allow_failure: true
   extends:
     - .windows-test-job
   needs:
@@ -405,6 +386,43 @@ windows-arm64-cpu-test-job:
   tags:
     - windows,arm64,fastcpu
 
+windows-arm64-gpu-adreno-test-job:
+  variables:
+    BIN_DIR: windows-arm64
+    AUX_TEST_ARGS: '--nocpu'
+  extends:
+    - .windows-test-job
+  needs:
+    - windows-arm64-build-job
+  tags:
+    - windows,arm64,adreno
+
+windows-arm64-cpu-perf-test-job:
+  variables:
+    BIN_DIR: windows-arm64
+    AUX_TEST_ARGS: '--nogpu --time_limit 11.7'
+  extends:
+    - .windows-perf-test-job
+  needs:
+    - windows-arm64-build-job
+  tags:
+    - windows,arm64,perf
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+windows-arm64-gpu-perf-test-job:
+  variables:
+    BIN_DIR: windows-arm64
+    AUX_TEST_ARGS: '--nocpu --time_limit 26.4'
+  extends:
+    - .windows-perf-test-job
+  needs:
+    - windows-arm64-build-job
+  tags:
+    - windows,arm64,perf
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
 linux-x86_64-cpu-test-job:
   variables:
     BIN_DIR: linux-x86_64
@@ -433,7 +451,6 @@ linux-x86_64-gpu-amd-test-job:
     AUX_TEST_ARGS: '-d AMD --nocpu'
   extends:
     - .test-job
-  allow_failure: true
   needs:
     - linux-x86_64-build-job
   tags:
@@ -441,34 +458,34 @@ linux-x86_64-gpu-amd-test-job:
 
 macos-x86_64-cpu-test-job:
   variables:
-    BIN_DIR: macos-x86_64
+    BIN_DIR: macos-universal
     AUX_TEST_ARGS: '--nogpu'
   extends:
     - .test-job
   needs:
-    - macos-x86_64-build-job
+    - macos-universal-build-job
   tags:
     - macos,x86_64,fastcpu
 
 macos-arm64-cpu-test-job:
   variables:
-    BIN_DIR: macos-arm64
+    BIN_DIR: macos-universal
     AUX_TEST_ARGS: '--nogpu'
   extends:
     - .test-job
   needs:
-    - macos-arm64-build-job
+    - macos-universal-build-job
   tags:
     - macos,arm64,fastcpu
 
 macos-arm64-gpu-m1-test-job:
   variables:
-    BIN_DIR: macos-arm64
+    BIN_DIR: macos-universal
     AUX_TEST_ARGS: '--nocpu'
   extends:
     - .test-job
   needs:
-    - macos-arm64-build-job
+    - macos-universal-build-job
   tags:
     - macos,arm64,m1
 
@@ -480,31 +497,18 @@ deploy-job:
     - echo "Deploying application..."
     - echo "Application successfully deployed."
   needs:
-    - windows-x86_64-cpu-test-job
-    - job: windows-x86_64-cpu-test-asan-job
-      optional: true
-    - job: windows-x86_64-gpu-nv-test-asan-job
-      optional: true
-    - windows-x86_64-gpu-amd-test-job
-    - windows-x86_64-gpu-nv-test-job
-    - windows-x86_64-gpu-xe-test-job
-    - windows-x86_64-gpu-arc-test-job
-    - windows-arm64-cpu-test-job
-    - linux-x86_64-cpu-test-job
-    - linux-x86_64-gpu-nv-test-job
-    - linux-x86_64-gpu-amd-test-job
-    - macos-x86_64-cpu-test-job
-    - macos-arm64-cpu-test-job
-    - macos-arm64-gpu-m1-test-job
+    - windows-x86_64-build-job
+    - windows-arm64-build-job
+    - linux-x86_64-build-job
+    - macos-universal-build-job
   artifacts:
     paths:
       - windows-x86_64/
       - windows-arm64/
       - linux-x86_64/
-      - macos-x86_64/
-      - macos-arm64/
+      - macos-universal/
     expire_in: 1 week
   tags:
-    - windows
+    - deployer
   rules:
     - if: $CI_COMMIT_BRANCH

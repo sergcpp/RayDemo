@@ -3,9 +3,12 @@
 #include <cassert>
 #include <cstring>
 
+#include "Bitmask.h"
 #include "internal/Core.h"
 
 Ray::CameraHandle Ray::SceneBase::AddCamera(const camera_desc_t &c) {
+    std::unique_lock<std::shared_timed_mutex> lock(mtx_);
+
     CameraHandle i;
     if (cam_first_free_ == InvalidCameraHandle) {
         i = CameraHandle{uint32_t(cams_.size())};
@@ -14,7 +17,7 @@ Ray::CameraHandle Ray::SceneBase::AddCamera(const camera_desc_t &c) {
         i = cam_first_free_;
         cam_first_free_ = cams_[i._index].next_free;
     }
-    SetCamera(i, c);
+    SetCamera_nolock(i, c);
     if (current_cam_ == InvalidCameraHandle) {
         current_cam_ = i;
     }
@@ -22,12 +25,14 @@ Ray::CameraHandle Ray::SceneBase::AddCamera(const camera_desc_t &c) {
 }
 
 void Ray::SceneBase::GetCamera(const CameraHandle i, camera_desc_t &c) const {
+    std::shared_lock<std::shared_timed_mutex> lock(mtx_);
+
     const camera_t &cam = cams_[i._index].cam;
     c.type = cam.type;
-    c.dtype = cam.dtype;
+    c.view_transform = cam.view_transform;
     c.exposure = cam.exposure;
     c.gamma = cam.gamma;
-    if (c.type != Geo) {
+    if (c.type != eCamType::Geo) {
         c.filter = cam.filter;
         memcpy(&c.origin[0], &cam.origin[0], 3 * sizeof(float));
         memcpy(&c.fwd[0], &cam.fwd[0], 3 * sizeof(float));
@@ -48,12 +53,13 @@ void Ray::SceneBase::GetCamera(const CameraHandle i, camera_desc_t &c) const {
         c.uv_index = cam.uv_index;
     }
 
-    c.lighting_only = (cam.pass_settings.flags & LightingOnly) != 0;
-    c.skip_direct_lighting = (cam.pass_settings.flags & SkipDirectLight) != 0;
-    c.skip_indirect_lighting = (cam.pass_settings.flags & SkipIndirectLight) != 0;
-    c.no_background = (cam.pass_settings.flags & NoBackground) != 0;
-    c.clamp = (cam.pass_settings.flags & Clamp) != 0;
-    c.output_sh = (cam.pass_settings.flags & OutputSH) != 0;
+    c.lighting_only = (cam.pass_settings.flags & ePassFlags::LightingOnly);
+    c.skip_direct_lighting = (cam.pass_settings.flags & ePassFlags::SkipDirectLight);
+    c.skip_indirect_lighting = (cam.pass_settings.flags & ePassFlags::SkipIndirectLight);
+    c.no_background = (cam.pass_settings.flags & ePassFlags::NoBackground);
+    c.output_sh = (cam.pass_settings.flags & ePassFlags::OutputSH);
+    c.output_base_color = (cam.pass_settings.flags & ePassFlags::OutputBaseColor);
+    c.output_depth_normals = (cam.pass_settings.flags & ePassFlags::OutputDepthNormals);
 
     c.max_diff_depth = cam.pass_settings.max_diff_depth;
     c.max_spec_depth = cam.pass_settings.max_spec_depth;
@@ -62,44 +68,53 @@ void Ray::SceneBase::GetCamera(const CameraHandle i, camera_desc_t &c) const {
     c.max_total_depth = cam.pass_settings.max_total_depth;
     c.min_total_depth = cam.pass_settings.min_total_depth;
     c.min_transp_depth = cam.pass_settings.min_transp_depth;
+
+    c.clamp_direct = cam.pass_settings.clamp_direct;
+    c.clamp_indirect = cam.pass_settings.clamp_indirect;
+
+    c.min_samples = cam.pass_settings.min_samples;
+    c.variance_threshold = cam.pass_settings.variance_threshold;
 }
 
-void Ray::SceneBase::SetCamera(const CameraHandle i, const camera_desc_t &c) {
+void Ray::SceneBase::SetCamera_nolock(const CameraHandle i, const camera_desc_t &c) {
     assert(i._index < uint32_t(cams_.size()));
     camera_t &cam = cams_[i._index].cam;
-    if (c.type != Geo) {
+    if (c.type != eCamType::Geo) {
         if (c.ltype == eLensUnits::FOV) {
-            ConstructCamera(c.type, c.filter, c.dtype, c.origin, c.fwd, c.up, c.shift, c.fov, c.sensor_height,
+            ConstructCamera(c.type, c.filter, c.view_transform, c.origin, c.fwd, c.up, c.shift, c.fov, c.sensor_height,
                             c.exposure, c.gamma, c.focus_distance, c.fstop, c.lens_rotation, c.lens_ratio,
                             c.lens_blades, c.clip_start, c.clip_end, &cam);
         } else if (c.ltype == eLensUnits::FLength) {
         }
     } else {
-        cam.type = Geo;
+        cam.type = eCamType::Geo;
         cam.exposure = c.exposure;
         cam.gamma = c.gamma;
         cam.mi_index = c.mi_index;
         cam.uv_index = c.uv_index;
     }
 
-    cam.pass_settings.flags = 0;
+    cam.pass_settings.flags = {};
     if (c.lighting_only) {
-        cam.pass_settings.flags |= LightingOnly;
+        cam.pass_settings.flags |= ePassFlags::LightingOnly;
     }
     if (c.skip_direct_lighting) {
-        cam.pass_settings.flags |= SkipDirectLight;
+        cam.pass_settings.flags |= ePassFlags::SkipDirectLight;
     }
     if (c.skip_indirect_lighting) {
-        cam.pass_settings.flags |= SkipIndirectLight;
+        cam.pass_settings.flags |= ePassFlags::SkipIndirectLight;
     }
     if (c.no_background) {
-        cam.pass_settings.flags |= NoBackground;
-    }
-    if (c.clamp) {
-        cam.pass_settings.flags |= Clamp;
+        cam.pass_settings.flags |= ePassFlags::NoBackground;
     }
     if (c.output_sh) {
-        cam.pass_settings.flags |= OutputSH;
+        cam.pass_settings.flags |= ePassFlags::OutputSH;
+    }
+    if (c.output_base_color) {
+        cam.pass_settings.flags |= ePassFlags::OutputBaseColor;
+    }
+    if (c.output_depth_normals) {
+        cam.pass_settings.flags |= ePassFlags::OutputDepthNormals;
     }
 
     cam.pass_settings.max_diff_depth = c.max_diff_depth;
@@ -115,9 +130,17 @@ void Ray::SceneBase::SetCamera(const CameraHandle i, const camera_desc_t &c) {
         cam.pass_settings.max_transp_depth = std::max(cam.pass_settings.max_transp_depth - 1, 0);
         cam.pass_settings.max_total_depth = std::max(cam.pass_settings.max_total_depth - 1, 0);
     }
+
+    cam.pass_settings.clamp_direct = c.clamp_direct;
+    cam.pass_settings.clamp_indirect = c.clamp_indirect;
+
+    cam.pass_settings.min_samples = c.min_samples;
+    cam.pass_settings.variance_threshold = c.variance_threshold;
 }
 
 void Ray::SceneBase::RemoveCamera(const CameraHandle i) {
+    std::unique_lock<std::shared_timed_mutex> lock(mtx_);
+
     assert(i._index < uint32_t(cams_.size()));
     cams_[i._index].next_free = cam_first_free_;
     cam_first_free_ = i;

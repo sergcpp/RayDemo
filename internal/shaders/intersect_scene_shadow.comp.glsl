@@ -72,6 +72,10 @@ layout(std430, binding = BLOCKER_LIGHTS_BUF_SLOT) readonly buffer BlockerLights 
     uint g_blocker_lights[];
 };
 
+layout(std430, binding = RANDOM_SEQ_BUF_SLOT) readonly buffer Random {
+    float g_random_seq[];
+};
+
 #if HWRT
 layout(binding = TLAS_SLOT) uniform accelerationStructureEXT g_tlas;
 #endif
@@ -91,7 +95,7 @@ layout (local_size_x = LOCAL_GROUP_SIZE_X, local_size_y = LOCAL_GROUP_SIZE_Y, lo
 
 shared uint g_stack[LOCAL_GROUP_SIZE_X * LOCAL_GROUP_SIZE_Y][MAX_STACK_SIZE];
 
-bool Traverse_MicroTree_WithStack(vec3 ro, vec3 rd, vec3 inv_d, int obj_index, uint node_index, uint stack_size,
+bool Traverse_BLAS_WithStack(vec3 ro, vec3 rd, vec3 inv_d, int obj_index, uint node_index, uint stack_size,
                                   inout hit_data_t inter) {
     vec3 neg_inv_do = -inv_d * ro;
 
@@ -134,7 +138,7 @@ bool Traverse_MicroTree_WithStack(vec3 ro, vec3 rd, vec3 inv_d, int obj_index, u
     return false;
 }
 
-bool Traverse_MacroTree_WithStack(vec3 orig_ro, vec3 orig_rd, vec3 orig_inv_rd, uint node_index, inout hit_data_t inter) {
+bool Traverse_TLAS_WithStack(vec3 orig_ro, vec3 orig_rd, vec3 orig_inv_rd, uint node_index, inout hit_data_t inter) {
     vec3 orig_neg_inv_do = -orig_inv_rd * orig_ro;
 
     uint stack_size = 0;
@@ -168,7 +172,7 @@ bool Traverse_MacroTree_WithStack(vec3 orig_ro, vec3 orig_rd, vec3 orig_inv_rd, 
                 const vec3 rd = (tr.inv_xform * vec4(orig_rd, 0.0)).xyz;
                 const vec3 inv_d = safe_invert(rd);
 
-                const bool solid_hit_found = Traverse_MicroTree_WithStack(ro, rd, inv_d, int(g_mi_indices[i]), m.node_index, stack_size, inter);
+                const bool solid_hit_found = Traverse_BLAS_WithStack(ro, rd, inv_d, int(g_mi_indices[i]), m.node_index, stack_size, inter);
                 if (solid_hit_found) {
                     return true;
                 }
@@ -185,6 +189,9 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
     vec3 rc = vec3(r.c[0], r.c[1], r.c[2]);
     int depth = (r.depth >> 24);
 
+    const vec2 rand_offset = vec2(construct_float(hash(r.xy)), construct_float(hash(hash(r.xy))));
+    int rand_index = g_params.hi + total_depth(r) * RAND_DIM_BOUNCE_COUNT;
+
     float dist = r.dist > 0.0 ? r.dist : MAX_DIST;
 #if !HWRT
     const vec3 inv_d = safe_invert(rd);
@@ -194,7 +201,7 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
         sh_inter.mask = 0;
         sh_inter.t = dist;
 
-        const bool solid_hit = Traverse_MacroTree_WithStack(ro, rd, inv_d, g_params.node_index, sh_inter);
+        const bool solid_hit = Traverse_TLAS_WithStack(ro, rd, inv_d, g_params.node_index, sh_inter);
         if (solid_hit || depth > g_params.max_transp_depth) {
             return vec3(0.0);
         }
@@ -219,7 +226,7 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
 
         const float w = 1.0 - sh_inter.u - sh_inter.v;
         const vec2 sh_uvs =
-            vec2(v1.t[0][0], v1.t[0][1]) * w + vec2(v2.t[0][0], v2.t[0][1]) * sh_inter.u + vec2(v3.t[0][0], v3.t[0][1]) * sh_inter.v;
+            vec2(v1.t[0], v1.t[1]) * w + vec2(v2.t[0], v2.t[1]) * sh_inter.u + vec2(v3.t[0], v3.t[1]) * sh_inter.v;
 
         // reuse traversal stack
         g_stack[gl_LocalInvocationIndex][0] = mat_index;
@@ -227,6 +234,9 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
         int stack_size = 1;
 
         vec3 throughput = vec3(0.0);
+
+        const vec2 tex_rand = vec2(fract(g_random_seq[rand_index + RAND_DIM_TEX_U] + rand_offset[0]),
+                                   fract(g_random_seq[rand_index + RAND_DIM_TEX_V] + rand_offset[1]));
 
         while (stack_size-- != 0) {
             material_t mat = g_materials[g_stack[gl_LocalInvocationIndex][2 * stack_size + 0]];
@@ -236,7 +246,7 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
             if (mat.type == MixNode) {
                 float mix_val = mat.tangent_rotation_or_strength;
                 if (mat.textures[BASE_TEXTURE] != 0xffffffff) {
-                    mix_val *= SampleBilinear(mat.textures[BASE_TEXTURE], sh_uvs, 0).r;
+                    mix_val *= SampleBilinear(mat.textures[BASE_TEXTURE], sh_uvs, 0, tex_rand).r;
                 }
 
                 g_stack[gl_LocalInvocationIndex][2 * stack_size + 0] = mat.textures[MIX_MAT1];
@@ -260,6 +270,7 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
         dist -= t;
 
         ++depth;
+        rand_index += RAND_DIM_BOUNCE_COUNT;
     }
 
     return rc;
@@ -306,7 +317,7 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
 
             const vec2 uv = rayQueryGetIntersectionBarycentricsEXT(rq, true);
             const float w = 1.0 - uv.x - uv.y;
-            const vec2 sh_uvs = vec2(v1.t[0][0], v1.t[0][1]) * w + vec2(v2.t[0][0], v2.t[0][1]) * uv.x + vec2(v3.t[0][0], v3.t[0][1]) * uv.y;
+            const vec2 sh_uvs = vec2(v1.t[0], v1.t[1]) * w + vec2(v2.t[0], v2.t[1]) * uv.x + vec2(v3.t[0], v3.t[1]) * uv.y;
 
             // reuse traversal stack
             g_stack[gl_LocalInvocationIndex][0] = mat_index;
@@ -314,6 +325,9 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
             int stack_size = 1;
 
             vec3 throughput = vec3(0.0);
+
+            const vec2 tex_rand = vec2(fract(g_random_seq[rand_index + RAND_DIM_TEX_U] + rand_offset[0]),
+                                   fract(g_random_seq[rand_index + RAND_DIM_TEX_V] + rand_offset[1]));
 
             while (stack_size-- != 0) {
                 material_t mat = g_materials[g_stack[gl_LocalInvocationIndex][2 * stack_size + 0]];
@@ -323,7 +337,7 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
                 if (mat.type == MixNode) {
                     float mix_val = mat.tangent_rotation_or_strength;
                     if (mat.textures[BASE_TEXTURE] != 0xffffffff) {
-                        mix_val *= SampleBilinear(mat.textures[BASE_TEXTURE], sh_uvs, 0).r;
+                        mix_val *= SampleBilinear(mat.textures[BASE_TEXTURE], sh_uvs, 0, tex_rand).r;
                     }
 
                     g_stack[gl_LocalInvocationIndex][2 * stack_size + 0] = mat.textures[MIX_MAT1];
@@ -348,6 +362,7 @@ vec3 IntersectSceneShadow(shadow_ray_t r) {
         dist -= t;
 
         ++depth;
+        rand_index += RAND_DIM_BOUNCE_COUNT;
     }
 
     return rc;
@@ -436,8 +451,8 @@ void main() {
         const int x = (sh_ray.xy >> 16) & 0xffff;
         const int y = (sh_ray.xy & 0xffff);
 
-        vec3 col = imageLoad(g_inout_img, ivec2(x, y)).rgb;
-        col += rc;
-        imageStore(g_inout_img, ivec2(x, y), vec4(col, 1.0));
+        vec4 col = imageLoad(g_inout_img, ivec2(x, y));
+        col.xyz += min(rc, vec3(g_params.clamp_val));
+        imageStore(g_inout_img, ivec2(x, y), col);
     }
 }

@@ -14,15 +14,21 @@ inline void *aligned_malloc(size_t size, size_t alignment) {
     while (alignment < sizeof(void *)) {
         alignment *= 2;
     }
-    size_t space = size + (alignment - 1);
+    size_t space = size + (alignment - 1) + sizeof(void *);
+    if (space > PTRDIFF_MAX) {
+        return nullptr;
+    }
 
-    void *ptr = malloc(space + sizeof(void *));
+    void *ptr = malloc(space);
+    if (!ptr) {
+        return nullptr;
+    }
     void *original_ptr = ptr;
 
     char *ptr_bytes = static_cast<char *>(ptr);
     ptr_bytes += sizeof(void *);
 
-    size_t off = static_cast<size_t>(reinterpret_cast<uintptr_t>(ptr_bytes) % alignment);
+    auto off = static_cast<size_t>(reinterpret_cast<uintptr_t>(ptr_bytes) % alignment);
     if (off) {
         off = alignment - off;
     }
@@ -90,13 +96,13 @@ template <typename T, size_t Alignment> class aligned_allocator {
 
     // Default constructor, copy constructor, rebinding constructor, and destructor.
     // Empty for stateless allocators.
-    aligned_allocator() {}
+    aligned_allocator() = default;
 
-    aligned_allocator(const aligned_allocator &) {}
+    aligned_allocator(const aligned_allocator &) = default;
 
-    template <typename U> aligned_allocator(const aligned_allocator<U, Alignment> &) {}
+    template <typename U> explicit aligned_allocator(const aligned_allocator<U, Alignment> &) {}
 
-    ~aligned_allocator() {}
+    ~aligned_allocator() = default;
 
     // The following will be different for each allocator.
     T *allocate(const size_t n) const {
@@ -121,7 +127,7 @@ template <typename T, size_t Alignment> class aligned_allocator {
         void *const pv = aligned_malloc(n * sizeof(T), Alignment);
 
         // Allocators should throw std::bad_alloc in the case of memory allocation failure.
-        if (pv == NULL) {
+        if (pv == nullptr) {
             throw std::bad_alloc();
         }
 
@@ -143,7 +149,6 @@ template <typename T, size_t Alignment> class aligned_allocator {
     // "assignment operator could not be generated because a
     // base class assignment operator is inaccessible" within
     // the STL headers, but that warning is useless.
-  private:
-    aligned_allocator &operator=(const aligned_allocator &);
+    aligned_allocator &operator=(const aligned_allocator &) = delete;
 };
 } // namespace Ray

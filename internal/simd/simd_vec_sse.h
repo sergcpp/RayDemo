@@ -241,8 +241,8 @@ template <> class simd_vec<float, 4> {
         return _mm_cvtss_f32(r1);
     }
 
-    force_inline void vectorcall copy_to(float *f) const { _mm_storeu_ps(f, vec_); }
-    force_inline void vectorcall copy_to(float *f, simd_mem_aligned_tag) const { _mm_store_ps(f, vec_); }
+    force_inline void vectorcall store_to(float *f) const { _mm_storeu_ps(f, vec_); }
+    force_inline void vectorcall store_to(float *f, simd_mem_aligned_tag) const { _mm_store_ps(f, vec_); }
 
     force_inline void vectorcall blend_to(const simd_vec<float, 4> mask, const simd_vec<float, 4> v1) {
         validate_mask(mask);
@@ -474,6 +474,13 @@ template <> class simd_vec<float, 4> {
 
     friend force_inline simd_vec<float, 4> vectorcall normalize(const simd_vec<float, 4> v1) {
         return v1 / v1.length();
+    }
+
+
+    friend force_inline simd_vec<float, 4> vectorcall inclusive_scan(simd_vec<float, 4> v1) {
+        v1.vec_ = _mm_add_ps(v1.vec_, _mm_castsi128_ps(_mm_slli_si128(_mm_castps_si128(v1.vec_), 4)));
+        v1.vec_ = _mm_add_ps(v1.vec_, _mm_castsi128_ps(_mm_slli_si128(_mm_castps_si128(v1.vec_), 8)));
+        return v1;
     }
 
 #ifndef NDEBUG
@@ -744,8 +751,8 @@ template <> class simd_vec<int, 4> {
         return ret;
     }
 
-    force_inline void copy_to(int *f) const { _mm_storeu_si128((__m128i *)f, vec_); }
-    force_inline void copy_to(int *f, simd_mem_aligned_tag) const { _mm_store_si128((__m128i *)f, vec_); }
+    force_inline void store_to(int *f) const { _mm_storeu_si128((__m128i *)f, vec_); }
+    force_inline void store_to(int *f, simd_mem_aligned_tag) const { _mm_store_si128((__m128i *)f, vec_); }
 
     force_inline void vectorcall blend_to(const simd_vec<int, 4> mask, const simd_vec<int, 4> v1) {
         validate_mask(mask);
@@ -1063,6 +1070,12 @@ template <> class simd_vec<int, 4> {
     friend force_inline bool vectorcall is_equal(const simd_vec<int, 4> v1, const simd_vec<int, 4> v2) {
         __m128i vcmp = _mm_cmpeq_epi32(v1.vec_, v2.vec_);
         return (_mm_movemask_epi8(vcmp) == 0xffff);
+    }
+
+    friend force_inline simd_vec<int, 4> vectorcall inclusive_scan(simd_vec<int, 4> v1) {
+        v1.vec_ = _mm_add_epi32(v1.vec_, _mm_slli_si128(v1.vec_, 4));
+        v1.vec_ = _mm_add_epi32(v1.vec_, _mm_slli_si128(v1.vec_, 8));
+        return v1;
     }
 
 #ifndef NDEBUG

@@ -2,8 +2,8 @@
 
 #include "Bitmap.h"
 #include "CoreVK.h"
-#include "Vk/Buffer.h"
-#include "Vk/Context.h"
+#include "Vk/BufferVK.h"
+#include "Vk/ContextVK.h"
 
 #ifdef __GNUC__
 #define force_inline __attribute__((always_inline)) inline
@@ -60,7 +60,7 @@ template <typename T> class SparseStorage {
 
         if (!cpu_buf_.ctx()) {
             cpu_buf_ =
-                Buffer{name_.c_str(), ctx_, eBufType::Stage, uint32_t(new_capacity * sizeof(T)), uint32_t(sizeof(T))};
+                Buffer{name_.c_str(), ctx_, eBufType::Upload, uint32_t(new_capacity * sizeof(T)), uint32_t(sizeof(T))};
             gpu_buf_ =
                 Buffer{name_.c_str(), ctx_, eBufType::Storage, uint32_t(new_capacity * sizeof(T)), uint32_t(sizeof(T))};
         } else {
@@ -69,7 +69,7 @@ template <typename T> class SparseStorage {
             gpu_buf_.Resize(new_capacity * sizeof(T));
         }
 
-        cpu_buf_.Map(BufMapRead | BufMapWrite, true /* persistent */);
+        cpu_buf_.Map(true /* persistent */);
     }
 
     template <class... Args> uint32_t emplace(Args &&...args) {
@@ -83,6 +83,7 @@ template <typename T> class SparseStorage {
 
         T *el = cpu_buf_.mapped_ptr<T>() + cpu_index;
         new (el) T(std::forward<Args>(args)...);
+        cpu_buf_.FlushMappedRange(cpu_index * sizeof(T), sizeof(T), true /* align size */);
 
         VkCommandBuffer cmd_buf = BegSingleTimeCommands(ctx_->device(), ctx_->temp_command_pool());
         gpu_buf_.UpdateSubRegion(gpu_index * sizeof(T), sizeof(T), cpu_buf_, cpu_index * sizeof(T), cmd_buf);

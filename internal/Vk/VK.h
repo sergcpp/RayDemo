@@ -1,5 +1,3 @@
-#pragma once
-
 #define VK_NO_PROTOTYPES
 #define VK_ENABLE_BETA_EXTENSIONS
 #include "../../third-party/vulkan/vulkan.h"
@@ -21,6 +19,7 @@
 #define vkEnumerateInstanceLayerProperties ray_vkEnumerateInstanceLayerProperties
 #define vkEnumerateInstanceExtensionProperties ray_vkEnumerateInstanceExtensionProperties
 #define vkGetInstanceProcAddr ray_vkGetInstanceProcAddr
+#define vkGetDeviceProcAddr ray_vkGetDeviceProcAddr
 
 #define vkEnumeratePhysicalDevices ray_vkEnumeratePhysicalDevices
 #define vkGetPhysicalDeviceProperties ray_vkGetPhysicalDeviceProperties
@@ -200,6 +199,7 @@ EXTERN_FUNC PFN_vkDestroyInstance ray_vkDestroyInstance;
 EXTERN_FUNC PFN_vkEnumerateInstanceLayerProperties ray_vkEnumerateInstanceLayerProperties;
 EXTERN_FUNC PFN_vkEnumerateInstanceExtensionProperties ray_vkEnumerateInstanceExtensionProperties;
 EXTERN_FUNC PFN_vkGetInstanceProcAddr ray_vkGetInstanceProcAddr;
+EXTERN_FUNC PFN_vkGetDeviceProcAddr ray_vkGetDeviceProcAddr;
 
 EXTERN_FUNC PFN_vkEnumeratePhysicalDevices ray_vkEnumeratePhysicalDevices;
 EXTERN_FUNC PFN_vkGetPhysicalDeviceProperties ray_vkGetPhysicalDeviceProperties;
@@ -384,3 +384,5 @@ bool LoadVulkan(ILog *log);
 bool LoadVulkanExtensions(VkInstance instance, ILog *log);
 } // namespace Vk
 } // namespace Ray
+
+#undef EXTERN_FUNC

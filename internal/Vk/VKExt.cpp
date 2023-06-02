@@ -7,9 +7,13 @@
 #include "../../Log.h"
 
 #if defined(_WIN32)
+#ifndef NOMINMAX
+    #define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+#endif
 #include <Windows.h>
-#undef max
-#undef min
 #elif defined(__linux__) || defined(__APPLE__)
 #include <dlfcn.h>
 #endif
@@ -72,6 +76,7 @@ bool Ray::Vk::LoadVulkan(ILog *log) {
     LOAD_VK_FUN(vkEnumerateInstanceExtensionProperties);
 
     LOAD_VK_FUN(vkGetInstanceProcAddr);
+    LOAD_VK_FUN(vkGetDeviceProcAddr);
     LOAD_VK_FUN(vkEnumeratePhysicalDevices);
 
     LOAD_VK_FUN(vkGetPhysicalDeviceProperties);

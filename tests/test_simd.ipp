@@ -59,8 +59,8 @@ using namespace Ray::NS;
     require(v8[2] == 30.0f);
     require(v8[3] == 14.0f);
 
-    v5.copy_to(&unaligned_array[0]);
-    v1.copy_to(&aligned_array[0], simd_mem_aligned);
+    v5.store_to(&unaligned_array[0]);
+    v1.store_to(&aligned_array[0], simd_mem_aligned);
 
     require(unaligned_array[0] == 1.0f);
     require(unaligned_array[1] == 2.0f);
@@ -136,20 +136,35 @@ using namespace Ray::NS;
     require(v11[2] == 0);
     require(v11[3] == -1);
 
-    static const float gather_source[] = {0, 42.0f, 0, 0, 12.0f, 0, 0, 0, 11.0f, 0, 0, 0, 0, 0, 0, 23.0f, 0, 0.0f};
+    static const float gather_source[] = {0, 42.0f, 0, 0, 12.0f, 0, 0, 0, 11.0f, 0, 0, 0, 0, 0, 0, 23.0f, 0, 0};
 
     const simd_ivec4 v12i = {-1, 2, 6, 13};
     const simd_fvec4 v12 = gather(gather_source + 2, v12i);
+    const simd_fvec4 v12_masked = gather(simd_fvec4{69}, gather_source + 2, simd_ivec4{-1, 0, -1, 0}, v12i);
 
     require(v12[0] == Approx(42));
     require(v12[1] == Approx(12));
     require(v12[2] == Approx(11));
     require(v12[3] == Approx(23));
 
+    require(v12_masked[0] == Approx(42));
+    require(v12_masked[1] == Approx(69));
+    require(v12_masked[2] == Approx(11));
+    require(v12_masked[3] == Approx(69));
+
     float scatter_destination[18] = {};
     scatter(scatter_destination + 2, v12i, v12);
 
     require(memcmp(gather_source, scatter_destination, sizeof(gather_source)) == 0);
+
+    const simd_ivec4 scatter_mask = {-1, 0, 0, -1};
+
+    float masked_scatter_destination[] = {1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0};
+    static const float masked_scatter_expected[] = {1, 42.0f, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23.0f, 4, 0};
+
+    scatter(masked_scatter_destination + 2, scatter_mask, v12i, v12);
+
+    require(memcmp(masked_scatter_destination, masked_scatter_expected, sizeof(masked_scatter_destination)) == 0);
 
     const simd_fvec4 v14 = {42.0f, 0, 24.0f, 0};
     simd_fvec4 v15 = {0, 12.0f, 0, 0};
@@ -160,6 +175,14 @@ using namespace Ray::NS;
     require(v15[1] == 12.0f);
     require(v15[2] == 24.0f);
     require(v15[3] == 0);
+
+    const simd_fvec4 v16 = {3, 1, 4, 1};
+    const simd_fvec4 v17 = inclusive_scan(v16);
+
+    require(v17[0] == 3.0f);
+    require(v17[1] == 4.0f);
+    require(v17[2] == 8.0f);
+    require(v17[3] == 9.0f);
 
     std::cout << "OK" << std::endl;
 }
@@ -223,8 +246,8 @@ using namespace Ray::NS;
     require(v8[2] == 30);
     require(v8[3] == 14);
 
-    v5.copy_to(&unaligned_array[0]);
-    v1.copy_to(&aligned_array[0], simd_mem_aligned);
+    v5.store_to(&unaligned_array[0]);
+    v1.store_to(&aligned_array[0], simd_mem_aligned);
 
     require(unaligned_array[0] == 1);
     require(unaligned_array[1] == 2);
@@ -277,16 +300,31 @@ using namespace Ray::NS;
 
     const simd_ivec4 v9i = {-1, 2, 6, 13};
     const simd_ivec4 v9 = gather(gather_source + 2, v9i);
+    const simd_ivec4 v9_masked = gather(simd_ivec4{69}, gather_source + 2, simd_ivec4{-1, 0, -1, 0}, v9i);
 
     require(v9[0] == 42);
     require(v9[1] == 12);
     require(v9[2] == 11);
     require(v9[3] == 23);
 
+    require(v9_masked[0] == 42);
+    require(v9_masked[1] == 69);
+    require(v9_masked[2] == 11);
+    require(v9_masked[3] == 69);
+
     int scatter_destination[18] = {};
     scatter(scatter_destination + 2, v9i, v9);
 
     require(memcmp(gather_source, scatter_destination, sizeof(gather_source)) == 0);
+
+    const simd_ivec4 scatter_mask = {-1, 0, 0, -1};
+
+    int masked_scatter_destination[] = {1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0};
+    static const int masked_scatter_expected[] = {1, 42, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23, 4, 0};
+
+    scatter(masked_scatter_destination + 2, scatter_mask, v9i, v9);
+
+    require(memcmp(masked_scatter_destination, masked_scatter_expected, sizeof(masked_scatter_destination)) == 0);
 
     const simd_ivec4 v11 = {-1, 0, -1, 0};
     simd_ivec4 v12 = {0, -1, 0, 0};
@@ -311,6 +349,14 @@ using namespace Ray::NS;
     const simd_ivec4 v15 = {-2147483647, 1, -42, 42};
     const simd_ivec4 v16 = srai(v15, 31);
     require((v16 != simd_ivec4{-1, 0, -1, 0}).all_zeros());
+
+    const simd_ivec4 v17 = {3, 1, 4, 1};
+    const simd_ivec4 v18 = inclusive_scan(v17);
+
+    require(v18[0] == 3);
+    require(v18[1] == 4);
+    require(v18[2] == 8);
+    require(v18[3] == 9);
 
     std::cout << "OK" << std::endl;
 }
@@ -492,6 +538,8 @@ using namespace Ray::NS;
 
     const simd_ivec8 v12i = {-1, 2, 6, 13, 17, 20, 24, 31};
     const simd_fvec8 v12 = gather(gather_source + 2, v12i);
+    const simd_fvec8 v12_masked =
+        gather(simd_fvec8{69}, gather_source + 2, simd_ivec8{-1, 0, -1, 0, -1, 0, -1, 0}, v12i);
 
     require(v12[0] == Approx(42));
     require(v12[1] == Approx(12));
@@ -502,10 +550,30 @@ using namespace Ray::NS;
     require(v12[6] == Approx(11));
     require(v12[7] == Approx(23));
 
+    require(v12_masked[0] == Approx(42));
+    require(v12_masked[1] == Approx(69));
+    require(v12_masked[2] == Approx(11));
+    require(v12_masked[3] == Approx(69));
+    require(v12_masked[4] == Approx(42));
+    require(v12_masked[5] == Approx(69));
+    require(v12_masked[6] == Approx(11));
+    require(v12_masked[7] == Approx(69));
+
     float scatter_destination[36] = {};
     scatter(scatter_destination + 2, v12i, v12);
 
     require(memcmp(gather_source, scatter_destination, sizeof(gather_source)) == 0);
+
+    const simd_ivec8 scatter_mask = {-1, 0, 0, -1, -1, 0, 0, -1};
+
+    float masked_scatter_destination[] = {1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0,
+                                          1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0};
+    static const float masked_scatter_expected[] = {1, 42.0f, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23.0f, 4, 0,
+                                                    1, 42.0f, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23.0f, 4, 0};
+
+    scatter(masked_scatter_destination + 2, scatter_mask, v12i, v12);
+
+    require(memcmp(masked_scatter_destination, masked_scatter_expected, sizeof(masked_scatter_destination)) == 0);
 
     const simd_fvec8 v14 = {42.0f, 0, 24.0f, 0, 42.0f, 0, 24.0f, 0};
     simd_fvec8 v15 = {0, 12.0f, 0, 0, 0, 12.0f, 0, 0};
@@ -520,6 +588,18 @@ using namespace Ray::NS;
     require(v15[5] == 12.0f);
     require(v15[6] == 24.0f);
     require(v15[7] == 0);
+
+    const simd_fvec8 v16 = {3, 1, 4, 1, 3, 1, 4, 1};
+    const simd_fvec8 v17 = inclusive_scan(v16);
+
+    require(v17[0] == 3.0f);
+    require(v17[1] == 4.0f);
+    require(v17[2] == 8.0f);
+    require(v17[3] == 9.0f);
+    require(v17[4] == 12.0f);
+    require(v17[5] == 13.0f);
+    require(v17[6] == 17.0f);
+    require(v17[7] == 18.0f);
 
     std::cout << "OK" << std::endl;
 }
@@ -655,6 +735,7 @@ using namespace Ray::NS;
 
     const simd_ivec8 v9i = {-1, 2, 6, 13, 17, 20, 24, 31};
     const simd_ivec8 v9 = gather(gather_source + 2, v9i);
+    const simd_ivec8 v9_masked = gather(simd_ivec8{69}, gather_source + 2, simd_ivec8{-1, 0, -1, 0, -1, 0, -1, 0}, v9i);
 
     require(v9[0] == 42);
     require(v9[1] == 12);
@@ -665,10 +746,30 @@ using namespace Ray::NS;
     require(v9[6] == 11);
     require(v9[7] == 23);
 
+    require(v9_masked[0] == 42);
+    require(v9_masked[1] == 69);
+    require(v9_masked[2] == 11);
+    require(v9_masked[3] == 69);
+    require(v9_masked[4] == 42);
+    require(v9_masked[5] == 69);
+    require(v9_masked[6] == 11);
+    require(v9_masked[7] == 69);
+
     int scatter_destination[36] = {};
     scatter(scatter_destination + 2, v9i, v9);
 
     require(memcmp(gather_source, scatter_destination, sizeof(gather_source)) == 0);
+
+    const simd_ivec8 scatter_mask = {-1, 0, 0, -1, -1, 0, 0, -1};
+
+    int masked_scatter_destination[] = {1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0,
+                                        1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0};
+    static const int masked_scatter_expected[] = {1, 42, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23, 4, 0,
+                                                  1, 42, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23, 4, 0};
+
+    scatter(masked_scatter_destination + 2, scatter_mask, v9i, v9);
+
+    require(memcmp(masked_scatter_destination, masked_scatter_expected, sizeof(masked_scatter_destination)) == 0);
 
     const simd_ivec8 v11 = {-1, 0, -1, 0, -1, 0, -1, 0};
     simd_ivec8 v12 = {0, -1, 0, 0, 0, -1, 0, 0};
@@ -701,6 +802,18 @@ using namespace Ray::NS;
     const simd_ivec8 v15 = {-2147483647, 1, -42, 42, -2147483647, 1, -42, 42};
     const simd_ivec8 v16 = srai(v15, 31);
     require((v16 != simd_ivec8{-1, 0, -1, 0, -1, 0, -1, 0}).all_zeros());
+
+    const simd_ivec8 v17 = {3, 1, 4, 1, 3, 1, 4, 1};
+    const simd_ivec8 v18 = inclusive_scan(v17);
+
+    require(v18[0] == 3);
+    require(v18[1] == 4);
+    require(v18[2] == 8);
+    require(v18[3] == 9);
+    require(v18[4] == 12);
+    require(v18[5] == 13);
+    require(v18[6] == 17);
+    require(v18[7] == 18);
 
     std::cout << "OK" << std::endl;
 }
@@ -1000,6 +1113,8 @@ using namespace Ray::NS;
 
     const simd_ivec16 v12i = {-1, 2, 6, 13, 17, 20, 24, 31, 35, 38, 42, 49, 53, 56, 60, 67};
     const simd_fvec16 v12 = gather(gather_source + 2, v12i);
+    const simd_fvec16 v12_masked = gather(simd_fvec16{69}, gather_source + 2,
+                                          simd_ivec16{-1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0}, v12i);
 
     require(v12[0] == Approx(42));
     require(v12[1] == Approx(12));
@@ -1018,10 +1133,42 @@ using namespace Ray::NS;
     require(v12[14] == Approx(11));
     require(v12[15] == Approx(23));
 
+    require(v12_masked[0] == Approx(42));
+    require(v12_masked[1] == Approx(69));
+    require(v12_masked[2] == Approx(11));
+    require(v12_masked[3] == Approx(69));
+    require(v12_masked[4] == Approx(42));
+    require(v12_masked[5] == Approx(69));
+    require(v12_masked[6] == Approx(11));
+    require(v12_masked[7] == Approx(69));
+    require(v12_masked[8] == Approx(42));
+    require(v12_masked[9] == Approx(69));
+    require(v12_masked[10] == Approx(11));
+    require(v12_masked[11] == Approx(69));
+    require(v12_masked[12] == Approx(42));
+    require(v12_masked[13] == Approx(69));
+    require(v12_masked[14] == Approx(11));
+    require(v12_masked[15] == Approx(69));
+
     float scatter_destination[72] = {};
     scatter(scatter_destination + 2, v12i, v12);
 
     require(memcmp(gather_source, scatter_destination, sizeof(gather_source)) == 0);
+
+    const simd_ivec16 scatter_mask = {-1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1};
+
+    float masked_scatter_destination[] = {1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0,
+                                          1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0,
+                                          1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0,
+                                          1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0};
+    static const float masked_scatter_expected[] = {1, 42.0f, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23.0f, 4, 0,
+                                                    1, 42.0f, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23.0f, 4, 0,
+                                                    1, 42.0f, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23.0f, 4, 0,
+                                                    1, 42.0f, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23.0f, 4, 0};
+
+    scatter(masked_scatter_destination + 2, scatter_mask, v12i, v12);
+
+    require(memcmp(masked_scatter_destination, masked_scatter_expected, sizeof(masked_scatter_destination)) == 0);
 
     const simd_fvec16 v14 = {42.0f, 0, 24.0f, 0, 42.0f, 0, 24.0f, 0, 42.0f, 0, 24.0f, 0, 42.0f, 0, 24.0f, 0};
     simd_fvec16 v15 = {0, 12.0f, 0, 0, 0, 12.0f, 0, 0, 0, 12.0f, 0, 0, 0, 12.0f, 0, 0};
@@ -1044,6 +1191,26 @@ using namespace Ray::NS;
     require(v15[13] == 12.0f);
     require(v15[14] == 24.0f);
     require(v15[15] == 0);
+
+    const simd_fvec16 v16 = {3, 1, 4, 1, 3, 1, 4, 1, 3, 1, 4, 1, 3, 1, 4, 1};
+    const simd_fvec16 v17 = inclusive_scan(v16);
+
+    require(v17[0] == 3.0f);
+    require(v17[1] == 4.0f);
+    require(v17[2] == 8.0f);
+    require(v17[3] == 9.0f);
+    require(v17[4] == 12.0f);
+    require(v17[5] == 13.0f);
+    require(v17[6] == 17.0f);
+    require(v17[7] == 18.0f);
+    require(v17[8] == 21.0f);
+    require(v17[9] == 22.0f);
+    require(v17[10] == 26.0f);
+    require(v17[11] == 27.0f);
+    require(v17[12] == 30.0f);
+    require(v17[13] == 31.0f);
+    require(v17[14] == 35.0f);
+    require(v17[15] == 36.0f);
 
     std::cout << "OK" << std::endl;
 }
@@ -1277,6 +1444,8 @@ using namespace Ray::NS;
 
     const simd_ivec16 v9i = {-1, 2, 6, 13, 17, 20, 24, 31, 35, 38, 42, 49, 53, 56, 60, 67};
     const simd_ivec16 v9 = gather(gather_source + 2, v9i);
+    const simd_ivec16 v9_masked = gather(simd_ivec16{69}, gather_source + 2,
+                                         simd_ivec16{-1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0}, v9i);
 
     require(v9[0] == 42);
     require(v9[1] == 12);
@@ -1295,10 +1464,42 @@ using namespace Ray::NS;
     require(v9[14] == 11);
     require(v9[15] == 23);
 
+    require(v9_masked[0] == 42);
+    require(v9_masked[1] == 69);
+    require(v9_masked[2] == 11);
+    require(v9_masked[3] == 69);
+    require(v9_masked[4] == 42);
+    require(v9_masked[5] == 69);
+    require(v9_masked[6] == 11);
+    require(v9_masked[7] == 69);
+    require(v9_masked[8] == 42);
+    require(v9_masked[9] == 69);
+    require(v9_masked[10] == 11);
+    require(v9_masked[11] == 69);
+    require(v9_masked[12] == 42);
+    require(v9_masked[13] == 69);
+    require(v9_masked[14] == 11);
+    require(v9_masked[15] == 69);
+
     int scatter_destination[72] = {};
     scatter(scatter_destination + 2, v9i, v9);
 
     require(memcmp(gather_source, scatter_destination, sizeof(gather_source)) == 0);
+
+    const simd_ivec16 scatter_mask = {-1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1};
+
+    int masked_scatter_destination[] = {1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0,
+                                        1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0,
+                                        1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0,
+                                        1, -1, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, -1, 4, 0};
+    static const int masked_scatter_expected[] = {1, 42, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23, 4, 0,
+                                                  1, 42, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23, 4, 0,
+                                                  1, 42, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23, 4, 0,
+                                                  1, 42, 2, 3, -1, 4, 5, 6, -1, 7, 8, 9, 1, 2, 3, 23, 4, 0};
+
+    scatter(masked_scatter_destination + 2, scatter_mask, v9i, v9);
+
+    require(memcmp(masked_scatter_destination, masked_scatter_expected, sizeof(masked_scatter_destination)) == 0);
 
     const simd_ivec16 v11 = {-1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0};
     simd_ivec16 v12 = {0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0};
@@ -1348,6 +1549,26 @@ using namespace Ray::NS;
                              -2147483647, 1, -42, 42, -2147483647, 1, -42, 42};
     const simd_ivec16 v16 = srai(v15, 31);
     require((v16 != simd_ivec16{-1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0}).all_zeros());
+
+    const simd_ivec16 v17 = {3, 1, 4, 1, 3, 1, 4, 1, 3, 1, 4, 1, 3, 1, 4, 1};
+    const simd_ivec16 v18 = inclusive_scan(v17);
+
+    require(v18[0] == 3);
+    require(v18[1] == 4);
+    require(v18[2] == 8);
+    require(v18[3] == 9);
+    require(v18[4] == 12);
+    require(v18[5] == 13);
+    require(v18[6] == 17);
+    require(v18[7] == 18);
+    require(v18[8] == 21);
+    require(v18[9] == 22);
+    require(v18[10] == 26);
+    require(v18[11] == 27);
+    require(v18[12] == 30);
+    require(v18[13] == 31);
+    require(v18[14] == 35);
+    require(v18[15] == 36);
 
     std::cout << "OK" << std::endl;
 }
