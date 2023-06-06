@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = master
-	commit = 869ec4db5b2496ec68d3da849d7b3cf6d46c77d3
+	branch = dx12_staging_heaps
+	commit = 70be6b5275fb251f7870cfc7c10f3e3aa383d53a
 	method = merge
 	cmdver = 0.4.6
-	parent = 2d91c6e12158f45790ebd7d10dfaed978a736e13
+	parent = 105621f4c8923a81c9b33d01c1b157437922a0c3
