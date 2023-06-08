@@ -21,7 +21,7 @@ class DemoApp {
 
     std::shared_ptr<InputManager> p_input_manager_;
 
-    bool quit_, capture_frame_ = false;
+    bool quit_, rdoc_capture_frame_ = false, pix_capture_frame_ = false;
 
 #if !defined(__ANDROID__)
     static bool ConvertToRawButton(int32_t key, InputManager::RawInputButton &button);
