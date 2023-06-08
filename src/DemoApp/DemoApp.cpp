@@ -13,9 +13,26 @@
 
 #include <cassert>
 #include <cfloat>
+#include <ctime>
+
+#include <algorithm>
+#include <chrono>
+#include <sstream>
+#include <iomanip>
 
 #ifdef _WIN32
 #include <renderdoc/renderdoc_app.h>
+
+#include <Ray/Config.h>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#include <WinPixEventRuntime/pix3.h>
 #endif
 
 #include <DemoLib/Viewer.h>
@@ -38,6 +55,15 @@ DLL_EXPORT int AmdPowerXpressRequestHighPerformance = 1; // AMD
 #ifdef _WIN32
 DLL_IMPORT int __stdcall SetProcessDPIAware();
 #endif
+}
+
+std::string get_current_time_and_date() {
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+    return ss.str();
 }
 
 #ifdef _WIN32
@@ -90,6 +116,11 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
     }
 #endif
 
+#ifdef ENABLE_PIX
+    HMODULE mod = PIXLoadLatestWinPixGpuCapturerLibrary();
+    (void)mod;
+#endif
+
     char envarg[] = "MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE=1";
     putenv(envarg);
 
@@ -120,18 +151,42 @@ void DemoApp::Destroy() {
 
 void DemoApp::Frame() {
 #ifdef _WIN32
-    if (capture_frame_ && rdoc_api) {
+    if (rdoc_capture_frame_ && rdoc_api) {
         rdoc_api->StartFrameCapture(Ray::g_rdoc_device, NULL);
     }
+#ifdef ENABLE_PIX
+    if (pix_capture_frame_) {
+        std::string date_and_time = get_current_time_and_date();
+        std::replace(std::begin(date_and_time), std::end(date_and_time), ' ', '_');
+        std::replace(std::begin(date_and_time), std::end(date_and_time), ':', '_');
+
+        std::wstring out_file_name = L"cap_";
+        out_file_name.append(std::begin(date_and_time), std::end(date_and_time));
+        out_file_name += L".pix3";
+
+        PIXCaptureParameters params = {};
+        params.GpuCaptureParameters.FileName = out_file_name.c_str();
+
+        const HRESULT hr = PIXBeginCapture(PIX_CAPTURE_GPU, &params);
+        assert(SUCCEEDED(hr));
+    }
+#endif
 #endif
     viewer_->Frame();
 #ifdef _WIN32
-    if (capture_frame_ && rdoc_api) {
+
+    if (rdoc_capture_frame_ && rdoc_api) {
         const uint32_t ret = rdoc_api->EndFrameCapture(Ray::g_rdoc_device, NULL);
         assert(ret == 1);
     }
+#ifdef ENABLE_PIX
+    if (pix_capture_frame_) {
+        const HRESULT hr = PIXEndCapture(FALSE);
+        assert(SUCCEEDED(hr));
+    }
 #endif
-    capture_frame_ = false;
+#endif
+    rdoc_capture_frame_ = pix_capture_frame_ = false;
 }
 
 #if !defined(__ANDROID__)
@@ -285,8 +340,11 @@ void DemoApp::PollEvents() {
             if (e.key.keysym.sym == SDLK_ESCAPE) {
                 quit_ = true;
                 return;
+            } else if (e.key.keysym.sym == SDLK_F11) {
+                pix_capture_frame_ = true;
+                return;
             } else if (e.key.keysym.sym == SDLK_F12) {
-                capture_frame_ = true;
+                rdoc_capture_frame_ = true;
                 return;
             } /*else if (e.key.keysym.sym == SDLK_TAB) {
             bool is_fullscreen = bool(SDL_GetWindowFlags(window_) & SDL_WINDOW_FULLSCREEN);
