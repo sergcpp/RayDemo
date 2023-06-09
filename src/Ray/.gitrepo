@@ -5,7 +5,7 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = shared_sampler
+	branch = master
 	commit = 43ed654523a775d2aaf0b583108a6ce3cccff4fc
 	method = merge
 	cmdver = 0.4.6
