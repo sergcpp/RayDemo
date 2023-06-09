@@ -254,11 +254,11 @@ stages:
   stage: test
   script:
     - echo "Running tests..."
+    - '& "$BIN_DIR/test_SW"'
+    - '& "$BIN_DIR/test_Sys"'
     - cd src/Ray/tests
     - '& "../../../$BIN_DIR/test_Ray" $TEST_ARGS.split(" ") $AUX_TEST_ARGS.split(" ")'
     - cd ../../../
-    - '& "$BIN_DIR/test_SW"'
-    - '& "$BIN_DIR/test_Sys"'
   after_script:
     - cp src/Ray/tests/test_data/material_*.tga ./
     - cp src/Ray/tests/test_data/errors.txt ./
@@ -330,11 +330,11 @@ stages:
   stage: test
   script:
     - echo "Running tests..."
+    - $BIN_DIR/test_SW
+    - $BIN_DIR/test_Sys
     - cd src/Ray/tests
     - ../../../$BIN_DIR/test_Ray $TEST_ARGS $AUX_TEST_ARGS
     - cd ../../../
-    - $BIN_DIR/test_SW
-    - $BIN_DIR/test_Sys
   after_script:
     - cp src/Ray/tests/test_data/material_*.tga ./
     - cp src/Ray/tests/test_data/errors.txt ./
