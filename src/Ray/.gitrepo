@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = dx_hwrt
-	commit = 173d1e093131714a7c1edd43b11f65390bd2caea
+	branch = unify_gpu_scene
+	commit = 4540ad4d6d06d18abf0d80ba3f6891fac925a635
 	method = merge
 	cmdver = 0.4.6
-	parent = 7b9d34a4c601a7f3e8a11ab09bddd6f4e7dd0431
+	parent = 528f6a4df2fce824b9c6f763863ab129a73bf0ba
