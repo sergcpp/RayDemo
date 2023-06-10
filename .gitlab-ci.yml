@@ -801,52 +801,16 @@ deploy-job:
     - echo "Deploying application..."
     - echo "Application successfully deployed."
   needs:
-    - windows-x86_64-cpu-test-job
-    - windows-x86_64-gpu-amd-test-job
-    - windows-x86_64-gpu-nv-test-job
-    - windows-x86_64-gpu-xe-test-job
-    - windows-x86_64-gpu-arc-test-job
-    - job: windows-x86_64-cpu-test-img-job
-      optional: true
-    - job: windows-x86_64-gpu-nv-test-img-job
-      optional: true
-    - job: windows-x86_64-gpu-amd-test-img-job
-      optional: true
-    - job: windows-x86_64-gpu-xe-test-img-job
-      optional: true
-    - job: windows-x86_64-gpu-arc-test-img-job
-      optional: true
-    - windows-arm64-cpu-test-job
-    - windows-arm64-gpu-adreno-test-job
-    - job: windows-arm64-cpu-test-img-job
-      optional: true
-    - job: windows-arm64-gpu-adreno-test-img-job
-      optional: true
-    - linux-x86_64-cpu-test-job
-    - linux-x86_64-gpu-nv-test-job
-    - linux-x86_64-gpu-amd-test-job
-    - job: linux-x86_64-cpu-test-img-job
-      optional: true
-    - job: linux-x86_64-gpu-nv-test-img-job
-      optional: true
-    - job: linux-x86_64-gpu-amd-test-img-job
-      optional: true
-    - macos-x86_64-cpu-test-job
-    - job: macos-x86_64-cpu-test-img-job
-      optional: true
-    - macos-arm64-cpu-test-job
-    - macos-arm64-gpu-m1-test-job
-    - job: macos-arm64-cpu-test-img-job
-      optional: true
-    - job: macos-arm64-gpu-m1-test-img-job
-      optional: true
+    - linux-x86_64-build-job
+    - macos-universal-prepare-job
+    - windows-arm64-build-job
+    - windows-x86_64-build-rel-job
   artifacts:
     paths:
       - windows-x86_64/
       - windows-arm64/
       - linux-x86_64/
-      - macos-x86_64/
-      - macos-arm64/
+      - macos-universal/
     expire_in: 1 week
   tags:
     - deployer
@@ -861,43 +825,10 @@ deploy-job-full:
     - echo "Deploying application..."
     - echo "Application successfully deployed."
   needs:
-    - windows-x86_64-cpu-test-job
-    - windows-x86_64-gpu-amd-test-job
-    - windows-x86_64-gpu-nv-test-job
-    - windows-x86_64-gpu-xe-test-job
-    - windows-x86_64-gpu-arc-test-job
-    - job: windows-x86_64-cpu-test-img-job
-      optional: true
-    - job: windows-x86_64-gpu-nv-test-img-job
-      optional: true
-    - job: windows-x86_64-gpu-amd-test-img-job
-      optional: true
-    - job: windows-x86_64-gpu-xe-test-img-job
-      optional: true
-    - job: windows-x86_64-gpu-arc-test-img-job
-      optional: true
-    - windows-arm64-cpu-test-job
-    - windows-arm64-gpu-adreno-test-job
-    - job: windows-arm64-cpu-test-img-job
-      optional: true
-    - job: windows-arm64-gpu-adreno-test-img-job
-      optional: true
-    - linux-x86_64-cpu-test-job
-    - linux-x86_64-gpu-nv-test-job
-    - linux-x86_64-gpu-amd-test-job
-    - job: linux-x86_64-cpu-test-img-job
-      optional: true
-    - job: linux-x86_64-gpu-nv-test-img-job
-      optional: true
-    - macos-x86_64-cpu-test-job
-    - job: macos-x86_64-cpu-test-img-job
-      optional: true
-    - macos-arm64-cpu-test-job
-    - macos-arm64-gpu-m1-test-job
-    - job: macos-arm64-cpu-test-img-job
-      optional: true
-    - job: macos-arm64-gpu-m1-test-img-job
-      optional: true
+    - linux-x86_64-build-job
+    - macos-universal-prepare-job
+    - windows-arm64-build-job
+    - windows-x86_64-build-rel-job
   artifacts:
     paths:
       - assets/fonts/
@@ -909,8 +840,7 @@ deploy-job-full:
       - windows-x86_64/
       - windows-arm64/
       - linux-x86_64/
-      - macos-x86_64/
-      - macos-arm64/
+      - macos-universal/
     expire_in: 1 week
   tags:
     - deployer
