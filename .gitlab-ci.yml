@@ -253,6 +253,8 @@ stages:
 .windows-test-job:
   stage: test
   script:
+    - echo "Cleaning repository..."
+    - '& git clean -fx -e "$BIN_DIR"'
     - echo "Running tests..."
     - '& "$BIN_DIR/test_SW"'
     - '& "$BIN_DIR/test_Sys"'
@@ -273,6 +275,8 @@ stages:
 .windows-perf-test-job:
   stage: test
   script:
+    - echo "Cleaning repository..."
+    - '& git clean -fx -e "$BIN_DIR"'
     - echo "Running tests..."
     - cd src/Ray/tests
     - '& "../../../$BIN_DIR/test_Ray" $AUX_TEST_ARGS.split(" ")'
@@ -291,6 +295,8 @@ stages:
 .windows-test-img-job:
   stage: test-img
   script:
+    - echo "Cleaning repository..."
+    - '& git clean -fx -e "$BIN_DIR"'
     - echo "Running image tests..."
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 31.42 --threshold 755 --clamp_indirect 8.0 --denoise'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.70 --threshold 8653 --clamp_indirect 8.0'
@@ -310,6 +316,8 @@ stages:
 .windows-gpu-test-img-job:
   stage: test-img
   script:
+    - echo "Cleaning repository..."
+    - '& git clean -fx -e "$BIN_DIR"'
     - echo "Running image tests..."
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 31.42 --threshold 755 --clamp_indirect 8.0 --denoise'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.70 --threshold 8653 --clamp_indirect 8.0'
@@ -329,6 +337,8 @@ stages:
 .test-job:
   stage: test
   script:
+    - echo "Cleaning repository..."
+    - git clean -fx -e $BIN_DIR
     - echo "Running tests..."
     - $BIN_DIR/test_SW
     - $BIN_DIR/test_Sys
@@ -349,6 +359,8 @@ stages:
 .test-img-job:
   stage: test-img
   script:
+    - echo "Cleaning repository..."
+    - git clean -fx -e $BIN_DIR
     - echo "Running image tests..."
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 31.42 --threshold 755 --clamp_indirect 8.0 --denoise
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.70 --threshold 8653 --clamp_indirect 8.0
@@ -368,6 +380,8 @@ stages:
 .gpu-test-img-job:
   stage: test-img
   script:
+    - echo "Cleaning repository..."
+    - git clean -fx -e $BIN_DIR
     - echo "Running image tests..."
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 31.42 --threshold 755 --clamp_indirect 8.0 --denoise
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.70 --threshold 8653 --clamp_indirect 8.0
