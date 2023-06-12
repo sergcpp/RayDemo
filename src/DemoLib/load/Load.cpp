@@ -504,7 +504,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_env.Has("env_map")) {
                     const JsString &js_env_map = js_env.at("env_map").as_str();
-                    env_desc.env_map = get_texture(js_env_map.val, false /* srgb */, false /* normalmap */, false);
+                    if (js_env_map.val == "physical_sky") {
+                        env_desc.env_map = Ray::PhysicalSkyTexture;
+                    } else {
+                        env_desc.env_map = get_texture(js_env_map.val, false /* srgb */, false /* normalmap */, false);
+                    }
                 }
 
                 if (js_env.Has("env_map_rot")) {
@@ -523,7 +527,12 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_env.Has("back_map")) {
                     const JsString &js_back_map = js_env.at("back_map").as_str();
-                    env_desc.back_map = get_texture(js_back_map.val, false /* srgb */, false /* normalmap */, false);
+                    if (js_back_map.val == "physical_sky") {
+                        env_desc.back_map = Ray::PhysicalSkyTexture;
+                    } else {
+                        env_desc.back_map =
+                            get_texture(js_back_map.val, false /* srgb */, false /* normalmap */, false);
+                    }
                 }
 
                 if (js_env.Has("back_map_rot")) {
