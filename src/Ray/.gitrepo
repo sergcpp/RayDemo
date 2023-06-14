@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = phys_sky
-	commit = 8615d8a7d34a305ff1ba9e455a0fac05eff7ac69
+	branch = sun_fix
+	commit = 0c4863da369a2fc9bae9c9d7b858bcd6404f1382
 	method = merge
 	cmdver = 0.4.6
-	parent = a575f1c8fd24703fd590f4b16319325a742684eb
+	parent = af9a12b88a506b90532647411fd3186aa53d9243
