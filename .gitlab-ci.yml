@@ -259,7 +259,7 @@ stages:
     - '& "$BIN_DIR/test_SW"'
     - '& "$BIN_DIR/test_Sys"'
     - cd src/Ray/tests
-    - '& "../../../$BIN_DIR/test_Ray" $TEST_ARGS.split(" ") $AUX_TEST_ARGS.split(" ")'
+    - '& "../../../$BIN_DIR/test_Ray" --mt $TEST_ARGS.split(" ") $AUX_TEST_ARGS.split(" ")'
     - cd ../../../
   after_script:
     - cp src/Ray/tests/test_data/material_*.tga ./
@@ -279,7 +279,7 @@ stages:
     - '& git clean -fx -e "$BIN_DIR"'
     - echo "Running tests..."
     - cd src/Ray/tests
-    - '& "../../../$BIN_DIR/test_Ray" $AUX_TEST_ARGS.split(" ")'
+    - '& "../../../$BIN_DIR/test_Ray" --mt $AUX_TEST_ARGS.split(" ")'
     - cd ../../../
   after_script:
     - cp src/Ray/tests/test_data/material_*.tga ./
@@ -343,7 +343,7 @@ stages:
     - $BIN_DIR/test_SW
     - $BIN_DIR/test_Sys
     - cd src/Ray/tests
-    - ../../../$BIN_DIR/test_Ray $TEST_ARGS $AUX_TEST_ARGS
+    - ../../../$BIN_DIR/test_Ray --mt $TEST_ARGS $AUX_TEST_ARGS
     - cd ../../../
   after_script:
     - cp src/Ray/tests/test_data/material_*.tga ./
@@ -600,7 +600,7 @@ windows-arm64-gpu-adreno-test-job:
 windows-arm64-cpu-perf-test-job:
   variables:
     BIN_DIR: windows-arm64
-    AUX_TEST_ARGS: '--nogpu --time_limit 16.2'
+    AUX_TEST_ARGS: '--nogpu --time_limit 16.4'
   extends:
     - .windows-perf-test-job
   needs:
