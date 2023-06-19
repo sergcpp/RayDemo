@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = mt_tests
-	commit = a8f24572cafac8472dab47dfd18de7a45f7d55ce
+	branch = master
+	commit = 6f772865e3223db03c18e5af21c2f5f8491e8d71
 	method = merge
 	cmdver = 0.4.6
-	parent = 6430489a2e3ee78367641d3ad98c45e69f369fd2
+	parent = 5c484e63802ea4e88e9375b8bf8021f1e0f31039
