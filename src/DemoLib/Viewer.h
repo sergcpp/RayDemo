@@ -26,6 +26,7 @@ struct AppParams {
     int total_depth = 8;
     int max_tex_res = -1;
     int denoise_after = -1;
+    int denoise_method = 1; // 0 - NLM, 1 - UNet
     bool output_exr = false;
     bool output_aux = false;
     float clamp_direct = 0.0f;
