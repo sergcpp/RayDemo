@@ -15,7 +15,7 @@ class FontStorage;
 namespace Sys {
 class ThreadPool;
 struct TaskList;
-}
+} // namespace Sys
 
 namespace Gui {
 class BaseElement;
@@ -37,6 +37,8 @@ class GSRayTest : public GameState {
 
     std::shared_ptr<Sys::ThreadPool> threads_;
     std::unique_ptr<Sys::TaskList> render_tasks_, render_and_denoise_tasks_;
+
+    int unet_denoise_passes_ = -1;
 
     bool animate_ = false;
     bool view_grabbed_ = false;

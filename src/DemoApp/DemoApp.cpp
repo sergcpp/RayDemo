@@ -246,6 +246,12 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.output_aux = true;
         } else if (strcmp(argv[i], "--denoise") == 0) {
             app_params.denoise_after = 1;
+        } else if (strcmp(argv[i], "--denoise_method") == 0 && (++i != argc)) {
+            if (strcmp(argv[i], "nlm") == 0) {
+                app_params.denoise_method = 0;
+            } else if (strcmp(argv[i], "unet") == 0) {
+                app_params.denoise_method = 1;
+            }
         } else if (strcmp(argv[i], "--denoise_after") == 0 && (++i != argc)) {
             app_params.denoise_after = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--clamp_direct") == 0 && (++i != argc)) {

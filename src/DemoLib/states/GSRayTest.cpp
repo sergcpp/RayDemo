@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <vector>
 
 #include <SOIL2/stb_image_write.h>
 
@@ -13,6 +14,7 @@
 #include <SW/SW.h>
 #include <SW/SWframebuffer.h>
 #include <Sys/Json.h>
+#include <Sys/ScopeExit.h>
 #include <Sys/ThreadPool.h>
 #include <Sys/Time_.h>
 
@@ -48,16 +50,26 @@ void GSRayTest::UpdateRegionContexts() {
     region_contexts_.clear();
 
     const auto rt = ray_renderer_->type();
-    const auto sz = ray_renderer_->size();
+    int w, h;
+    std::tie(w, h) = ray_renderer_->size();
+
+    auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
+
+    Ray::unet_filter_properties_t unet_props;
+    if (app_params->denoise_method == 1) {
+        ray_renderer_->InitUNetFilter(true, unet_props);
+        unet_denoise_passes_ = unet_props.pass_count;
+    } else {
+        unet_denoise_passes_ = -1;
+    }
 
     if (Ray::RendererSupportsMultithreading(rt)) {
-        const int BucketSize = 32;
+        const int TileSize = 64;
 
-        for (int y = 0; y < sz.second; y += BucketSize) {
+        for (int y = 0; y < h; y += TileSize) {
             region_contexts_.emplace_back();
-            for (int x = 0; x < sz.first; x += BucketSize) {
-                const auto rect =
-                    Ray::rect_t{x, y, std::min(sz.first - x, BucketSize), std::min(sz.second - y, BucketSize)};
+            for (int x = 0; x < w; x += TileSize) {
+                const auto rect = Ray::rect_t{x, y, std::min(w - x, TileSize), std::min(h - y, TileSize)};
 
                 region_contexts_.back().emplace_back(rect);
             }
@@ -71,12 +83,20 @@ void GSRayTest::UpdateRegionContexts() {
             ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i][j]);
         };
 
-        auto denoise_job = [this](const int i, const int j) {
+        auto denoise_job_nlm = [this](const int i, const int j) {
 #if !defined(NDEBUG) && defined(_WIN32)
             unsigned old_value;
             _controlfp_s(&old_value, _EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
 #endif
             ray_renderer_->DenoiseImage(region_contexts_[i][j]);
+        };
+
+        auto denoise_job_unet = [this](const int pass, const int i, const int j) {
+#if !defined(NDEBUG) && defined(_WIN32)
+            unsigned old_value;
+            _controlfp_s(&old_value, _EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
+#endif
+            ray_renderer_->DenoiseImage(pass, region_contexts_[i][j]);
         };
 
         std::vector<Sys::SmallVector<short, 128>> render_task_ids;
@@ -91,9 +111,20 @@ void GSRayTest::UpdateRegionContexts() {
                 render_task_ids.back().emplace_back(render_and_denoise_tasks_->AddTask(render_job, i, j));
             }
         }
+
+        std::vector<Sys::SmallVector<short, 128>> denoise_task_ids[16];
+
         for (int i = 0; i < int(region_contexts_.size()); ++i) {
+            denoise_task_ids[0].emplace_back();
             for (int j = 0; j < int(region_contexts_[i].size()); ++j) {
-                const short id = render_and_denoise_tasks_->AddTask(denoise_job, i, j);
+                short id = -1;
+                if (app_params->denoise_method == 0) {
+                    id = render_and_denoise_tasks_->AddTask(denoise_job_nlm, i, j);
+                } else if (app_params->denoise_method == 1) {
+                    id = render_and_denoise_tasks_->AddTask(denoise_job_unet, 0, i, j);
+                }
+
+                denoise_task_ids[0].back().push_back(id);
 
                 for (int k = -1; k <= 1; ++k) {
                     if (i + k < 0 || i + k >= int(render_task_ids.size())) {
@@ -109,30 +140,67 @@ void GSRayTest::UpdateRegionContexts() {
             }
         }
 
+        if (app_params->denoise_method == 1) {
+            for (int pass = 1; pass < unet_props.pass_count; ++pass) {
+                for (int y = 0, i = 0; y < h; y += TileSize, ++i) {
+                    denoise_task_ids[pass].emplace_back();
+                    for (int x = 0, j = 0; x < w; x += TileSize, ++j) {
+                        const short id = render_and_denoise_tasks_->AddTask(denoise_job_unet, pass, i, j);
+
+                        denoise_task_ids[pass].back().push_back(id);
+
+                        // Always assume dependency on previous pass
+                        for (int k = -1; k <= 1; ++k) {
+                            if (i + k < 0 || i + k >= int(denoise_task_ids[pass - 1].size())) {
+                                continue;
+                            }
+                            for (int l = -1; l <= 1; ++l) {
+                                if (j + l < 0 || j + l >= int(denoise_task_ids[pass - 1][i + k].size())) {
+                                    continue;
+                                }
+                                render_and_denoise_tasks_->AddDependency(id, denoise_task_ids[pass - 1][i + k][j + l]);
+                            }
+                        }
+
+                        // Account for aliasing dependency (wait for all tasks which use this memory region)
+                        for (int ndx : unet_props.alias_dependencies[pass]) {
+                            if (ndx == -1) {
+                                break;
+                            }
+                            for (const auto &deps : denoise_task_ids[ndx]) {
+                                for (const short dep : deps) {
+                                    render_and_denoise_tasks_->AddDependency(id, dep);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         render_tasks_->Sort();
         render_and_denoise_tasks_->Sort();
         assert(!render_and_denoise_tasks_->HasCycles());
     } else {
 #if 1
-        const auto rect = Ray::rect_t{0, 0, sz.first, sz.second};
+        const auto rect = Ray::rect_t{0, 0, w, h};
         region_contexts_.emplace_back();
         region_contexts_.back().emplace_back(rect);
 #else
-        const int BucketSize = 32;
+        const int BucketSize = 64;
 
         bool skip_tile = false;
-        for (int y = 0; y < sz.second; y += BucketSize) {
+        for (int y = 0; y < h; y += BucketSize) {
             skip_tile = !skip_tile;
 
             region_contexts_.emplace_back();
-            for (int x = 0; x < sz.first; x += BucketSize) {
+            for (int x = 0; x < w; x += BucketSize) {
                 skip_tile = !skip_tile;
                 if (skip_tile) {
                     continue;
                 }
 
-                const auto rect =
-                    Ray::rect_t{x, y, std::min(sz.first - x, BucketSize), std::min(sz.second - y, BucketSize)};
+                const auto rect = Ray::rect_t{x, y, std::min(w - x, BucketSize), std::min(h - y, BucketSize)};
                 region_contexts_.back().emplace_back(rect);
             }
         }
@@ -235,6 +303,8 @@ void GSRayTest::Enter() {
 void GSRayTest::Exit() {}
 
 void GSRayTest::Draw(const uint64_t dt_us) {
+    using namespace GSRayTestInternal;
+
     const uint64_t t1 = Sys::GetTimeMs();
     auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
 
@@ -289,9 +359,19 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             }
         }
         if (denoise_image) {
-            for (const auto &regions_row : region_contexts_) {
-                for (const auto &region : regions_row) {
-                    ray_renderer_->DenoiseImage(region);
+            if (unet_denoise_passes_ != -1) {
+                for (int pass = 0; pass < unet_denoise_passes_; ++pass) {
+                    for (const auto &regions_row : region_contexts_) {
+                        for (const auto &region : regions_row) {
+                            ray_renderer_->DenoiseImage(pass, region);
+                        }
+                    }
+                }
+            } else {
+                for (const auto &regions_row : region_contexts_) {
+                    for (const auto &region : regions_row) {
+                        ray_renderer_->DenoiseImage(region);
+                    }
                 }
             }
         }
