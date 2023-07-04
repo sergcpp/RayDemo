@@ -137,9 +137,9 @@ template <typename T, int AlignmentOfT = alignof(T)> class SmallVectorImpl {
         }
 
         if (rhs.capacity_ & OwnerBit) {
-            begin_ = exchange(rhs.begin_, nullptr);
-            end_ = exchange(rhs.end_, nullptr);
-            capacity_ = exchange(rhs.capacity_, 0);
+            begin_ = Sys::exchange(rhs.begin_, nullptr);
+            end_ = Sys::exchange(rhs.end_, nullptr);
+            capacity_ = Sys::exchange(rhs.capacity_, 0);
         } else {
             reserve(rhs.capacity_ & CapacityMask);
 
