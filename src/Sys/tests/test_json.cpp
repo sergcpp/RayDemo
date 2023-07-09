@@ -159,8 +159,6 @@ void test_json() {
             std::stringstream ss;
             a1.Write(ss);
 
-            volatile int ii  =0;
-
             JsArrayP a2(my_alloc);
             require(a2.Read(ss));
             require(a2.Size() == 3);
