@@ -262,7 +262,11 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
         if (invalidate_preview_ || last_invalidate_) {
             ray_renderer_->Clear({0, 0, 0, 0});
-            UpdateRegionContexts();
+            for (auto &ctxs : region_contexts_) {
+                for (auto &ctx : ctxs) {
+                    ctx.Clear();
+                }
+            }
             invalidate_preview_ = false;
         }
     }
