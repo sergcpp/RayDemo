@@ -17,8 +17,8 @@
 
 #include <algorithm>
 #include <chrono>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 
 #ifdef _WIN32
 #include <renderdoc/renderdoc_app.h>
@@ -31,8 +31,10 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+// clang-format off
 #include <Windows.h>
 #include <WinPixEventRuntime/pix3.h>
+// clang-format on
 #endif
 
 #include <DemoLib/Viewer.h>
@@ -254,6 +256,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             }
         } else if (strcmp(argv[i], "--denoise_after") == 0 && (++i != argc)) {
             app_params.denoise_after = int(strtol(argv[i], nullptr, 10));
+        } else if (strcmp(argv[i], "--iteration_steps") == 0 && (++i != argc)) {
+            app_params.iteration_steps = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--clamp_direct") == 0 && (++i != argc)) {
             app_params.clamp_direct = float(atof(argv[i]));
         } else if (strcmp(argv[i], "--clamp_indirect") == 0 && (++i != argc)) {

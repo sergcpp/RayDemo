@@ -347,30 +347,34 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         app_params->denoise_after != -1 && region_contexts_[0][0].iteration >= app_params->denoise_after;
 
     if (Ray::RendererSupportsMultithreading(rt)) {
-        if (denoise_image) {
-            threads_->Enqueue(*render_and_denoise_tasks_).wait();
-        } else {
-            threads_->Enqueue(*render_tasks_).wait();
-        }
-    } else {
-        for (auto &regions_row : region_contexts_) {
-            for (auto &region : regions_row) {
-                ray_renderer_->RenderScene(ray_scene_.get(), region);
+        for (int i = 0; i < app_params->iteration_steps; ++i) {
+            if (denoise_image && i == app_params->iteration_steps - 1) {
+                threads_->Enqueue(*render_and_denoise_tasks_).wait();
+            } else {
+                threads_->Enqueue(*render_tasks_).wait();
             }
         }
-        if (denoise_image) {
-            if (unet_denoise_passes_ != -1) {
-                for (int pass = 0; pass < unet_denoise_passes_; ++pass) {
-                    for (const auto &regions_row : region_contexts_) {
-                        for (const auto &region : regions_row) {
-                            ray_renderer_->DenoiseImage(pass, region);
+    } else {
+        for (int i = 0; i < app_params->iteration_steps; ++i) {
+            for (auto &regions_row : region_contexts_) {
+                for (auto &region : regions_row) {
+                    ray_renderer_->RenderScene(ray_scene_.get(), region);
+                }
+            }
+            if (denoise_image && i == app_params->iteration_steps - 1) {
+                if (unet_denoise_passes_ != -1) {
+                    for (int pass = 0; pass < unet_denoise_passes_; ++pass) {
+                        for (const auto &regions_row : region_contexts_) {
+                            for (const auto &region : regions_row) {
+                                ray_renderer_->DenoiseImage(pass, region);
+                            }
                         }
                     }
-                }
-            } else {
-                for (const auto &regions_row : region_contexts_) {
-                    for (const auto &region : regions_row) {
-                        ray_renderer_->DenoiseImage(region);
+                } else {
+                    for (const auto &regions_row : region_contexts_) {
+                        for (const auto &region : regions_row) {
+                            ray_renderer_->DenoiseImage(region);
+                        }
                     }
                 }
             }
