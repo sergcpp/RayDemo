@@ -402,6 +402,8 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         if (stats_.size() > 128) {
             stats_.erase(stats_.begin());
         }
+
+        // ray_renderer_->log()->Info("Denoise time: %fms", st.time_denoise_us * 0.001);
     }
 
     unsigned long long time_total = 0;
