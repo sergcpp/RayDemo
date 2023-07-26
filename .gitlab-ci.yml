@@ -438,7 +438,7 @@ windows-x86_64-cpu-test-job:
   needs:
     - windows-x86_64-build-job
   tags:
-    - windows,x86_64,fastcpu,avx512
+    - windows,x86_64,avx512
 
 windows-x86_64-gpu-amd-test-job:
   variables:
@@ -493,7 +493,7 @@ windows-x86_64-cpu-test-img-job:
   needs:
     - windows-x86_64-build-job
   tags:
-    - windows,x86_64,fastcpu
+    - windows,x86_64
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
@@ -558,7 +558,7 @@ windows-arm64-cpu-test-job:
   needs:
     - windows-arm64-build-job
   tags:
-    - windows,arm64,fastcpu
+    - windows,arm64
 
 windows-arm64-gpu-adreno-test-job:
   variables:
@@ -606,7 +606,7 @@ windows-arm64-cpu-test-img-job:
   needs:
     - windows-arm64-build-job
   tags:
-    - windows,arm64,fastcpu
+    - windows,arm64
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
@@ -632,7 +632,7 @@ linux-x86_64-cpu-test-job:
   needs:
     - linux-x86_64-build-job
   tags:
-    - linux,x86_64,fastcpu
+    - linux,x86_64
 
 linux-x86_64-gpu-nv-test-job:
   variables:
@@ -665,7 +665,7 @@ linux-x86_64-cpu-test-img-job:
   needs:
     - linux-x86_64-build-job
   tags:
-    - linux,x86_64,fastcpu
+    - linux,x86_64
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
