@@ -3,7 +3,7 @@
 #include <regex>
 #include <sstream>
 
-#include <Ray/RendererFactory.h>
+#include <Ray/Ray.h>
 #include <Sys/AssetFile.h>
 #include <Sys/Json.h>
 
