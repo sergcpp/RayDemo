@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include <Ray/RendererFactory.h>
+#include <Ray/Ray.h>
 #include <SW/SW.h>
 #include <SW/SWframebuffer.h>
 #include <Sys/Json.h>
