@@ -97,6 +97,12 @@ set_target_properties(Ray
                       SW
                       SOIL2 PROPERTIES FOLDER Libs)
 
+set_target_properties(00_basic
+                      01_texturing
+                      02_multithreading
+                      03_principled
+                      04_denoising PROPERTIES FOLDER Samples)
+
 set_target_properties(test_Ray
                       test_SW
                       test_Sys PROPERTIES FOLDER Tests)
