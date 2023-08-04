@@ -118,7 +118,7 @@ stages:
     - cd build
     - cmake .. -G "Visual Studio 17 2022" -A ARM64 -DCMAKE_UNITY_BUILD=ON -DENABLE_VK_IMPL=OFF -DENABLE_DX_IMPL=ON
     - cd ..
-    - cmake --build build --target DemoApp test_Ray test_SW test_Sys --config Release --parallel 16
+    - cmake --build build --target ALL_BUILD --config Release --parallel 16
     - echo "Compile complete."
     - mkdir windows-arm64
     - copy build/src/Ray/tests/Release/test_Ray.exe windows-arm64
@@ -171,7 +171,7 @@ stages:
     - cd build
     - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=ON
     - cd ..
-    - cmake --build build --target DemoApp test_Ray test_SW test_Sys --parallel 16
+    - cmake --build build --target all --parallel 16
     - echo "Compile complete."
     - mkdir macos-x86_64
     - cp build/src/Ray/tests/test_Ray macos-x86_64
@@ -193,7 +193,7 @@ stages:
     - cd build
     - cmake .. -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=ON
     - cd ..
-    - cmake --build build --target DemoApp test_Ray test_SW test_Sys --parallel 16
+    - cmake --build build --target all --parallel 16
     - echo "Compile complete."
     - mkdir macos-arm64
     - cp build/src/Ray/tests/test_Ray macos-arm64
