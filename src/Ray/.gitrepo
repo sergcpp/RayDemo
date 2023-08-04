@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = tlsf_alloc
-	commit = cf2ba388e209c321481b402e6e6f5870d87f3b78
+	branch = samples
+	commit = 06cb5aad983317906cf52553236acb9cd267c41c
 	method = merge
 	cmdver = 0.4.6
-	parent = f30a4d01c733d9f4e8626e48dc06842ed86f2f75
+	parent = 8f5497fb86fc6c5bb355574128e29ce275133587
