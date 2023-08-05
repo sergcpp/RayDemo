@@ -791,12 +791,13 @@ deploy-job:
   rules:
     - if: $CI_COMMIT_BRANCH
 
-deploy-job-full:
+deploy-job-full-base:
   stage: deploy
   variables:
     GIT_STRATEGY: none
   script:
     - echo "Deploying application..."
+    - cp windows-x86_64/DemoApp.exe ./
     - echo "Application successfully deployed."
   needs:
     - linux-x86_64-build-job
@@ -804,19 +805,136 @@ deploy-job-full:
     - windows-arm64-build-job
     - windows-x86_64-build-job
   artifacts:
+    name: "base_$CI_COMMIT_TAG"
     paths:
       - assets/fonts/
-      - assets/meshes/
-      - assets/references/
-      - assets/scenes/
-      - assets/textures/
+      - assets/meshes/bathroom/
+      - assets/meshes/coffee_maker/
+      - assets/meshes/mat_test/
+      - assets/meshes/staircase.bin
+      - assets/scenes/bathroom.json
+      - assets/scenes/coffee_maker.json
+      - assets/scenes/mat_test.json
+      - assets/scenes/staircase.json
+      - assets/textures/bathroom/
+      - assets/textures/staircase/
+      - assets/textures/mat_test/
       - assets/config.json
       - windows-x86_64/
       - windows-arm64/
       - linux-x86_64/
       - macos-universal/
+      - DemoApp.exe
+      - run_bathroom_cpu.bat
+      - run_bathroom_gpu.bat
+      - run_coffee_cpu.bat
+      - run_coffee_gpu.bat
+      - run_staircase_cpu.bat
+      - run_staircase_gpu.bat
     expire_in: 1 week
   tags:
-    - deployer
+    - deployer,linux
+  rules:
+    - if: $CI_COMMIT_TAG
+
+deploy-job-full-sponza:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "Deploying application..."
+    - cp windows-x86_64/DemoApp.exe ./
+    - echo "Application successfully deployed."
+  needs:
+    - linux-x86_64-build-job
+    - macos-universal-prepare-job
+    - windows-arm64-build-job
+    - windows-x86_64-build-job
+  artifacts:
+    name: "sponza_$CI_COMMIT_TAG"
+    paths:
+      - assets/fonts/
+      - assets/meshes/sponza/
+      - assets/scenes/sponza.json
+      - assets/textures/sponza/
+      - assets/config.json
+      - windows-x86_64/
+      - windows-arm64/
+      - linux-x86_64/
+      - macos-universal/
+      - DemoApp.exe
+      - run_sponza_cpu.bat
+      - run_sponza_gpu.bat
+    expire_in: 1 week
+  tags:
+    - deployer,linux
+  rules:
+    - if: $CI_COMMIT_TAG
+
+deploy-job-full-ai043:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "Deploying application..."
+    - cp windows-x86_64/DemoApp.exe ./
+    - echo "Application successfully deployed."
+  needs:
+    - linux-x86_64-build-job
+    - macos-universal-prepare-job
+    - windows-arm64-build-job
+    - windows-x86_64-build-job
+  artifacts:
+    name: "ai043_$CI_COMMIT_TAG"
+    paths:
+      - assets/fonts/
+      - assets/meshes/ai043_01/
+      - assets/scenes/ai043_01.json
+      - assets/textures/ai043_01/
+      - assets/config.json
+      - windows-x86_64/
+      - windows-arm64/
+      - linux-x86_64/
+      - macos-universal/
+      - DemoApp.exe
+      - run_ai043_cpu.bat
+      - run_ai043_gpu.bat
+    expire_in: 1 week
+  tags:
+    - deployer,linux
+  rules:
+    - if: $CI_COMMIT_TAG
+
+deploy-job-full-italian_flat:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "Deploying application..."
+    - cp windows-x86_64/DemoApp.exe ./
+    - echo "Application successfully deployed."
+  needs:
+    - linux-x86_64-build-job
+    - macos-universal-prepare-job
+    - windows-arm64-build-job
+    - windows-x86_64-build-job
+  artifacts:
+    name: "italian_flat_$CI_COMMIT_TAG"
+    paths:
+      - assets/fonts/
+      - assets/meshes/italian_flat/
+      - assets/scenes/italian_flat.json
+      - assets/textures/italian_flat/
+      - assets/config.json
+      - windows-x86_64/
+      - windows-arm64/
+      - linux-x86_64/
+      - macos-universal/
+      - DemoApp.exe
+      - run_italian_flat_cpu.bat
+      - run_italian_flat_gpu.bat
+    expire_in: 1 week
+  tags:
+    - deployer,linux
   rules:
     - if: $CI_COMMIT_TAG
