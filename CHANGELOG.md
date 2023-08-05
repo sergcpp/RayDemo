@@ -7,6 +7,14 @@
 ### Changed
 ### Removed
 
+## [0.6.0] - 2023-08-05
+
+### Added
+
+  - Basic PIX capturing
+  - Physical sky to sponza scene
+  - Cmdline '--iteration_steps' option
+
 ## [0.5.0] - 2023-05-01
 
 ### Added
@@ -160,7 +168,8 @@
   - BVH construction uses binning now for significant speedup
   - Shadow rays are traced in seperate stage
 
-[Unreleased]: https://gitlab.com/sergcpp/raydemo/-/compare/v0.5.0...master
+[Unreleased]: https://gitlab.com/sergcpp/raydemo/-/compare/v0.6.0...master
+[0.6.0]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.6.0
 [0.5.0]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.5.0
 [0.4.5]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.4.5
 [0.4.0]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.4.0
