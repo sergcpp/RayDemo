@@ -9,12 +9,16 @@ Test application for a Ray library bundled with many test scenes. Mostly needed 
     https://benedikt-bitterli.me/resources/  \
     https://www.blender.org/download/demo-files/  \
     https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html  \
+    https://developer.nvidia.com/orca/amazon-lumberyard-bistro \
     https://evermotion.org/shop/show_product/scene-1-ai43-archinteriors-for-blender/14564
 
 <div>
 <div float="left" >
   <img src="italian_flat.png" width="47.0%" />
   <img src="ai043_01.png" width="42.4%" />
+</div>
+<div float="left" >
+  <img src="bistro.png" width="89.75%" />
 </div>
 <div float="left" >
   <img src="bathroom.png" width="26.55%" />
