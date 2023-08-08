@@ -159,6 +159,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             }
         }
         if (!img_data) {
+            new_scene->log()->Error("Failed to load image %s", name.c_str());
             throw std::runtime_error("Cannot load image!");
         }
 
@@ -491,114 +492,58 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         if (js_scene.Has("environment")) {
             const JsObject &js_env = js_scene.at("environment").as_obj();
 
-            {
-                Ray::environment_desc_t env_desc;
-                env_desc.env_col[0] = env_desc.env_col[1] = env_desc.env_col[2] = 0.0f;
+            Ray::environment_desc_t env_desc;
 
-                if (js_env.Has("env_col")) {
-                    const JsArray &js_env_col = js_env.at("env_col").as_arr();
-                    env_desc.env_col[0] = float(js_env_col.at(0).as_num().val);
-                    env_desc.env_col[1] = float(js_env_col.at(1).as_num().val);
-                    env_desc.env_col[2] = float(js_env_col.at(2).as_num().val);
-                }
+            if (js_env.Has("env_col")) {
+                const JsArray &js_env_col = js_env.at("env_col").as_arr();
+                env_desc.env_col[0] = float(js_env_col.at(0).as_num().val);
+                env_desc.env_col[1] = float(js_env_col.at(1).as_num().val);
+                env_desc.env_col[2] = float(js_env_col.at(2).as_num().val);
+            }
 
-                if (js_env.Has("env_map")) {
-                    const JsString &js_env_map = js_env.at("env_map").as_str();
-                    if (js_env_map.val == "physical_sky") {
-                        env_desc.env_map = Ray::PhysicalSkyTexture;
-                    } else {
-                        env_desc.env_map = get_texture(js_env_map.val, false /* srgb */, false /* normalmap */, false);
-                    }
-                }
-
-                if (js_env.Has("env_map_rot")) {
-                    const JsNumber &js_env_map_rot = js_env.at("env_map_rot").as_num();
-                    env_desc.env_map_rotation = float(js_env_map_rot.val) * Ren::Pi<float>() / 180.0f;
-                }
-
-                if (js_env.Has("back_col")) {
-                    const JsArray &js_back_col = js_env.at("back_col").as_arr();
-                    env_desc.back_col[0] = float(js_back_col.at(0).as_num().val);
-                    env_desc.back_col[1] = float(js_back_col.at(1).as_num().val);
-                    env_desc.back_col[2] = float(js_back_col.at(2).as_num().val);
+            if (js_env.Has("env_map")) {
+                const JsString &js_env_map = js_env.at("env_map").as_str();
+                if (js_env_map.val == "physical_sky") {
+                    env_desc.env_map = Ray::PhysicalSkyTexture;
                 } else {
-                    memcpy(env_desc.back_col, env_desc.env_col, 3 * sizeof(float));
-                }
-
-                if (js_env.Has("back_map")) {
-                    const JsString &js_back_map = js_env.at("back_map").as_str();
-                    if (js_back_map.val == "physical_sky") {
-                        env_desc.back_map = Ray::PhysicalSkyTexture;
-                    } else {
-                        env_desc.back_map =
-                            get_texture(js_back_map.val, false /* srgb */, false /* normalmap */, false);
-                    }
-                }
-
-                if (js_env.Has("back_map_rot")) {
-                    const JsNumber &js_back_map_rot = js_env.at("back_map_rot").as_num();
-                    env_desc.back_map_rotation = float(js_back_map_rot.val) * Ren::Pi<float>() / 180.0f;
-                }
-
-                if (js_env.Has("multiple_importance")) {
-                    const JsLiteral &js_mult_imp = js_env.at("multiple_importance").as_lit();
-                    env_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
-                }
-
-                new_scene->SetEnvironment(env_desc);
-            }
-
-            if ((js_env.Has("sun_dir") || js_env.Has("sun_rot")) && js_env.Has("sun_col")) {
-                Ray::directional_light_desc_t sun_desc;
-
-                if (js_env.Has("sun_dir")) {
-                    const JsArray &js_sun_dir = js_env.at("sun_dir").as_arr();
-                    sun_desc.direction[0] = float(js_sun_dir.at(0).as_num().val);
-                    sun_desc.direction[1] = float(js_sun_dir.at(1).as_num().val);
-                    sun_desc.direction[2] = float(js_sun_dir.at(2).as_num().val);
-                } else if (js_env.Has("sun_rot")) {
-                    const JsArray &js_sun_rot = js_env.at("sun_rot").as_arr();
-
-                    const float rot[3] = {float(js_sun_rot.at(0).as_num().val) * Ren::Pi<float>() / 180.0f,
-                                          float(js_sun_rot.at(1).as_num().val) * Ren::Pi<float>() / 180.0f,
-                                          float(js_sun_rot.at(2).as_num().val) * Ren::Pi<float>() / 180.0f};
-
-                    Ren::Mat4f transform;
-                    transform = Ren::Rotate(transform, rot[2], Ren::Vec3f{0.0f, 0.0f, 1.0f});
-                    transform = Ren::Rotate(transform, rot[0], Ren::Vec3f{1.0f, 0.0f, 0.0f});
-                    transform = Ren::Rotate(transform, rot[1], Ren::Vec3f{0.0f, 1.0f, 0.0f});
-
-                    const Ren::Vec4f sun_dir = Normalize(transform * Ren::Vec4f{0.0f, -1.0f, 0.0f, 0.0f});
-                    sun_desc.direction[0] = sun_dir[0];
-                    sun_desc.direction[1] = sun_dir[1];
-                    sun_desc.direction[2] = sun_dir[2];
-                }
-
-                const JsArray &js_sun_col = js_env.at("sun_col").as_arr();
-
-                sun_desc.color[0] = float(js_sun_col.at(0).as_num().val);
-                sun_desc.color[1] = float(js_sun_col.at(1).as_num().val);
-                sun_desc.color[2] = float(js_sun_col.at(2).as_num().val);
-
-                if (js_env.Has("sun_strength")) {
-                    const JsNumber &js_sun_strength = js_env.at("sun_strength").as_num();
-
-                    sun_desc.color[0] *= float(js_sun_strength.val);
-                    sun_desc.color[1] *= float(js_sun_strength.val);
-                    sun_desc.color[2] *= float(js_sun_strength.val);
-                }
-
-                sun_desc.angle = 0.0f;
-                if (js_env.Has("sun_angle")) {
-                    const JsNumber &js_sun_softness = js_env.at("sun_angle").as_num();
-                    sun_desc.angle = float(js_sun_softness.val);
-                }
-
-                if ((sun_desc.direction[0] != 0.0f || sun_desc.direction[1] != 0.0f || sun_desc.direction[2] != 0.0f) &&
-                    sun_desc.color[0] != 0.0f && sun_desc.color[1] != 0.0f && sun_desc.color[2] != 0.0f) {
-                    new_scene->AddLight(sun_desc);
+                    env_desc.env_map = get_texture(js_env_map.val, false /* srgb */, false /* normalmap */, false);
                 }
             }
+
+            if (js_env.Has("env_map_rot")) {
+                const JsNumber &js_env_map_rot = js_env.at("env_map_rot").as_num();
+                env_desc.env_map_rotation = float(js_env_map_rot.val) * Ren::Pi<float>() / 180.0f;
+            }
+
+            if (js_env.Has("back_col")) {
+                const JsArray &js_back_col = js_env.at("back_col").as_arr();
+                env_desc.back_col[0] = float(js_back_col.at(0).as_num().val);
+                env_desc.back_col[1] = float(js_back_col.at(1).as_num().val);
+                env_desc.back_col[2] = float(js_back_col.at(2).as_num().val);
+            } else {
+                memcpy(env_desc.back_col, env_desc.env_col, 3 * sizeof(float));
+            }
+
+            if (js_env.Has("back_map")) {
+                const JsString &js_back_map = js_env.at("back_map").as_str();
+                if (js_back_map.val == "physical_sky") {
+                    env_desc.back_map = Ray::PhysicalSkyTexture;
+                } else {
+                    env_desc.back_map = get_texture(js_back_map.val, false /* srgb */, false /* normalmap */, false);
+                }
+            }
+
+            if (js_env.Has("back_map_rot")) {
+                const JsNumber &js_back_map_rot = js_env.at("back_map_rot").as_num();
+                env_desc.back_map_rotation = float(js_back_map_rot.val) * Ren::Pi<float>() / 180.0f;
+            }
+
+            if (js_env.Has("multiple_importance")) {
+                const JsLiteral &js_mult_imp = js_env.at("multiple_importance").as_lit();
+                env_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
+            }
+
+            new_scene->SetEnvironment(env_desc);
         }
 
         if (threads) {
@@ -1254,6 +1199,55 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                     if (new_light.color[0] > 0.0f || new_light.color[1] > 0.0f || new_light.color[2] > 0.0f) {
                         new_scene->AddLight(new_light, Ren::ValuePtr(transform));
+                    }
+                } else if (js_light_type.val == "directional") {
+                    Ray::directional_light_desc_t new_light;
+
+                    new_light.color[0] = float(js_color.at(0).as_num().val);
+                    new_light.color[1] = float(js_color.at(1).as_num().val);
+                    new_light.color[2] = float(js_color.at(2).as_num().val);
+
+                    if (js_light_obj.Has("dir")) {
+                        const JsArray &js_dir = js_light_obj.at("dir").as_arr();
+                        new_light.direction[0] = float(js_dir.at(0).as_num().val);
+                        new_light.direction[1] = float(js_dir.at(1).as_num().val);
+                        new_light.direction[2] = float(js_dir.at(2).as_num().val);
+                    } else if (js_light_obj.Has("rot")) {
+                        const JsArray &js_rot = js_light_obj.at("rot").as_arr();
+
+                        const float rot[3] = {float(js_rot.at(0).as_num().val) * Ren::Pi<float>() / 180.0f,
+                                              float(js_rot.at(1).as_num().val) * Ren::Pi<float>() / 180.0f,
+                                              float(js_rot.at(2).as_num().val) * Ren::Pi<float>() / 180.0f};
+
+                        Ren::Mat4f transform;
+                        transform = Ren::Rotate(transform, rot[2], Ren::Vec3f{0.0f, 0.0f, 1.0f});
+                        transform = Ren::Rotate(transform, rot[0], Ren::Vec3f{1.0f, 0.0f, 0.0f});
+                        transform = Ren::Rotate(transform, rot[1], Ren::Vec3f{0.0f, 1.0f, 0.0f});
+
+                        const Ren::Vec4f sun_dir = Normalize(transform * Ren::Vec4f{0.0f, -1.0f, 0.0f, 0.0f});
+                        new_light.direction[0] = sun_dir[0];
+                        new_light.direction[1] = sun_dir[1];
+                        new_light.direction[2] = sun_dir[2];
+                    }
+
+                    if (js_light_obj.Has("strength")) {
+                        const JsNumber &js_sun_strength = js_light_obj.at("strength").as_num();
+
+                        new_light.color[0] *= float(js_sun_strength.val);
+                        new_light.color[1] *= float(js_sun_strength.val);
+                        new_light.color[2] *= float(js_sun_strength.val);
+                    }
+
+                    new_light.angle = 0.0f;
+                    if (js_light_obj.Has("angle")) {
+                        const JsNumber &js_angle = js_light_obj.at("angle").as_num();
+                        new_light.angle = float(js_angle.val);
+                    }
+
+                    if ((new_light.direction[0] != 0.0f || new_light.direction[1] != 0.0f ||
+                         new_light.direction[2] != 0.0f) &&
+                        new_light.color[0] != 0.0f && new_light.color[1] != 0.0f && new_light.color[2] != 0.0f) {
+                        new_scene->AddLight(new_light);
                     }
                 }
             }
