@@ -93,6 +93,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             } else if (ends_with(_name, "@blue")) {
                 channel_to_extract = 2;
                 _name.resize(_name.size() - 5);
+            } else if (ends_with(_name, "@alpha")) {
+                channel_to_extract = 3;
+                _name.resize(_name.size() - 6);
             }
 
             if (ends_with(_name, ".jpg") || ends_with(_name, ".jpeg") || ends_with(_name, ".JPG") ||
