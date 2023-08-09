@@ -146,6 +146,7 @@ void stbi_decode_DXT23_alpha_block(
 }
 void stbi_decode_DXT45_alpha_block(
     unsigned char uncompressed[16*4],
+    int target_channel,
     unsigned char compressed[8] ) {
     int i, next_bit = 8*2;
     unsigned char decode_alpha[8];
@@ -169,7 +170,7 @@ void stbi_decode_DXT45_alpha_block(
         decode_alpha[6] = 0;
         decode_alpha[7] = 255;
     }
-    for( i = 3; i < 16*4; i += 4 ) {
+    for (i = target_channel; i < 16 * 4; i += 4) {
         int idx = 0, bit;
         bit = (compressed[next_bit>>3] >> (next_bit&7)) & 1;
         idx += bit << 0;
@@ -344,6 +345,10 @@ static stbi_uc * stbi__dds_load(stbi__context *s, int *x, int *y, int *comp, int
     s->img_x = header.dwWidth;
     s->img_y = header.dwHeight;
     s->img_n = 4;
+    int is_bc5 = header.sPixelFormat.dwFourCC == (('A' << 0) | ('T' << 8) | ('I' << 16) | ('2' << 24));
+    if (is_bc5) {
+        s->img_n = 2;
+    }
     is_compressed = (header.sPixelFormat.dwFlags & DDPF_FOURCC) / DDPF_FOURCC;
     has_alpha = (header.sPixelFormat.dwFlags & DDPF_ALPHAPIXELS) / DDPF_ALPHAPIXELS;
     has_mipmap = (header.sCaps.dwCaps1 & DDSCAPS_MIPMAP) && (header.dwMipMapCount > 1);
@@ -363,7 +368,7 @@ static stbi_uc * stbi__dds_load(stbi__context *s, int *x, int *y, int *comp, int
         /*	compressed	*/
         //	note: header.sPixelFormat.dwFourCC is something like (('D'<<0)|('X'<<8)|('T'<<16)|('1'<<24))
         DXT_family = 1 + (header.sPixelFormat.dwFourCC >> 24) - '1';
-        if( (DXT_family < 1) || (DXT_family > 5) ) return NULL;
+        if (((DXT_family < 1) || (DXT_family > 5)) && !is_bc5) return NULL;
         /*	check the expected size...oops, nevermind...
         	those non-compliant writers leave
         	dwPitchOrLinearSize == 0	*/
@@ -379,7 +384,12 @@ static stbi_uc * stbi__dds_load(stbi__context *s, int *x, int *y, int *comp, int
                 int ref_x = 4 * (i % block_pitch);
                 int ref_y = 4 * (i / block_pitch);
                 //	get the next block's worth of compressed data, and decompress it
-                if( DXT_family == 1 ) {
+                if (is_bc5) {
+                    stbi__getn(s, compressed, 8);
+                    stbi_decode_DXT45_alpha_block(block, 0, compressed);
+                    stbi__getn(s, compressed, 8);
+                    stbi_decode_DXT45_alpha_block(block, 1, compressed);
+                } else if( DXT_family == 1 ) {
                     //	DXT1
                     stbi__getn( s, compressed, 8 );
                     stbi_decode_DXT1_block( block, compressed );
@@ -392,7 +402,7 @@ static stbi_uc * stbi__dds_load(stbi__context *s, int *x, int *y, int *comp, int
                 } else {
                     //	DXT4/5
                     stbi__getn( s, compressed, 8 );
-                    stbi_decode_DXT45_alpha_block ( block, compressed );
+                    stbi_decode_DXT45_alpha_block ( block, 3, compressed );
                     stbi__getn( s, compressed, 8 );
                     stbi_decode_DXT_color_block ( block, compressed );
                 }
@@ -405,10 +415,17 @@ static stbi_uc * stbi__dds_load(stbi__context *s, int *x, int *y, int *comp, int
                 }
                 //	now drop our decompressed data into the buffer
                 for( by = 0; by < bh; ++by ) {
-                    int idx = 4*((ref_y+by+cf*s->img_x)*s->img_x + ref_x);
-                    for( bx = 0; bx < bw*4; ++bx ) {
-
-                        dds_data[idx+bx] = block[by*16+bx];
+                    if (is_bc5) {
+                        int idx = 2 * ((ref_y + by + cf * s->img_x) * s->img_x + ref_x);
+                        for (bx = 0; bx < bw; ++bx) {
+                            dds_data[idx + bx * 2 + 0] = block[by * 16 + bx * 4 + 0];
+                            dds_data[idx + bx * 2 + 1] = block[by * 16 + bx * 4 + 1];
+                        }
+                    } else {
+                        int idx = 4 * ((ref_y + by + cf * s->img_x) * s->img_x + ref_x);
+                        for (bx = 0; bx < bw * 4; ++bx) {
+                            dds_data[idx + bx] = block[by * 16 + bx];
+                        }
                     }
                 }
             }
