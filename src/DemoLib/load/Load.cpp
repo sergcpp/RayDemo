@@ -73,6 +73,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         int w, h, channels;
         uint8_t *img_data = nullptr;
         bool force_no_compression = false;
+        bool flip_y = false;
         if (ends_with(name, ".hdr")) {
             const std::vector<Ray::color_rgba8_t> temp = LoadHDR(name.c_str(), w, h);
 
@@ -96,6 +97,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             } else if (ends_with(_name, "@alpha")) {
                 channel_to_extract = 3;
                 _name.resize(_name.size() - 6);
+            } else if (ends_with(_name, "@flip_y")) {
+                flip_y = true;
+                _name.resize(_name.size() - 7);
             }
 
             if (ends_with(_name, ".jpg") || ends_with(_name, ".jpeg") || ends_with(_name, ".JPG") ||
@@ -205,6 +209,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         tex_desc.h = h;
         tex_desc.is_srgb = srgb;
         tex_desc.is_normalmap = normalmap;
+        tex_desc.flip_normalmap_y = flip_y;
         tex_desc.force_no_compression = force_no_compression;
         tex_desc.generate_mipmaps = gen_mipmaps;
 
