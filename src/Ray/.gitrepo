@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = normal_flip
-	commit = 7010e9002ca7fea8540c1444508b1777233e74fb
+	branch = basis_flip
+	commit = 7792114072644025de722d15ab7b6db5f669d4f7
 	method = merge
 	cmdver = 0.4.6
-	parent = d27be31af21176f571d2d7a52d419dadf5ba7373
+	parent = 0d72301f5b9ee9e03a6198177d31df5744dd0a40
