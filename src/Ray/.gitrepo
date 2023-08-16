@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = fixes_16_08
-	commit = a31e4635117885f6283f3b1adbb7b73631f5e657
+	branch = cpu_ram_fallback
+	commit = 3fedeef240fa0ab1e500c30a8413f1142046e3e5
 	method = merge
 	cmdver = 0.4.6
-	parent = bda37590ea4d4396456735819e70e2bfa1480b69
+	parent = 0657d3f8bc70c2798f301bf7e4809e538e482dc6
