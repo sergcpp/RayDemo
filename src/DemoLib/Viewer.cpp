@@ -69,12 +69,12 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
 
         std::shared_ptr<Ray::RendererBase> ray_renderer;
 
+        s.use_hwrt = (gpu_mode == 2);
+        s.use_bindless = !nobindless;
+        s.use_tex_compression = !nocompression;
         if (gpu_mode == 0) {
             ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get(), Ray::RendererCPU));
         } else {
-            s.use_hwrt = (gpu_mode == 2);
-            s.use_bindless = !nobindless;
-            s.use_tex_compression = !nocompression;
             ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get()));
         }
 
