@@ -355,12 +355,12 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     Ren::Vec4f view_vec = {0.0f, -1.0f, 0.0f, 0.0f};
                     view_vec = transform * view_vec;
 
-                    memcpy(&view_dir[0], Ren::ValuePtr(view_vec), 3 * sizeof(float));
+                    memcpy(&view_dir[0], ValuePtr(view_vec), 3 * sizeof(float));
 
                     Ren::Vec4f view_up_vec = {0.0f, 0.0f, -1.0f, 0.0f};
                     view_up_vec = transform * view_up_vec;
 
-                    memcpy(&view_up[0], Ren::ValuePtr(view_up_vec), 3 * sizeof(float));
+                    memcpy(&view_up[0], ValuePtr(view_up_vec), 3 * sizeof(float));
                 }
 
                 if (js_cam.Has("view_up")) {
@@ -1104,7 +1104,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     }
 
                     if (new_light.color[0] > 0.0f || new_light.color[1] > 0.0f || new_light.color[2] > 0.0f) {
-                        new_scene->AddLight(new_light, Ren::ValuePtr(transform));
+                        new_scene->AddLight(new_light, ValuePtr(transform));
                     }
                 } else if (js_light_type.val == "disk") {
                     Ray::disk_light_desc_t new_light;
@@ -1155,7 +1155,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     }
 
                     if (new_light.color[0] > 0.0f || new_light.color[1] > 0.0f || new_light.color[2] > 0.0f) {
-                        new_scene->AddLight(new_light, Ren::ValuePtr(transform));
+                        new_scene->AddLight(new_light, ValuePtr(transform));
                     }
                 } else if (js_light_type.val == "line") {
                     Ray::line_light_desc_t new_light;
@@ -1206,7 +1206,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     }
 
                     if (new_light.color[0] > 0.0f || new_light.color[1] > 0.0f || new_light.color[2] > 0.0f) {
-                        new_scene->AddLight(new_light, Ren::ValuePtr(transform));
+                        new_scene->AddLight(new_light, ValuePtr(transform));
                     }
                 } else if (js_light_type.val == "directional") {
                     Ray::directional_light_desc_t new_light;
@@ -1268,8 +1268,32 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             const Ren::Mat4f transform = parse_transform(js_mesh_instance_obj);
 
-            const Ray::MeshHandle mesh_handle = meshes.at(js_mesh_name.val);
-            new_scene->AddMeshInstance(mesh_handle, Ren::ValuePtr(transform));
+            Ray::mesh_instance_desc_t mi_desc;
+            mi_desc.mesh = meshes.at(js_mesh_name.val);
+            memcpy(mi_desc.xform, ValuePtr(transform), 16 * sizeof(float));
+
+            if (js_mesh_instance_obj.Has("camera_visibility")) {
+                mi_desc.camera_visibility =
+                    js_mesh_instance_obj.at("camera_visibility").as_lit().val == JsLiteralType::True;
+            }
+            if (js_mesh_instance_obj.Has("diffuse_visibility")) {
+                mi_desc.diffuse_visibility =
+                    js_mesh_instance_obj.at("diffuse_visibility").as_lit().val == JsLiteralType::True;
+            }
+            if (js_mesh_instance_obj.Has("specular_visibility")) {
+                mi_desc.specular_visibility =
+                    js_mesh_instance_obj.at("specular_visibility").as_lit().val == JsLiteralType::True;
+            }
+            if (js_mesh_instance_obj.Has("refraction_visibility")) {
+                mi_desc.refraction_visibility =
+                    js_mesh_instance_obj.at("refraction_visibility").as_lit().val == JsLiteralType::True;
+            }
+            if (js_mesh_instance_obj.Has("shadow_visibility")) {
+                mi_desc.shadow_visibility =
+                    js_mesh_instance_obj.at("shadow_visibility").as_lit().val == JsLiteralType::True;
+            }
+
+            new_scene->AddMeshInstance(mi_desc);
         }
     } catch (std::runtime_error &e) {
         r->log()->Error("Error in parsing json file! %s", e.what());
