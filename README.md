@@ -14,15 +14,16 @@ Test application for a Ray library bundled with many test scenes. Mostly needed 
 
 <div>
 <div float="left" >
-  <img src="italian_flat.png" width="47.0%" />
-  <img src="ai043_01.png" width="42.4%" />
-</div>
-<div float="left" >
-  <img src="bistro.png" width="89.75%" />
+  <img src="bistro.png" width="46.95%" />
+  <img src="mustang.png" width="42.45%" />
 </div>
 <div float="left" >
   <img src="bathroom.png" width="26.55%" />
   <img src="sponza.png" width="62.9%" />
+</div>
+<div float="left" >
+  <img src="italian_flat.png" width="47.0%" />
+  <img src="ai043_01.png" width="42.4%" />
 </div>
 <div float="left" >
   <img src="coffee_maker.png" width="44.1%" />
