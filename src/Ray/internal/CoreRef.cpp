@@ -3613,6 +3613,7 @@ Ray::Ref::simd_fvec4 Ray::Ref::Evaluate_EnvColor(const ray_data_t &ray, const en
         env_col = SampleLatlong_RGBE(tex_storage, env_map, I, env_map_rotation, rand);
     }
 
+#if USE_NEE
     if (env.qtree_levels) {
         const auto *qtree_mips = reinterpret_cast<const simd_fvec4 *const *>(env.qtree_mips);
 
@@ -3628,6 +3629,7 @@ Ray::Ref::simd_fvec4 Ray::Ref::Evaluate_EnvColor(const ray_data_t &ray, const en
         const float mis_weight = power_heuristic(bsdf_pdf, light_pdf);
         env_col *= mis_weight;
     }
+#endif
 
     env_col *= (ray.depth & 0x00ffffff) ? simd_fvec4{env.env_col[0], env.env_col[1], env.env_col[2], 1.0f}
                                         : simd_fvec4{env.back_col[0], env.back_col[1], env.back_col[2], 1.0f};
@@ -4521,16 +4523,17 @@ void Ray::Ref::ShadePrimary(const pass_settings_t &ps, Span<const hit_data_t> in
     }
 }
 
-void Ray::Ref::ShadeSecondary(const pass_settings_t &ps, Span<const hit_data_t> inters, Span<const ray_data_t> rays,
-                              const float *random_seq, const scene_data_t &sc, uint32_t node_index,
-                              const Cpu::TexStorageBase *const textures[], ray_data_t *out_secondary_rays,
-                              int *out_secondary_rays_count, shadow_ray_t *out_shadow_rays, int *out_shadow_rays_count,
-                              int img_w, color_rgba_t *out_color) {
+void Ray::Ref::ShadeSecondary(const pass_settings_t &ps, float clamp_val, Span<const hit_data_t> inters,
+                              Span<const ray_data_t> rays, const float *random_seq, const scene_data_t &sc,
+                              uint32_t node_index, const Cpu::TexStorageBase *const textures[],
+                              ray_data_t *out_secondary_rays, int *out_secondary_rays_count,
+                              shadow_ray_t *out_shadow_rays, int *out_shadow_rays_count, int img_w,
+                              color_rgba_t *out_color) {
     auto clamp_indirect = simd_fvec4{std::numeric_limits<float>::max()};
-    if (ps.clamp_indirect != 0.0f) {
-        clamp_indirect.set<0>(ps.clamp_indirect);
-        clamp_indirect.set<1>(ps.clamp_indirect);
-        clamp_indirect.set<2>(ps.clamp_indirect);
+    if (clamp_val != 0.0f) {
+        clamp_indirect.set<0>(clamp_val);
+        clamp_indirect.set<1>(clamp_val);
+        clamp_indirect.set<2>(clamp_val);
     }
 
     for (int i = 0; i < int(inters.size()); ++i) {

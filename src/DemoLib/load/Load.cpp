@@ -1372,8 +1372,8 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
                         _abs(attrs[i * 8 + 3] - vn[i3 * 3]) < 0.0000001f &&
                         _abs(attrs[i * 8 + 4] - vn[i3 * 3 + 1]) < 0.0000001f &&
                         _abs(attrs[i * 8 + 5] - vn[i3 * 3 + 2]) < 0.0000001f &&
-                        _abs(attrs[i * 8 + 6] - vt[i2 * 2]) < 0.0000001f &&
-                        _abs(attrs[i * 8 + 7] - vt[i2 * 2 + 1]) < 0.0000001f) {
+                        (i2 == -1 || (_abs(attrs[i * 8 + 6] - vt[i2 * 2]) < 0.0000001f &&
+                                      _abs(attrs[i * 8 + 7] - vt[i2 * 2 + 1]) < 0.0000001f))) {
                         indices.push_back(i);
                         found = true;
                         break;
@@ -1393,8 +1393,13 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
                     attrs.push_back(vn[i3 * 3 + 1]);
                     attrs.push_back(vn[i3 * 3 + 2]);
 
-                    attrs.push_back(vt[i2 * 2]);
-                    attrs.push_back(vt[i2 * 2 + 1]);
+                    if (i2 != -1) {
+                        attrs.push_back(vt[i2 * 2]);
+                        attrs.push_back(vt[i2 * 2 + 1]);
+                    } else {
+                        attrs.push_back(0.0f);
+                        attrs.push_back(0.0f);
+                    }
                 }
             }
         } else if ((q - p) == 1 && p[0] == 'g') {

@@ -479,9 +479,9 @@ void ShadePrimary(const pass_settings_t &ps, Span<const hit_data_t<S>> inters, S
                   int img_w, float mix_factor, color_rgba_t *out_color, color_rgba_t *out_base_color,
                   color_rgba_t *out_depth_normals);
 template <int S>
-void ShadeSecondary(const pass_settings_t &ps, Span<const hit_data_t<S>> inters, Span<const ray_data_t<S>> rays,
-                    const float *random_seq, const scene_data_t &sc, uint32_t node_index,
-                    const Cpu::TexStorageBase *const textures[], ray_data_t<S> *out_secondary_rays,
+void ShadeSecondary(const pass_settings_t &ps, float clamp_val, Span<const hit_data_t<S>> inters,
+                    Span<const ray_data_t<S>> rays, const float *random_seq, const scene_data_t &sc,
+                    uint32_t node_index, const Cpu::TexStorageBase *const textures[], ray_data_t<S> *out_secondary_rays,
                     int *out_secondary_rays_count, shadow_ray_t<S> *out_shadow_rays, int *out_shadow_rays_count,
                     int img_w, color_rgba_t *out_color);
 
@@ -565,15 +565,16 @@ class SIMDPolicyBase {
                                  out_color, out_base_color, out_depth_normal);
     }
 
-    static force_inline void ShadeSecondary(const pass_settings_t &ps, Span<const HitDataType> inters,
+    static force_inline void ShadeSecondary(const pass_settings_t &ps, float clamp_val, Span<const HitDataType> inters,
                                             Span<const RayDataType> rays, const float *random_seq,
                                             const scene_data_t &sc, uint32_t node_index,
                                             const Cpu::TexStorageBase *const textures[],
                                             RayDataType *out_secondary_rays, int *out_secondary_rays_count,
                                             ShadowRayType *out_shadow_rays, int *out_shadow_rays_count, int img_w,
                                             color_rgba_t *out_color) {
-        NS::ShadeSecondary<RPSize>(ps, inters, rays, random_seq, sc, node_index, textures, out_secondary_rays,
-                                   out_secondary_rays_count, out_shadow_rays, out_shadow_rays_count, img_w, out_color);
+        NS::ShadeSecondary<RPSize>(ps, clamp_val, inters, rays, random_seq, sc, node_index, textures,
+                                   out_secondary_rays, out_secondary_rays_count, out_shadow_rays, out_shadow_rays_count,
+                                   img_w, out_color);
     }
 
     template <int InChannels1, int InChannels2, int InChannels3, int PxPitch, int OutChannels,
@@ -5455,6 +5456,7 @@ void Ray::NS::Evaluate_EnvColor(const ray_data_t<S> &ray, const simd_ivec<S> &ma
         if (env_map != 0xffffffff) {
             SampleLatlong_RGBE(tex_storage, env_map, ray.d, env_map_rotation, rand, (mask & env_map_mask), env_col);
         }
+#if USE_NEE
         if (env.qtree_levels) {
             const auto *qtree_mips = reinterpret_cast<const simd_fvec4 *const *>(env.qtree_mips);
 
@@ -5470,6 +5472,7 @@ void Ray::NS::Evaluate_EnvColor(const ray_data_t<S> &ray, const simd_ivec<S> &ma
             const simd_fvec<S> mis_weight = power_heuristic(bsdf_pdf, light_pdf);
             UNROLLED_FOR(i, 3, { env_col[i] *= mis_weight; })
         }
+#endif
     }
     UNROLLED_FOR(i, 3, { where(env_map_mask, env_col[i]) *= env.env_col[i]; })
 
@@ -6285,8 +6288,8 @@ void Ray::NS::ShadeSurface(const pass_settings_t &ps, const float *random_seq, c
 
         const simd_fvec<S> ior = gather(iors, mat_index * MatDWORDStride);
 
-        simd_fvec<S> eta = safe_div_pos(ext_ior, ior);
-        where(is_backfacing, eta) = safe_div_pos(ior, ext_ior);
+        simd_fvec<S> eta = safe_div_pos(ior, ext_ior);
+        where(is_backfacing, eta) = safe_div_pos(ext_ior, ior);
 
         simd_fvec<S> RR = fresnel_dielectric_cos(dot3(I, surf.N), eta);
         where(ior == 0.0f, RR) = 1.0f;
@@ -6830,15 +6833,15 @@ void Ray::NS::ShadePrimary(const pass_settings_t &ps, Span<const hit_data_t<S>> 
 }
 
 template <int S>
-void Ray::NS::ShadeSecondary(const pass_settings_t &ps, Span<const hit_data_t<S>> inters,
+void Ray::NS::ShadeSecondary(const pass_settings_t &ps, float clamp_val, Span<const hit_data_t<S>> inters,
                              Span<const ray_data_t<S>> rays, const float *random_seq, const scene_data_t &sc,
                              uint32_t node_index, const Cpu::TexStorageBase *const textures[],
                              ray_data_t<S> *out_secondary_rays, int *out_secondary_rays_count,
                              shadow_ray_t<S> *out_shadow_rays, int *out_shadow_rays_count, int img_w,
                              color_rgba_t *out_color) {
-    simd_fvec<S> clamp_indirect = ps.clamp_indirect;
-    if (ps.clamp_indirect == 0.0f) {
-        clamp_indirect = std::numeric_limits<float>::max();
+    simd_fvec<S> clamp_indirect = std::numeric_limits<float>::max();
+    if (clamp_val != 0.0f) {
+        clamp_indirect = clamp_val;
     }
 
     for (int i = 0; i < inters.size(); ++i) {
