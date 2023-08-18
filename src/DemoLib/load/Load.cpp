@@ -608,8 +608,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                     if (js_mat_obj.Has("alpha_texture")) {
                         const JsString &js_alpha_tex = js_mat_obj.at("alpha_texture").as_str();
-                        textures_to_load[js_alpha_tex.val] = {false /* srgb */, false /* normalmap */,
-                                                              false /* mips */};
+                        const bool is_srgb = js_mat_obj.Has("alpha_texture_srgb") &&
+                                             js_mat_obj.at("alpha_texture_srgb").as_lit().val == JsLiteralType::True;
+                        textures_to_load[js_alpha_tex.val] = {is_srgb, false /* normalmap */, false /* mips */};
                     }
                 } else {
                     if (js_mat_obj.Has("base_texture")) {
