@@ -169,14 +169,16 @@ bool Traverse_TLAS_WithStack_ClosestHit(const float ro[3], const float rd[3], co
                                         const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
                                         const mtri_accel_t *mtris, const uint32_t *tri_indices, hit_data_t &inter);
 // returns whether hit was solid
-bool Traverse_TLAS_WithStack_AnyHit(const float ro[3], const float rd[3], const bvh_node_t *nodes, uint32_t root_index,
-                                    const mesh_instance_t *mesh_instances, const uint32_t *mi_indices,
-                                    const mesh_t *meshes, const transform_t *transforms, const mtri_accel_t *mtris,
-                                    const tri_mat_data_t *materials, const uint32_t *tri_indices, hit_data_t &inter);
-bool Traverse_TLAS_WithStack_AnyHit(const float ro[3], const float rd[3], const mbvh_node_t *nodes, uint32_t root_index,
-                                    const mesh_instance_t *mesh_instances, const uint32_t *mi_indices,
-                                    const mesh_t *meshes, const transform_t *transforms, const tri_accel_t *tris,
-                                    const tri_mat_data_t *materials, const uint32_t *tri_indices, hit_data_t &inter);
+bool Traverse_TLAS_WithStack_AnyHit(const float ro[3], const float rd[3], int ray_type, const bvh_node_t *nodes,
+                                    uint32_t root_index, const mesh_instance_t *mesh_instances,
+                                    const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
+                                    const mtri_accel_t *mtris, const tri_mat_data_t *materials,
+                                    const uint32_t *tri_indices, hit_data_t &inter);
+bool Traverse_TLAS_WithStack_AnyHit(const float ro[3], const float rd[3], int ray_type, const mbvh_node_t *nodes,
+                                    uint32_t root_index, const mesh_instance_t *mesh_instances,
+                                    const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
+                                    const tri_accel_t *tris, const tri_mat_data_t *materials,
+                                    const uint32_t *tri_indices, hit_data_t &inter);
 // traditional bvh traversal with stack for inner nodes
 bool Traverse_BLAS_WithStack_ClosestHit(const float ro[3], const float rd[3], const float inv_d[3],
                                         const bvh_node_t *nodes, uint32_t root_index, const tri_accel_t *tris,
@@ -342,12 +344,13 @@ struct lobe_weights_t {
 simd_fvec4 Evaluate_PrincipledNode(const light_sample_t &ls, const ray_data_t &ray, const surface_t &surf,
                                    const lobe_weights_t &lobe_weights, const diff_params_t &diff,
                                    const spec_params_t &spec, const clearcoat_params_t &coat,
-                                   const transmission_params_t &trans, float metallic, float N_dot_L, float mix_weight,
-                                   shadow_ray_t &sh_r);
+                                   const transmission_params_t &trans, float metallic, float transmission,
+                                   float N_dot_L, float mix_weight, shadow_ray_t &sh_r);
 void Sample_PrincipledNode(const pass_settings_t &ps, const ray_data_t &ray, const surface_t &surf,
                            const lobe_weights_t &lobe_weights, const diff_params_t &diff, const spec_params_t &spec,
                            const clearcoat_params_t &coat, const transmission_params_t &trans, float metallic,
-                           float rand_u, float rand_v, float mix_rand, float mix_weight, ray_data_t &new_ray);
+                           float transmission, float rand_u, float rand_v, float mix_rand, float mix_weight,
+                           ray_data_t &new_ray);
 
 // Shade
 color_rgba_t ShadeSurface(const pass_settings_t &ps, const hit_data_t &inter, const ray_data_t &ray,

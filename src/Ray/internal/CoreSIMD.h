@@ -200,7 +200,7 @@ bool Traverse_TLAS_WithStack_ClosestHit(const simd_fvec<S> ro[3], const simd_fve
                                         const mesh_t *meshes, const transform_t *transforms, const mtri_accel_t *mtris,
                                         const uint32_t *tri_indices, hit_data_t<S> &inter);
 template <int S>
-simd_ivec<S> Traverse_TLAS_WithStack_AnyHit(const simd_fvec<S> ro[3], const simd_fvec<S> rd[3],
+simd_ivec<S> Traverse_TLAS_WithStack_AnyHit(const simd_fvec<S> ro[3], const simd_fvec<S> rd[3], int ray_type,
                                             const simd_ivec<S> &ray_mask, const bvh_node_t *nodes, uint32_t node_index,
                                             const mesh_instance_t *mesh_instances, const uint32_t *mi_indices,
                                             const mesh_t *meshes, const transform_t *transforms,
@@ -208,11 +208,11 @@ simd_ivec<S> Traverse_TLAS_WithStack_AnyHit(const simd_fvec<S> ro[3], const simd
                                             const uint32_t *tri_indices, hit_data_t<S> &inter);
 template <int S>
 simd_ivec<S>
-Traverse_TLAS_WithStack_AnyHit(const simd_fvec<S> ro[3], const simd_fvec<S> rd[3], const simd_ivec<S> &ray_mask,
-                               const mbvh_node_t *mnodes, uint32_t node_index, const mesh_instance_t *mesh_instances,
-                               const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                               const mtri_accel_t *mtris, const tri_mat_data_t *materials, const uint32_t *tri_indices,
-                               hit_data_t<S> &inter);
+Traverse_TLAS_WithStack_AnyHit(const simd_fvec<S> ro[3], const simd_fvec<S> rd[3], int ray_type,
+                               const simd_ivec<S> &ray_mask, const mbvh_node_t *mnodes, uint32_t node_index,
+                               const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes,
+                               const transform_t *transforms, const mtri_accel_t *mtris,
+                               const tri_mat_data_t *materials, const uint32_t *tri_indices, hit_data_t<S> &inter);
 // traditional bvh traversal with stack for inner nodes
 template <int S>
 bool Traverse_BLAS_WithStack_ClosestHit(const simd_fvec<S> ro[3], const simd_fvec<S> rd[3],
@@ -453,16 +453,16 @@ simd_ivec<S> Evaluate_PrincipledNode(const light_sample_t<S> &ls, const ray_data
                                      const surface_t<S> &surf, const lobe_weights_t<S> &lobe_weights,
                                      const diff_params_t<S> &diff, const spec_params_t<S> &spec,
                                      const clearcoat_params_t<S> &coat, const transmission_params_t<S> &trans,
-                                     const simd_fvec<S> &metallic, const simd_fvec<S> &N_dot_L,
+                                     const simd_fvec<S> &metallic, float transmission, const simd_fvec<S> &N_dot_L,
                                      const simd_fvec<S> &mix_weight, simd_fvec<S> out_col[3], shadow_ray_t<S> &sh_r);
 template <int S>
 void Sample_PrincipledNode(const pass_settings_t &ps, const ray_data_t<S> &ray, const simd_ivec<S> &mask,
                            const surface_t<S> &surf, const lobe_weights_t<S> &lobe_weights,
                            const diff_params_t<S> &diff, const spec_params_t<S> &spec,
                            const clearcoat_params_t<S> &coat, const transmission_params_t<S> &trans,
-                           const simd_fvec<S> &metallic, const simd_fvec<S> &rand_u, const simd_fvec<S> &rand_v,
-                           simd_fvec<S> mix_rand, const simd_fvec<S> &mix_weight, simd_ivec<S> &secondary_mask,
-                           ray_data_t<S> &new_ray);
+                           const simd_fvec<S> &metallic, float transmission, const simd_fvec<S> &rand_u,
+                           const simd_fvec<S> &rand_v, simd_fvec<S> mix_rand, const simd_fvec<S> &mix_weight,
+                           simd_ivec<S> &secondary_mask, ray_data_t<S> &new_ray);
 
 // Shade
 template <int S>
@@ -3109,10 +3109,12 @@ bool Ray::NS::Traverse_TLAS_WithStack_ClosestHit(const simd_fvec<S> ro[3], const
 
 template <int S>
 Ray::NS::simd_ivec<S> Ray::NS::Traverse_TLAS_WithStack_AnyHit(
-    const simd_fvec<S> ro[3], const simd_fvec<S> rd[3], const simd_ivec<S> &ray_mask, const bvh_node_t *nodes,
-    uint32_t node_index, const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes,
-    const transform_t *transforms, const tri_accel_t *tris, const tri_mat_data_t *materials,
+    const simd_fvec<S> ro[3], const simd_fvec<S> rd[3], int ray_type, const simd_ivec<S> &ray_mask,
+    const bvh_node_t *nodes, uint32_t node_index, const mesh_instance_t *mesh_instances, const uint32_t *mi_indices,
+    const mesh_t *meshes, const transform_t *transforms, const tri_accel_t *tris, const tri_mat_data_t *materials,
     const uint32_t *tri_indices, hit_data_t<S> &inter) {
+    const int ray_vismask = (1u << ray_type);
+
     simd_ivec<S> solid_hit_mask = {0};
 
     simd_fvec<S> inv_d[3], inv_d_o[3];
@@ -3150,6 +3152,10 @@ Ray::NS::simd_ivec<S> Ray::NS::Traverse_TLAS_WithStack_AnyHit(
                 const uint32_t prim_index = (nodes[cur].prim_index & PRIM_INDEX_BITS);
                 for (uint32_t i = prim_index; i < prim_index + nodes[cur].prim_count; i++) {
                     const mesh_instance_t &mi = mesh_instances[mi_indices[i]];
+                    if ((mi.ray_visibility & ray_vismask) == 0) {
+                        continue;
+                    }
+
                     const mesh_t &m = meshes[mi.mesh_index];
                     const transform_t &tr = transforms[mi.tr_index];
 
@@ -3184,10 +3190,12 @@ Ray::NS::simd_ivec<S> Ray::NS::Traverse_TLAS_WithStack_AnyHit(
 
 template <int S>
 Ray::NS::simd_ivec<S> Ray::NS::Traverse_TLAS_WithStack_AnyHit(
-    const simd_fvec<S> ro[3], const simd_fvec<S> rd[3], const simd_ivec<S> &ray_mask, const mbvh_node_t *nodes,
-    uint32_t node_index, const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes,
-    const transform_t *transforms, const mtri_accel_t *mtris, const tri_mat_data_t *materials,
+    const simd_fvec<S> ro[3], const simd_fvec<S> rd[3], int ray_type, const simd_ivec<S> &ray_mask,
+    const mbvh_node_t *nodes, uint32_t node_index, const mesh_instance_t *mesh_instances, const uint32_t *mi_indices,
+    const mesh_t *meshes, const transform_t *transforms, const mtri_accel_t *mtris, const tri_mat_data_t *materials,
     const uint32_t *tri_indices, hit_data_t<S> &inter) {
+    const int ray_vismask = (1u << ray_type);
+
     simd_ivec<S> solid_hit_mask = {0};
 
     simd_fvec<S> inv_d[3], inv_d_o[3];
@@ -3286,6 +3294,10 @@ Ray::NS::simd_ivec<S> Ray::NS::Traverse_TLAS_WithStack_AnyHit(
                 const uint32_t prim_index = (nodes[cur.index].child[0] & PRIM_INDEX_BITS);
                 for (uint32_t j = prim_index; j < prim_index + nodes[cur.index].child[1]; j++) {
                     const mesh_instance_t &mi = mesh_instances[mi_indices[j]];
+                    if ((mi.ray_visibility & ray_vismask) == 0) {
+                        continue;
+                    }
+
                     const mesh_t &m = meshes[mi.mesh_index];
                     const transform_t &tr = transforms[mi.tr_index];
 
@@ -4582,9 +4594,16 @@ void Ray::NS::IntersectScene(ray_data_t<S> &r, const int min_transp_depth, const
                     while (mat->type == eShadingNode::Mix) {
                         simd_fvec<S> _mix_val = 1.0f;
 
-                        if (mat->textures[BASE_TEXTURE] != 0xffffffff) {
+                        const uint32_t first_t = mat->textures[BASE_TEXTURE];
+                        if (first_t != 0xffffffff) {
                             simd_fvec<S> mix[4] = {};
-                            SampleBilinear(textures, mat->textures[BASE_TEXTURE], uvs, {0}, tex_rand, same_mi, mix);
+                            SampleBilinear(textures, first_t, uvs, {0}, tex_rand, same_mi, mix);
+                            if (first_t & TEX_YCOCG_BIT) {
+                                YCoCg_to_RGB(mix, mix);
+                            }
+                            if (first_t & TEX_SRGB_BIT) {
+                                srgb_to_rgb(mix, mix);
+                            }
                             _mix_val *= mix[0];
                         }
                         _mix_val *= mat->strength;
@@ -4736,13 +4755,13 @@ void Ray::NS::IntersectScene(const shadow_ray_t<S> &r, const int max_transp_dept
 
         simd_ivec<S> solid_hit;
         if (sc.mnodes) {
-            solid_hit = Traverse_TLAS_WithStack_AnyHit(ro, r.d, keep_going, sc.mnodes, node_index, sc.mesh_instances,
-                                                       sc.mi_indices, sc.meshes, sc.transforms, sc.mtris,
-                                                       sc.tri_materials, sc.tri_indices, inter);
+            solid_hit = Traverse_TLAS_WithStack_AnyHit(ro, r.d, RAY_TYPE_SHADOW, keep_going, sc.mnodes, node_index,
+                                                       sc.mesh_instances, sc.mi_indices, sc.meshes, sc.transforms,
+                                                       sc.mtris, sc.tri_materials, sc.tri_indices, inter);
         } else {
-            solid_hit = Traverse_TLAS_WithStack_AnyHit(ro, r.d, keep_going, sc.nodes, node_index, sc.mesh_instances,
-                                                       sc.mi_indices, sc.meshes, sc.transforms, sc.tris,
-                                                       sc.tri_materials, sc.tri_indices, inter);
+            solid_hit = Traverse_TLAS_WithStack_AnyHit(ro, r.d, RAY_TYPE_SHADOW, keep_going, sc.nodes, node_index,
+                                                       sc.mesh_instances, sc.mi_indices, sc.meshes, sc.transforms,
+                                                       sc.tris, sc.tri_materials, sc.tri_indices, inter);
         }
 
         const simd_ivec<S> terminate_mask = solid_hit | (depth > max_transp_depth);
@@ -4824,10 +4843,16 @@ void Ray::NS::IntersectScene(const shadow_ray_t<S> &r, const int max_transp_dept
                         // resolve mix material
                         if (mat->type == eShadingNode::Mix) {
                             simd_fvec<S> mix_val = mat->strength;
-                            if (mat->textures[BASE_TEXTURE] != 0xffffffff) {
+                            const uint32_t first_t = mat->textures[BASE_TEXTURE];
+                            if (first_t != 0xffffffff) {
                                 simd_fvec<S> mix[4] = {};
-                                SampleBilinear(textures, mat->textures[BASE_TEXTURE], sh_uvs, {0}, tex_rand, same_mi,
-                                               mix);
+                                SampleBilinear(textures, first_t, sh_uvs, {0}, tex_rand, same_mi, mix);
+                                if (first_t & TEX_YCOCG_BIT) {
+                                    YCoCg_to_RGB(mix, mix);
+                                }
+                                if (first_t & TEX_SRGB_BIT) {
+                                    srgb_to_rgb(mix, mix);
+                                }
                                 mix_val *= mix[0];
                             }
 
@@ -5780,11 +5805,13 @@ void Ray::NS::Sample_RefractiveNode(const ray_data_t<S> &ray, const simd_ivec<S>
 }
 
 template <int S>
-Ray::NS::simd_ivec<S> Ray::NS::Evaluate_PrincipledNode(
-    const light_sample_t<S> &ls, const ray_data_t<S> &ray, const simd_ivec<S> &mask, const surface_t<S> &surf,
-    const lobe_weights_t<S> &lobe_weights, const diff_params_t<S> &diff, const spec_params_t<S> &spec,
-    const clearcoat_params_t<S> &coat, const transmission_params_t<S> &trans, const simd_fvec<S> &metallic,
-    const simd_fvec<S> &N_dot_L, const simd_fvec<S> &mix_weight, simd_fvec<S> out_col[3], shadow_ray_t<S> &sh_r) {
+Ray::NS::simd_ivec<S>
+Ray::NS::Evaluate_PrincipledNode(const light_sample_t<S> &ls, const ray_data_t<S> &ray, const simd_ivec<S> &mask,
+                                 const surface_t<S> &surf, const lobe_weights_t<S> &lobe_weights,
+                                 const diff_params_t<S> &diff, const spec_params_t<S> &spec,
+                                 const clearcoat_params_t<S> &coat, const transmission_params_t<S> &trans,
+                                 const simd_fvec<S> &metallic, const float transmission, const simd_fvec<S> &N_dot_L,
+                                 const simd_fvec<S> &mix_weight, simd_fvec<S> out_col[3], shadow_ray_t<S> &sh_r) {
     const simd_fvec<S> nI[3] = {-ray.d[0], -ray.d[1], -ray.d[2]};
 
     const simd_ivec<S> _is_backfacing = simd_cast(N_dot_L < 0.0f);
@@ -5801,7 +5828,7 @@ Ray::NS::simd_ivec<S> Ray::NS::Evaluate_PrincipledNode(
 
         where(eval_diff_lobe, bsdf_pdf) += lobe_weights.diffuse * diff_col[3];
         UNROLLED_FOR(i, 3, {
-            diff_col[i] *= (1.0f - metallic);
+            diff_col[i] *= (1.0f - metallic) * (1.0f - transmission);
             where(eval_diff_lobe, lcol[i]) += safe_div_pos(ls.col[i] * N_dot_L * diff_col[i], PI * ls.pdf);
         })
     }
@@ -5911,7 +5938,7 @@ void Ray::NS::Sample_PrincipledNode(const pass_settings_t &ps, const ray_data_t<
                                     const surface_t<S> &surf, const lobe_weights_t<S> &lobe_weights,
                                     const diff_params_t<S> &diff, const spec_params_t<S> &spec,
                                     const clearcoat_params_t<S> &coat, const transmission_params_t<S> &trans,
-                                    const simd_fvec<S> &metallic, const simd_fvec<S> &rand_u,
+                                    const simd_fvec<S> &metallic, const float transmission, const simd_fvec<S> &rand_u,
                                     const simd_fvec<S> &rand_v, simd_fvec<S> mix_rand, const simd_fvec<S> &mix_weight,
                                     simd_ivec<S> &secondary_mask, ray_data_t<S> &new_ray) {
     const simd_ivec<S> diff_depth = ray.depth & 0x000000ff;
@@ -5923,11 +5950,12 @@ void Ray::NS::Sample_PrincipledNode(const pass_settings_t &ps, const ray_data_t<
     const simd_ivec<S> sample_diff_lobe = (diff_depth < ps.max_diff_depth) & (total_depth < ps.max_total_depth) &
                                           simd_cast(mix_rand < lobe_weights.diffuse) & mask;
     if (sample_diff_lobe.not_all_zeros()) {
-        simd_fvec<S> V[3], diff_col[4];
+        simd_fvec<S> V[3], F[4];
         Sample_PrincipledDiffuse_BSDF(surf.T, surf.B, surf.N, ray.d, diff.roughness, diff.base_color, diff.sheen_color,
-                                      false, rand_u, rand_v, V, diff_col);
+                                      false, rand_u, rand_v, V, F);
+        F[3] *= lobe_weights.diffuse;
 
-        UNROLLED_FOR(i, 3, { diff_col[i] *= (1.0f - metallic); })
+        UNROLLED_FOR(i, 3, { F[i] *= (1.0f - metallic) * (1.0f - transmission); })
 
         simd_fvec<S> new_p[3];
         offset_ray(surf.P, surf.plane_N, new_p);
@@ -5937,10 +5965,9 @@ void Ray::NS::Sample_PrincipledNode(const pass_settings_t &ps, const ray_data_t<
         UNROLLED_FOR(i, 3, {
             where(sample_diff_lobe, new_ray.o[i]) = new_p[i];
             where(sample_diff_lobe, new_ray.d[i]) = V[i];
-            where(sample_diff_lobe, new_ray.c[i]) =
-                safe_div_pos(ray.c[i] * diff_col[i] * mix_weight, lobe_weights.diffuse);
+            where(sample_diff_lobe, new_ray.c[i]) = safe_div_pos(ray.c[i] * F[i] * mix_weight, lobe_weights.diffuse);
         })
-        where(sample_diff_lobe, new_ray.pdf) = diff_col[3];
+        where(sample_diff_lobe, new_ray.pdf) = F[3];
 
         assert((secondary_mask & sample_diff_lobe).all_zeros());
         secondary_mask |= sample_diff_lobe;
@@ -5998,15 +6025,16 @@ void Ray::NS::Sample_PrincipledNode(const pass_settings_t &ps, const ray_data_t<
         secondary_mask |= sample_coat_lobe;
     }
 
-    const simd_ivec<S> sample_trans_lobe =
+    simd_ivec<S> sample_trans_lobe =
         simd_cast(mix_rand >= lobe_weights.diffuse + lobe_weights.specular + lobe_weights.clearcoat) &
-        ((simd_cast(mix_rand >= trans.fresnel) & (refr_depth < ps.max_refr_depth)) |
-         (simd_cast(mix_rand < trans.fresnel) & (spec_depth < ps.max_spec_depth))) &
         (total_depth < ps.max_total_depth) & mask;
-    if (sample_trans_lobe.not_all_zeros()) {
-        where(sample_trans_lobe, mix_rand) -= lobe_weights.diffuse + lobe_weights.specular + lobe_weights.clearcoat;
-        where(sample_trans_lobe, mix_rand) = safe_div_pos(mix_rand, lobe_weights.refraction);
 
+    mix_rand -= lobe_weights.diffuse + lobe_weights.specular + lobe_weights.clearcoat;
+    mix_rand = safe_div_pos(mix_rand, lobe_weights.refraction);
+
+    sample_trans_lobe &= ((simd_cast(mix_rand >= trans.fresnel) & (refr_depth < ps.max_refr_depth)) |
+                          (simd_cast(mix_rand < trans.fresnel) & (spec_depth < ps.max_spec_depth)));
+    if (sample_trans_lobe.not_all_zeros()) {
         simd_fvec<S> F[4] = {}, V[3] = {};
 
         const simd_ivec<S> sample_trans_spec_lobe = simd_cast(mix_rand < trans.fresnel) & sample_trans_lobe;
@@ -6277,6 +6305,12 @@ void Ray::NS::ShadeSurface(const pass_settings_t &ps, const float *random_seq, c
                 simd_fvec<S> tex_color[4] = {};
                 SampleBilinear(textures, first_t, surf.uvs, simd_ivec<S>(base_lod), tex_rand, ray_queue[index],
                                tex_color);
+                if (first_t & TEX_YCOCG_BIT) {
+                    YCoCg_to_RGB(tex_color, tex_color);
+                }
+                if (first_t & TEX_SRGB_BIT) {
+                    srgb_to_rgb(tex_color, tex_color);
+                }
 
                 where(ray_queue[index], mix_val) *= tex_color[0];
 
@@ -6718,12 +6752,13 @@ void Ray::NS::ShadeSurface(const pass_settings_t &ps, const float *random_seq, c
                 const simd_ivec<S> eval_light = simd_cast(ls.pdf > 0.0f) & ray_queue[index];
                 if (eval_light.not_all_zeros()) {
                     assert((shadow_mask & eval_light).all_zeros());
-                    shadow_mask |= Evaluate_PrincipledNode(ls, ray, eval_light, surf, lobe_weights, diff, spec, coat,
-                                                           trans, metallic, N_dot_L, mix_weight, col, sh_r);
+                    shadow_mask |=
+                        Evaluate_PrincipledNode(ls, ray, eval_light, surf, lobe_weights, diff, spec, coat, trans,
+                                                metallic, transmission, N_dot_L, mix_weight, col, sh_r);
                 }
 #endif
                 Sample_PrincipledNode(ps, ray, ray_queue[index], surf, lobe_weights, diff, spec, coat, trans, metallic,
-                                      rand_u, rand_v, mix_rand, mix_weight, secondary_mask, new_ray);
+                                      transmission, rand_u, rand_v, mix_rand, mix_weight, secondary_mask, new_ray);
             } /*else if (mat->type == TransparentNode) {
                 assert(false);
             }*/
