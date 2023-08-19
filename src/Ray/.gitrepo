@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = mustang_scene
-	commit = 0904a2a65f573552c46b6f69e67c6df1c64a77c6
+	branch = fixes_19_08
+	commit = 3def8098476e63f1bda3fd198be9e81ce68cf609
 	method = merge
 	cmdver = 0.4.6
-	parent = c4c0aec0b6c4d7791fecf1c770b8c1828d7b9481
+	parent = 4cb0f82eddcafa0f9f295002d47004cf79c87d51
