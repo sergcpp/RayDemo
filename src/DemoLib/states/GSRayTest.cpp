@@ -562,7 +562,8 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                                        region_contexts_[0][0].iteration);
             fflush(stdout);
 
-            if (app_params->threshold != -1 && region_contexts_[0][0].iteration >= app_params->max_samples) {
+            if (app_params->threshold != -1 && app_params->max_samples != -1 &&
+                region_contexts_[0][0].iteration >= app_params->max_samples) {
                 ray_renderer_->log()->Info("Elapsed time: %.2fm",
                                            double(Sys::GetTimeMs() - test_start_time_) / 60000.0);
                 if (psnr < app_params->psnr || error_pixels > app_params->threshold) {
