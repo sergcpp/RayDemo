@@ -13,7 +13,7 @@ void test_optional() {
             bool b;
 
           public:
-            MyObj(int) : b(true) { }
+            explicit MyObj(int) : b(true) { }
             MyObj(const MyObj &rhs) {
                 b = rhs.b;
             }

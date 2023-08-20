@@ -303,9 +303,9 @@ void test_alloc() {
             const int size_to_alloc = 1 + rand() % (8 * 1024 * 1024);
             uint8_t *new_alloc;
             if (i % 2) {
-                new_alloc = (uint8_t *)alloc.Alloc_FirstFit(size_to_alloc);
+                new_alloc = reinterpret_cast<uint8_t *>(alloc.Alloc_FirstFit(size_to_alloc));
             } else {
-                new_alloc = (uint8_t *)alloc.Alloc_BestFit(size_to_alloc);
+                new_alloc = reinterpret_cast<uint8_t *>(alloc.Alloc_BestFit(size_to_alloc));
             }
             if (!new_alloc) {
                 const int index_to_free = rand() % allocated.size();

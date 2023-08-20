@@ -26,7 +26,7 @@ void test_pack() {
 
             std::unique_ptr<char[]> buf(new char[size]);
             in_file.Read(buf.get(), (size_t)size);
-            const char *p1 = (char *)data;
+            const char *p1 = reinterpret_cast<char *>(data);
             const char *p2 = buf.get();
             require(memcmp(p1, p2, (size_t)size) == 0);
         };
