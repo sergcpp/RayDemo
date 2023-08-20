@@ -135,7 +135,7 @@ void swCPUInfoInit(SWcpu_info *info) {
         if ((tok = strtok(tok, " \t:\n")) != NULL) {
             if (strcmp(tok, "vendor_id") == 0) {
                 if ((tok = strtok(NULL, "\t:\n")) != NULL) {
-                    while (*tok && *tok == ' ') tok++;
+                    while (*tok == ' ') tok++;
                     info->vendor = strdup(tok);
                 }
             } else if (strcmp(tok, "model") == 0) {
