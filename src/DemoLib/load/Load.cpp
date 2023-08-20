@@ -1747,18 +1747,20 @@ void WriteTGA(const Ray::color_rgba_t *data, int pitch, const int w, const int h
     header[14] = (h)&0xFF;
     header[15] = (h >> 8) & 0xFF;
     header[16] = bpp * 8;
+    if (flip_vertical) {
+        header[17] |= (1 << 5); // set origin to upper left corner
+    }
 
     file.write((char *)&header[0], sizeof(unsigned char) * 18);
 
     auto out_data = std::unique_ptr<uint8_t[]>{new uint8_t[size_t(w) * h * bpp]};
     for (int j = 0; j < h; ++j) {
-        const int _j = flip_vertical ? (h - j - 1) : j;
         for (int i = 0; i < w; ++i) {
-            out_data[(j * w + i) * bpp + 0] = float_to_byte(data[_j * pitch + i].v[2]);
-            out_data[(j * w + i) * bpp + 1] = float_to_byte(data[_j * pitch + i].v[1]);
-            out_data[(j * w + i) * bpp + 2] = float_to_byte(data[_j * pitch + i].v[0]);
+            out_data[(j * w + i) * bpp + 0] = float_to_byte(data[j * pitch + i].v[2]);
+            out_data[(j * w + i) * bpp + 1] = float_to_byte(data[j * pitch + i].v[1]);
+            out_data[(j * w + i) * bpp + 2] = float_to_byte(data[j * pitch + i].v[0]);
             if (bpp == 4) {
-                out_data[i * 4 + 3] = float_to_byte(data[_j * pitch + i].v[3]);
+                out_data[i * 4 + 3] = float_to_byte(data[j * pitch + i].v[3]);
             }
         }
     }
