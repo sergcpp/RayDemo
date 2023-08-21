@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = tests_20_08
-	commit = a5989673c8e16c4ca868e95f4b1e37eb13751dae
+	branch = simd_compress
+	commit = 8de460072db48e9c2c4234111f30ed4d320c3f90
 	method = merge
 	cmdver = 0.4.6
-	parent = 12fc04fa4dbaedf5d310fa35f1e15ac6bb157c92
+	parent = f1430953c7a101aae634e5c9208c005d62bfe9e5
