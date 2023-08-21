@@ -50,11 +50,6 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
     }
 
     {
-        auto test_result = std::make_shared<double>(0.0);
-        AddComponent(TEST_RESULT_KEY, test_result);
-    }
-
-    {
         auto app_params = std::make_shared<AppParams>(_app_params);
         AddComponent(APP_PARAMS_KEY, app_params);
     }
