@@ -905,11 +905,13 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             mesh_desc.vtx_indices_count = indices.size();
             mesh_desc.use_fast_bvh_build = global_settings.use_fast_bvh_build;
 
+            std::vector<Ray::mat_group_desc_t> mat_groups;
             for (size_t i = 0; i < groups.size(); i += 2) {
                 const JsString &js_mat_name = js_materials.at(i / 2).as_str();
                 const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
-                mesh_desc.shapes.emplace_back(mat_handle, mat_handle, groups[i], groups[i + 1]);
+                mat_groups.emplace_back(mat_handle, mat_handle, groups[i], groups[i + 1]);
             }
+            mesh_desc.groups = mat_groups;
 
             if (js_mesh_obj.Has("allow_spatial_splits")) {
                 JsLiteral splits = js_mesh_obj.at("allow_spatial_splits").as_lit();
@@ -920,6 +922,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 JsLiteral use_fast = js_mesh_obj.at("use_fast_bvh_build").as_lit();
                 mesh_desc.use_fast_bvh_build = (use_fast.val == JsLiteralType::True);
             }
+
+            
 
             return new_scene->AddMesh(mesh_desc);
         };
