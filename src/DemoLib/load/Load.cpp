@@ -899,10 +899,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             mesh_desc.name = mesh_name;
             mesh_desc.prim_type = Ray::ePrimType::TriangleList;
             mesh_desc.layout = Ray::eVertexLayout::PxyzNxyzTuv;
-            mesh_desc.vtx_attrs = &attrs[0];
-            mesh_desc.vtx_attrs_count = attrs.size() / 8;
-            mesh_desc.vtx_indices = &indices[0];
-            mesh_desc.vtx_indices_count = indices.size();
+            mesh_desc.vtx_attrs = attrs;
+            mesh_desc.vtx_indices = indices;
             mesh_desc.use_fast_bvh_build = global_settings.use_fast_bvh_build;
 
             std::vector<Ray::mat_group_desc_t> mat_groups;
