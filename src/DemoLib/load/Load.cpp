@@ -72,13 +72,15 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
         int w, h, channels;
         uint8_t *img_data = nullptr;
+        int img_data_len = 0;
         bool force_no_compression = false;
         bool flip_y = false;
         if (ends_with(name, ".hdr")) {
             const std::vector<Ray::color_rgba8_t> temp = LoadHDR(name.c_str(), w, h);
 
             channels = 4;
-            img_data = (uint8_t *)STBI_MALLOC(w * h * 4);
+            img_data_len = w * h * 4;
+            img_data = (uint8_t *)STBI_MALLOC(img_data_len);
             force_no_compression = true;
 
             memcpy(img_data, &temp[0].v[0], w * h * sizeof(Ray::color_rgba8_t));
@@ -114,7 +116,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 const int res =
                     tjDecompressHeader((tjhandle)jpg_decompressor.get(), &in_file_buf[0], in_file_size, &w, &h);
                 if (res == 0) {
-                    img_data = (uint8_t *)STBI_MALLOC(w * h * 3);
+                    img_data_len = w * h * 3;
+                    img_data = (uint8_t *)STBI_MALLOC(img_data_len);
                     const int res2 = tjDecompress((tjhandle)jpg_decompressor.get(), &in_file_buf[0], in_file_size,
                                                   img_data, w, 0, h, 3, TJXOP_VFLIP);
                     if (res2 == 0) {
@@ -122,6 +125,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     } else {
                         stbi_image_free(img_data);
                         img_data = nullptr;
+                        img_data_len = 0;
                         fprintf(stderr, "tjDecompress error %i\n", res2);
                         return Ray::InvalidTextureHandle;
                     }
@@ -132,6 +136,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             } else {
                 stbi_set_flip_vertically_on_load(1);
                 img_data = stbi_load(_name.c_str(), &w, &h, &channels, 0);
+                img_data_len = w * h * channels;
             }
 
             if (channel_to_extract == -1) {
@@ -148,6 +153,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (is_1px_texture) {
                     w = h = 1;
+                    img_data_len = 1;
                 }
 
                 if (is_grey) {
@@ -163,6 +169,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     }
                 }
                 channels = 1;
+                img_data_len = w * h;
             }
         }
         if (!img_data) {
@@ -172,7 +179,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
         while (max_tex_res != -1 && (w > max_tex_res || h > max_tex_res)) {
             const int new_w = (w / 2), new_h = (h / 2);
-            auto new_img_data = (uint8_t *)STBI_MALLOC(new_w * new_h * channels);
+            const int new_img_data_len = new_w * new_h * channels;
+            auto new_img_data = (uint8_t *)STBI_MALLOC(new_img_data_len);
 
             for (int y = 0; y < h - 1; y += 2) {
                 for (int x = 0; x < w - 1; x += 2) {
@@ -189,6 +197,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             stbi_image_free(img_data);
             img_data = new_img_data;
+            img_data_len = new_img_data_len;
             w = new_w;
             h = new_h;
         }
@@ -204,7 +213,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             tex_desc.format = Ray::eTextureFormat::R8;
         }
         tex_desc.name = name.c_str();
-        tex_desc.data = &img_data[0];
+        tex_desc.data = Ray::Span<const uint8_t>(&img_data[0], img_data_len);
         tex_desc.w = w;
         tex_desc.h = h;
         tex_desc.is_srgb = srgb;
