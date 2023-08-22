@@ -1273,7 +1273,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             Ray::mesh_instance_desc_t mi_desc;
             mi_desc.mesh = meshes.at(js_mesh_name.val);
-            memcpy(mi_desc.xform, ValuePtr(transform), 16 * sizeof(float));
+            mi_desc.xform = ValuePtr(transform);
 
             if (js_mesh_instance_obj.Has("camera_visibility")) {
                 mi_desc.camera_visibility =
