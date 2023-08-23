@@ -71,10 +71,10 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         }
 
         int w, h, channels;
+        Ray::eTextureConvention convention = Ray::eTextureConvention::OGL;
         uint8_t *img_data = nullptr;
         int img_data_len = 0;
         bool force_no_compression = false;
-        bool flip_y = false;
         if (ends_with(name, ".hdr")) {
             const std::vector<Ray::color_rgba8_t> temp = LoadHDR(name.c_str(), w, h);
 
@@ -99,9 +99,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             } else if (ends_with(_name, "@alpha")) {
                 channel_to_extract = 3;
                 _name.resize(_name.size() - 6);
-            } else if (ends_with(_name, "@flip_y")) {
-                flip_y = true;
-                _name.resize(_name.size() - 7);
+            } else if (ends_with(_name, "@dx")) {
+                convention = Ray::eTextureConvention::DX;
+                _name.resize(_name.size() - 3);
             }
 
             if (ends_with(_name, ".jpg") || ends_with(_name, ".jpeg") || ends_with(_name, ".JPG") ||
@@ -212,13 +212,13 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         } else if (channels == 1) {
             tex_desc.format = Ray::eTextureFormat::R8;
         }
+        tex_desc.convention = convention;
         tex_desc.name = name.c_str();
         tex_desc.data = Ray::Span<const uint8_t>(&img_data[0], img_data_len);
         tex_desc.w = w;
         tex_desc.h = h;
         tex_desc.is_srgb = srgb;
         tex_desc.is_normalmap = normalmap;
-        tex_desc.flip_normalmap_y = flip_y;
         tex_desc.force_no_compression = force_no_compression;
         tex_desc.generate_mipmaps = gen_mipmaps;
 
