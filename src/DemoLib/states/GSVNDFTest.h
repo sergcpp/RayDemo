@@ -18,7 +18,6 @@ class Renderer;
 }
 
 class GSVNDFTest : public GameState {
-    GameBase *game_;
     std::weak_ptr<GameStateManager> state_manager_;
     std::shared_ptr<Ren::Context> ctx_;
     std::shared_ptr<Renderer> renderer_;

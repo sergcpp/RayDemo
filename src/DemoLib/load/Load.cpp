@@ -49,6 +49,205 @@ bool ends_with(const std::string &value, const std::string &ending) {
     }
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
+
+//	the following constants were copied directly off the MSDN website
+
+//	The dwFlags member of the original DDSURFACEDESC2 structure
+//        can be set to one or more of the following values.
+#define DDSD_CAPS 0x00000001
+#define DDSD_HEIGHT 0x00000002
+#define DDSD_WIDTH 0x00000004
+#define DDSD_PITCH 0x00000008
+#define DDSD_PIXELFORMAT 0x00001000
+#define DDSD_MIPMAPCOUNT 0x00020000
+#define DDSD_LINEARSIZE 0x00080000
+#define DDSD_DEPTH 0x00800000
+
+//	DirectDraw Pixel Format
+#define DDPF_ALPHAPIXELS 0x00000001
+#define DDPF_FOURCC 0x00000004
+#define DDPF_RGB 0x00000040
+
+//	The dwCaps1 member of the DDSCAPS2 structure can be
+//        set to one or more of the following values.
+#define DDSCAPS_COMPLEX 0x00000008
+#define DDSCAPS_TEXTURE 0x00001000
+#define DDSCAPS_MIPMAP 0x00400000
+
+struct DDSHeader {
+    uint32_t dwMagic;
+    uint32_t dwSize;
+    uint32_t dwFlags;
+    uint32_t dwHeight;
+    uint32_t dwWidth;
+    uint32_t dwPitchOrLinearSize;
+    uint32_t dwDepth;
+    uint32_t dwMipMapCount;
+    uint32_t dwReserved1[11];
+
+    //  DDPIXELFORMAT
+    struct {
+        uint32_t dwSize;
+        uint32_t dwFlags;
+        uint32_t dwFourCC;
+        uint32_t dwRGBBitCount;
+        uint32_t dwRBitMask;
+        uint32_t dwGBitMask;
+        uint32_t dwBBitMask;
+        uint32_t dwAlphaBitMask;
+    } sPixelFormat;
+
+    //  DDCAPS2
+    struct {
+        uint32_t dwCaps1;
+        uint32_t dwCaps2;
+        uint32_t dwDDSX;
+        uint32_t dwReserved;
+    } sCaps;
+    uint32_t dwReserved2;
+};
+static_assert(sizeof(DDSHeader) == 128, "!");
+
+enum DXGI_FORMAT {
+    DXGI_FORMAT_UNKNOWN = 0,
+    DXGI_FORMAT_R32G32B32A32_TYPELESS = 1,
+    DXGI_FORMAT_R32G32B32A32_FLOAT = 2,
+    DXGI_FORMAT_R32G32B32A32_UINT = 3,
+    DXGI_FORMAT_R32G32B32A32_SINT = 4,
+    DXGI_FORMAT_R32G32B32_TYPELESS = 5,
+    DXGI_FORMAT_R32G32B32_FLOAT = 6,
+    DXGI_FORMAT_R32G32B32_UINT = 7,
+    DXGI_FORMAT_R32G32B32_SINT = 8,
+    DXGI_FORMAT_R16G16B16A16_TYPELESS = 9,
+    DXGI_FORMAT_R16G16B16A16_FLOAT = 10,
+    DXGI_FORMAT_R16G16B16A16_UNORM = 11,
+    DXGI_FORMAT_R16G16B16A16_UINT = 12,
+    DXGI_FORMAT_R16G16B16A16_SNORM = 13,
+    DXGI_FORMAT_R16G16B16A16_SINT = 14,
+    DXGI_FORMAT_R32G32_TYPELESS = 15,
+    DXGI_FORMAT_R32G32_FLOAT = 16,
+    DXGI_FORMAT_R32G32_UINT = 17,
+    DXGI_FORMAT_R32G32_SINT = 18,
+    DXGI_FORMAT_R32G8X24_TYPELESS = 19,
+    DXGI_FORMAT_D32_FLOAT_S8X24_UINT = 20,
+    DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS = 21,
+    DXGI_FORMAT_X32_TYPELESS_G8X24_UINT = 22,
+    DXGI_FORMAT_R10G10B10A2_TYPELESS = 23,
+    DXGI_FORMAT_R10G10B10A2_UNORM = 24,
+    DXGI_FORMAT_R10G10B10A2_UINT = 25,
+    DXGI_FORMAT_R11G11B10_FLOAT = 26,
+    DXGI_FORMAT_R8G8B8A8_TYPELESS = 27,
+    DXGI_FORMAT_R8G8B8A8_UNORM = 28,
+    DXGI_FORMAT_R8G8B8A8_UNORM_SRGB = 29,
+    DXGI_FORMAT_R8G8B8A8_UINT = 30,
+    DXGI_FORMAT_R8G8B8A8_SNORM = 31,
+    DXGI_FORMAT_R8G8B8A8_SINT = 32,
+    DXGI_FORMAT_R16G16_TYPELESS = 33,
+    DXGI_FORMAT_R16G16_FLOAT = 34,
+    DXGI_FORMAT_R16G16_UNORM = 35,
+    DXGI_FORMAT_R16G16_UINT = 36,
+    DXGI_FORMAT_R16G16_SNORM = 37,
+    DXGI_FORMAT_R16G16_SINT = 38,
+    DXGI_FORMAT_R32_TYPELESS = 39,
+    DXGI_FORMAT_D32_FLOAT = 40,
+    DXGI_FORMAT_R32_FLOAT = 41,
+    DXGI_FORMAT_R32_UINT = 42,
+    DXGI_FORMAT_R32_SINT = 43,
+    DXGI_FORMAT_R24G8_TYPELESS = 44,
+    DXGI_FORMAT_D24_UNORM_S8_UINT = 45,
+    DXGI_FORMAT_R24_UNORM_X8_TYPELESS = 46,
+    DXGI_FORMAT_X24_TYPELESS_G8_UINT = 47,
+    DXGI_FORMAT_R8G8_TYPELESS = 48,
+    DXGI_FORMAT_R8G8_UNORM = 49,
+    DXGI_FORMAT_R8G8_UINT = 50,
+    DXGI_FORMAT_R8G8_SNORM = 51,
+    DXGI_FORMAT_R8G8_SINT = 52,
+    DXGI_FORMAT_R16_TYPELESS = 53,
+    DXGI_FORMAT_R16_FLOAT = 54,
+    DXGI_FORMAT_D16_UNORM = 55,
+    DXGI_FORMAT_R16_UNORM = 56,
+    DXGI_FORMAT_R16_UINT = 57,
+    DXGI_FORMAT_R16_SNORM = 58,
+    DXGI_FORMAT_R16_SINT = 59,
+    DXGI_FORMAT_R8_TYPELESS = 60,
+    DXGI_FORMAT_R8_UNORM = 61,
+    DXGI_FORMAT_R8_UINT = 62,
+    DXGI_FORMAT_R8_SNORM = 63,
+    DXGI_FORMAT_R8_SINT = 64,
+    DXGI_FORMAT_A8_UNORM = 65,
+    DXGI_FORMAT_R1_UNORM = 66,
+    DXGI_FORMAT_R9G9B9E5_SHAREDEXP = 67,
+    DXGI_FORMAT_R8G8_B8G8_UNORM = 68,
+    DXGI_FORMAT_G8R8_G8B8_UNORM = 69,
+    DXGI_FORMAT_BC1_TYPELESS = 70,
+    DXGI_FORMAT_BC1_UNORM = 71,
+    DXGI_FORMAT_BC1_UNORM_SRGB = 72,
+    DXGI_FORMAT_BC2_TYPELESS = 73,
+    DXGI_FORMAT_BC2_UNORM = 74,
+    DXGI_FORMAT_BC2_UNORM_SRGB = 75,
+    DXGI_FORMAT_BC3_TYPELESS = 76,
+    DXGI_FORMAT_BC3_UNORM = 77,
+    DXGI_FORMAT_BC3_UNORM_SRGB = 78,
+    DXGI_FORMAT_BC4_TYPELESS = 79,
+    DXGI_FORMAT_BC4_UNORM = 80,
+    DXGI_FORMAT_BC4_SNORM = 81,
+    DXGI_FORMAT_BC5_TYPELESS = 82,
+    DXGI_FORMAT_BC5_UNORM = 83,
+    DXGI_FORMAT_BC5_SNORM = 84,
+    DXGI_FORMAT_B5G6R5_UNORM = 85,
+    DXGI_FORMAT_B5G5R5A1_UNORM = 86,
+    DXGI_FORMAT_B8G8R8A8_UNORM = 87,
+    DXGI_FORMAT_B8G8R8X8_UNORM = 88,
+    DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM = 89,
+    DXGI_FORMAT_B8G8R8A8_TYPELESS = 90,
+    DXGI_FORMAT_B8G8R8A8_UNORM_SRGB = 91,
+    DXGI_FORMAT_B8G8R8X8_TYPELESS = 92,
+    DXGI_FORMAT_B8G8R8X8_UNORM_SRGB = 93,
+    DXGI_FORMAT_BC6H_TYPELESS = 94,
+    DXGI_FORMAT_BC6H_UF16 = 95,
+    DXGI_FORMAT_BC6H_SF16 = 96,
+    DXGI_FORMAT_BC7_TYPELESS = 97,
+    DXGI_FORMAT_BC7_UNORM = 98,
+    DXGI_FORMAT_BC7_UNORM_SRGB = 99,
+    DXGI_FORMAT_AYUV = 100,
+    DXGI_FORMAT_Y410 = 101,
+    DXGI_FORMAT_Y416 = 102,
+    DXGI_FORMAT_NV12 = 103,
+    DXGI_FORMAT_P010 = 104,
+    DXGI_FORMAT_P016 = 105,
+    DXGI_FORMAT_420_OPAQUE = 106,
+    DXGI_FORMAT_YUY2 = 107,
+    DXGI_FORMAT_Y210 = 108,
+    DXGI_FORMAT_Y216 = 109,
+    DXGI_FORMAT_NV11 = 110,
+    DXGI_FORMAT_AI44 = 111,
+    DXGI_FORMAT_IA44 = 112,
+    DXGI_FORMAT_P8 = 113,
+    DXGI_FORMAT_A8P8 = 114,
+    DXGI_FORMAT_B4G4R4A4_UNORM = 115,
+    DXGI_FORMAT_P208 = 130,
+    DXGI_FORMAT_V208 = 131,
+    DXGI_FORMAT_V408 = 132,
+    DXGI_FORMAT_SAMPLER_FEEDBACK_MIN_MIP_OPAQUE,
+    DXGI_FORMAT_SAMPLER_FEEDBACK_MIP_REGION_USED_OPAQUE,
+    DXGI_FORMAT_FORCE_UINT = 0xffffffff
+};
+
+enum D3D10_RESOURCE_DIMENSION {
+    D3D10_RESOURCE_DIMENSION_UNKNOWN = 0,
+    D3D10_RESOURCE_DIMENSION_BUFFER = 1,
+    D3D10_RESOURCE_DIMENSION_TEXTURE1D = 2,
+    D3D10_RESOURCE_DIMENSION_TEXTURE2D = 3,
+    D3D10_RESOURCE_DIMENSION_TEXTURE3D = 4
+};
+
+struct DDS_HEADER_DXT10 {
+    DXGI_FORMAT dxgiFormat;
+    D3D10_RESOURCE_DIMENSION resourceDimension;
+    uint32_t miscFlag;
+    uint32_t arraySize;
+    uint32_t miscFlags2;
+};
 } // namespace
 
 std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res,
@@ -65,12 +264,13 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     thread_local std::unique_ptr<void, int (*)(tjhandle)> jpg_decompressor(nullptr, &tjDestroy);
 
     auto load_texture = [max_tex_res, &new_scene](const std::string &name, const bool srgb, const bool normalmap,
-                                                  const bool gen_mipmaps) -> Ray::TextureHandle {
+                                                  const bool use_mipmaps) -> Ray::TextureHandle {
         if (!jpg_decompressor) {
             jpg_decompressor.reset(tjInitDecompress());
         }
 
-        int w, h, channels;
+        int w = 0, h = 0, mips = 1;
+        Ray::eTextureFormat format = Ray::eTextureFormat::Undefined;
         Ray::eTextureConvention convention = Ray::eTextureConvention::OGL;
         uint8_t *img_data = nullptr;
         int img_data_len = 0;
@@ -78,7 +278,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         if (ends_with(name, ".hdr")) {
             const std::vector<Ray::color_rgba8_t> temp = LoadHDR(name.c_str(), w, h);
 
-            channels = 4;
+            format = Ray::eTextureFormat::RGBA8888;
             img_data_len = w * h * 4;
             img_data = (uint8_t *)STBI_MALLOC(img_data_len);
             force_no_compression = true;
@@ -86,6 +286,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             memcpy(img_data, &temp[0].v[0], w * h * sizeof(Ray::color_rgba8_t));
         } else {
             int channel_to_extract = -1;
+            bool drop_alpha = false;
             std::string _name = name;
             if (ends_with(_name, "@red")) {
                 channel_to_extract = 0;
@@ -102,6 +303,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             } else if (ends_with(_name, "@dx")) {
                 convention = Ray::eTextureConvention::DX;
                 _name.resize(_name.size() - 3);
+            } else if (ends_with(_name, "@rgb")) {
+                drop_alpha = true;
+                _name.resize(_name.size() - 4);
             }
 
             if (ends_with(_name, ".jpg") || ends_with(_name, ".jpeg") || ends_with(_name, ".JPG") ||
@@ -121,7 +325,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     const int res2 = tjDecompress((tjhandle)jpg_decompressor.get(), &in_file_buf[0], in_file_size,
                                                   img_data, w, 0, h, 3, TJXOP_VFLIP);
                     if (res2 == 0) {
-                        channels = 3;
+                        format = Ray::eTextureFormat::RGB888;
                     } else {
                         stbi_image_free(img_data);
                         img_data = nullptr;
@@ -133,16 +337,123 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     fprintf(stderr, "tjDecompressHeader error %i\n", res);
                     return Ray::InvalidTextureHandle;
                 }
+            } else if (ends_with(_name, ".dds") || ends_with(_name, ".DDS")) {
+                std::ifstream in_file(_name, std::ios::binary | std::ios::ate);
+                const int in_file_size = int(in_file.tellg());
+                in_file.seekg(0, std::ios::beg);
+
+                DDSHeader dds_header = {};
+                in_file.read((char *)&dds_header, sizeof(DDSHeader));
+                if (!in_file) {
+                    new_scene->log()->Error("Failed to load image %s", name.c_str());
+                    throw std::runtime_error("Invalid DDS Header!");
+                }
+
+                w = dds_header.dwWidth;
+                h = dds_header.dwHeight;
+                mips = dds_header.dwMipMapCount;
+
+                if ((dds_header.dwFlags & DDPF_FOURCC) != 0) {
+                    if (dds_header.sPixelFormat.dwFourCC == (('D' << 0) | ('X' << 8) | ('T' << 16) | ('1' << 24))) {
+                        format = Ray::eTextureFormat::BC1;
+                    } else if (dds_header.sPixelFormat.dwFourCC ==
+                               (('D' << 0) | ('X' << 8) | ('T' << 16) | ('5' << 24))) {
+                        format = Ray::eTextureFormat::BC3;
+                    } else if (dds_header.sPixelFormat.dwFourCC ==
+                                   (('B' << 0) | ('C' << 8) | ('4' << 16) | ('U' << 24)) ||
+                               dds_header.sPixelFormat.dwFourCC ==
+                                   (('A' << 0) | ('T' << 8) | ('I' << 16) | ('1' << 24))) {
+                        format = Ray::eTextureFormat::BC4;
+                    } else if (dds_header.sPixelFormat.dwFourCC ==
+                               (('A' << 0) | ('T' << 8) | ('I' << 16) | ('2' << 24))) {
+                        format = Ray::eTextureFormat::BC5;
+                    } else if (dds_header.sPixelFormat.dwFourCC ==
+                               (('D' << 0u) | ('X' << 8u) | ('1' << 16u) | ('0' << 24u))) {
+                        DDS_HEADER_DXT10 dx10_header = {};
+                        in_file.read((char *)&dx10_header, sizeof(DDS_HEADER_DXT10));
+                        if (!in_file) {
+                            new_scene->log()->Error("Failed to load image %s", name.c_str());
+                            throw std::runtime_error("Invalid DX10 Header!");
+                        }
+                        assert(false);
+                    }
+                }
+
+                if ((channel_to_extract != -1 && channel_to_extract != 3 && format == Ray::eTextureFormat::BC3) ||
+                    (channel_to_extract != -1 && format == Ray::eTextureFormat::BC1) || w < 4 || h < 4) {
+                    // We can not extract rgb channels from BC3, uncompress
+                    stbi_set_flip_vertically_on_load(1);
+                    int channels = 0;
+                    img_data = stbi_load(_name.c_str(), &w, &h, &channels, 0);
+                    img_data_len = w * h * channels;
+
+                    switch (channels) {
+                    case 1:
+                        format = Ray::eTextureFormat::R8;
+                        break;
+                    case 2:
+                        format = Ray::eTextureFormat::RG88;
+                        break;
+                    case 3:
+                        format = Ray::eTextureFormat::RGB888;
+                        break;
+                    case 4:
+                        format = Ray::eTextureFormat::RGBA8888;
+                        break;
+                    }
+                } else {
+                    int offset = sizeof(DDSHeader);
+                    while (max_tex_res != -1 && (w > max_tex_res || h > max_tex_res) && mips > 1) {
+                        if (format == Ray::eTextureFormat::BC1 || format == Ray::eTextureFormat::BC4) {
+                            offset += ((w + 3) / 4) * ((h + 3) / 4) * 8;
+                        } else if (format == Ray::eTextureFormat::BC3 || format == Ray::eTextureFormat::BC5) {
+                            offset += ((w + 3) / 4) * ((h + 3) / 4) * 16;
+                        }
+
+                        w /= 2;
+                        h /= 2;
+                        --mips;
+                    }
+
+                    convention = Ray::eTextureConvention::DX;
+
+                    img_data_len = in_file_size - offset;
+                    img_data = (uint8_t *)STBI_MALLOC(img_data_len);
+
+                    in_file.seekg(offset, std::ios::beg);
+                    in_file.read((char *)img_data, img_data_len);
+                    if (!in_file) {
+                        new_scene->log()->Error("Failed to load image %s", name.c_str());
+                        throw std::runtime_error("Incomplete image data!");
+                    }
+                }
             } else {
                 stbi_set_flip_vertically_on_load(1);
+                int channels = 0;
                 img_data = stbi_load(_name.c_str(), &w, &h, &channels, 0);
                 img_data_len = w * h * channels;
+
+                switch (channels) {
+                case 1:
+                    format = Ray::eTextureFormat::R8;
+                    break;
+                case 2:
+                    format = Ray::eTextureFormat::RG88;
+                    break;
+                case 3:
+                    format = Ray::eTextureFormat::RGB888;
+                    break;
+                case 4:
+                    format = Ray::eTextureFormat::RGBA8888;
+                    break;
+                }
             }
 
-            if (channel_to_extract == -1) {
+            if (channel_to_extract == -1 && !Ray::IsCompressedFormat(format)) {
                 // Try to detect single channel texture
                 bool is_grey = true, is_1px_texture = true;
                 for (int i = 0; i < w * h && (is_grey || is_1px_texture); ++i) {
+                    const int channels = Ray::TexFormatChannelCount[int(format)];
                     for (int j = 1; j < channels; ++j) {
                         is_grey &= (img_data[i * channels + 0] == img_data[i * channels + j]);
                     }
@@ -162,14 +473,42 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 }
             }
 
-            if (channel_to_extract != -1) {
+            if (channel_to_extract != -1 && !Ray::IsCompressedFormat(format)) {
+                const int channels = Ray::TexFormatChannelCount[int(format)];
                 for (int i = 0; i < w * h; ++i) {
                     for (int j = 0; j < channels; ++j) {
                         img_data[i + j] = img_data[i * channels + channel_to_extract];
                     }
                 }
-                channels = 1;
+                format = Ray::eTextureFormat::R8;
                 img_data_len = w * h;
+            }
+
+            if (((channel_to_extract == 3 || drop_alpha) && format == Ray::eTextureFormat::BC3) ||
+                (channel_to_extract != -1 && format == Ray::eTextureFormat::BC5)) {
+
+                const int new_img_data_len = (img_data_len / 2);
+                uint8_t *new_img_data = (uint8_t *)STBI_MALLOC(new_img_data_len);
+
+                int offset = 0; // Extract BC4 alpha from BC3 texture
+                if (format == Ray::eTextureFormat::BC5) {
+                    // Extract single BC4 component from BC5 texture
+                    offset = channel_to_extract * 8;
+                    assert(channel_to_extract < 2);
+                } else if (drop_alpha) {
+                    // Extract BC1 color from BC3 texture
+                    offset = 8;
+                }
+
+                for (int i = 0; i < (img_data_len / 16); ++i) {
+                    memcpy(&new_img_data[i * 8], &img_data[i * 16 + offset], 8);
+                }
+
+                stbi_image_free(img_data);
+
+                format = drop_alpha ? Ray::eTextureFormat::BC1 : Ray::eTextureFormat::BC4;
+                img_data = new_img_data;
+                img_data_len = new_img_data_len;
             }
         }
         if (!img_data) {
@@ -177,7 +516,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             throw std::runtime_error("Cannot load image!");
         }
 
-        while (max_tex_res != -1 && (w > max_tex_res || h > max_tex_res)) {
+        while (!Ray::IsCompressedFormat(format) && max_tex_res != -1 && (w > max_tex_res || h > max_tex_res)) {
+            const int channels = Ray::TexFormatChannelCount[int(format)];
             const int new_w = (w / 2), new_h = (h / 2);
             const int new_img_data_len = new_w * new_h * channels;
             auto new_img_data = (uint8_t *)STBI_MALLOC(new_img_data_len);
@@ -203,24 +543,17 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         }
 
         Ray::tex_desc_t tex_desc;
-        if (channels == 4) {
-            tex_desc.format = Ray::eTextureFormat::RGBA8888;
-        } else if (channels == 3) {
-            tex_desc.format = Ray::eTextureFormat::RGB888;
-        } else if (channels == 2) {
-            tex_desc.format = Ray::eTextureFormat::RG88;
-        } else if (channels == 1) {
-            tex_desc.format = Ray::eTextureFormat::R8;
-        }
+        tex_desc.format = format;
         tex_desc.convention = convention;
         tex_desc.name = name.c_str();
         tex_desc.data = Ray::Span<const uint8_t>(&img_data[0], img_data_len);
         tex_desc.w = w;
         tex_desc.h = h;
+        tex_desc.mips_count = use_mipmaps ? mips : 1;
         tex_desc.is_srgb = srgb;
         tex_desc.is_normalmap = normalmap;
         tex_desc.force_no_compression = force_no_compression;
-        tex_desc.generate_mipmaps = gen_mipmaps;
+        tex_desc.generate_mipmaps = use_mipmaps;
 
         const Ray::TextureHandle tex_handle = new_scene->AddTexture(tex_desc);
 
@@ -229,10 +562,10 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         return tex_handle;
     };
 
-    auto get_texture = [&](const std::string &name, const bool srgb, const bool normalmap, const bool gen_mipmaps) {
+    auto get_texture = [&](const std::string &name, const bool srgb, const bool normalmap, const bool use_mipmaps) {
         auto it = textures.find(name);
         if (it == textures.end()) {
-            const Ray::TextureHandle tex_handle = load_texture(name, srgb, normalmap, gen_mipmaps);
+            const Ray::TextureHandle tex_handle = load_texture(name, srgb, normalmap, use_mipmaps);
             textures[name] = tex_handle;
 
             return tex_handle;
@@ -929,8 +1262,6 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 JsLiteral use_fast = js_mesh_obj.at("use_fast_bvh_build").as_lit();
                 mesh_desc.use_fast_bvh_build = (use_fast.val == JsLiteralType::True);
             }
-
-            
 
             return new_scene->AddMesh(mesh_desc);
         };

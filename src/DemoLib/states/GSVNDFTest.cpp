@@ -131,7 +131,7 @@ FSHADER vtx_color_fs(FS_IN, FS_OUT) {
 }
 }
 
-GSVNDFTest::GSVNDFTest(GameBase *game) : game_(game) {
+GSVNDFTest::GSVNDFTest(GameBase *game) {
     using namespace GSVNDFTestInternal;
 
     state_manager_ = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
