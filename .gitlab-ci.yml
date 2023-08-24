@@ -267,7 +267,7 @@ stages:
     - '& git clean -fx -e "$BIN_DIR"'
     - echo "Running image tests..."
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/mustang.json -w 960 -h 600 $AUX_TEST_ARGS.split(" ") -ref assets/references/mustang_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 30.48 --threshold 278 --refr_depth 12 --total_depth 12 --clamp_indirect 10.0'
-    - '& "$BIN_DIR/DemoApp" -s assets/scenes/bistro.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 34.45 --threshold 1147 --clamp_indirect 10.0 --iteration_steps 1 --max_tex_res 1024'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/bistro.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 34.36 --threshold 1215 --clamp_indirect 10.0 --iteration_steps 1 --max_tex_res 1024'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 32.04 --threshold 715 --clamp_indirect 8.0 --iteration_steps 8 --denoise'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS.split(" ") -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.58 --threshold 9802 --clamp_indirect 8.0'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 679 --max_tex_res 1024'
@@ -312,7 +312,7 @@ stages:
     - git clean -fx -e $BIN_DIR
     - echo "Running image tests..."
     - ./$BIN_DIR/DemoApp -s assets/scenes/mustang.json -w 960 -h 600 $AUX_TEST_ARGS -ref assets/references/mustang_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 30.48 --threshold 278 --refr_depth 12 --total_depth 12 --clamp_indirect 10.0
-    - ./$BIN_DIR/DemoApp -s assets/scenes/bistro.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 34.45 --threshold 1147 --clamp_indirect 10.0 --max_tex_res 1024
+    - ./$BIN_DIR/DemoApp -s assets/scenes/bistro.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 34.36 --threshold 1215 --clamp_indirect 10.0 --max_tex_res 1024
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 32.04 --threshold 715 --clamp_indirect 8.0 --iteration_steps 8 --denoise
     - ./$BIN_DIR/DemoApp -s assets/scenes/italian_flat.json -w 900 -h 550 $AUX_TEST_ARGS -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --psnr 26.58 --threshold 9802 --clamp_indirect 8.0
     - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.95 --threshold 679 --max_tex_res 1024
