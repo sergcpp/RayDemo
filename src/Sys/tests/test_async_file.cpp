@@ -39,7 +39,7 @@ void test_async_file() {
     { // read file (blocking 2)
         std::unique_ptr<char[]> file_data_buf;
         const size_t file_data_buf_size = test_file_size;
-        file_data_buf.reset(new char[file_data_buf_size]);
+        file_data_buf = std::make_unique<char[]>(file_data_buf_size);
 
         Sys::AsyncFileReader reader;
 

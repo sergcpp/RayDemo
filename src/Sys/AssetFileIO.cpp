@@ -57,7 +57,7 @@ void Sys::LoadAssetComplete(const char *url, void *arg, onload_func onload, oner
             while (file_size > g_file_read_buffer_size) {
                 g_file_read_buffer_size *= 2;
             }
-            g_file_read_buffer.reset(new char[g_file_read_buffer_size]);
+            g_file_read_buffer = std::make_unique<char[]>(g_file_read_buffer_size);
             file_size = g_file_read_buffer_size;
 #if !defined(__ANDROID__) && !defined(__APPLE__)
             success = g_file_reader().ReadFileBlocking(url_str.c_str(), 0 /* file_offset */, WholeFile,
@@ -80,15 +80,15 @@ void Sys::LoadAssetComplete(const char *url, void *arg, onload_func onload, oner
 }
 
 void Sys::InitWorker() {
-    g_worker.reset(new Sys::ThreadWorker);
+    g_worker = std::make_unique<Sys::ThreadWorker>();
     g_file_read_buffer_size = 16 * 1024 * 1024;
-    g_file_read_buffer.reset(new char[g_file_read_buffer_size]);
+    g_file_read_buffer = std::make_unique<char[]>(g_file_read_buffer_size);
 }
 
 bool Sys::StopWorker() {
     if (g_worker->Stop()) {
-        g_worker.reset();
-        g_file_read_buffer.reset();
+        g_worker = {};
+        g_file_read_buffer = {};
         return true;
     }
     return false;

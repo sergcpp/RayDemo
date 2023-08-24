@@ -261,7 +261,7 @@ void Ren::ReorderTriangleIndices(const uint32_t *indices, uint32_t indices_count
     }
 
     for (auto &v : vertices) {
-        v.tris.reset(new int32_t[v.active_tris_count]);
+        v.tris = std::make_unique<int32_t[]>(v.active_tris_count);
         v.score = get_vertex_score(v.cache_pos, v.active_tris_count);
     }
 
