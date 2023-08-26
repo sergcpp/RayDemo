@@ -4,9 +4,9 @@
 ; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
 ;
 [subrepo]
-	remote = Ray
-	branch = fixes_26_08
-	commit = 09c9b7a5b48f9c50e2ae84d8772531eb9d13bada
+	remote = Ray-gitlab
+	branch = master
+	commit = df260ae9cad779e6bf4f1c654dded4f8bcd397d2
 	method = merge
 	cmdver = 0.4.6
-	parent = 902690dcd2eb2ec6057407861963aaf10875243d
+	parent = 531a9c939ef55b9638d2432f6dab9809995ad038
