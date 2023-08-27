@@ -790,9 +790,9 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 if (js_cam.Has("filter")) {
                     const JsString &js_filter = js_cam.at("filter").as_str();
                     if (js_filter.val == "box") {
-                        cam_desc.filter = Ray::eFilterType::Box;
+                        cam_desc.filter = Ray::ePixelFilter::Box;
                     } else if (js_filter.val == "tent") {
-                        cam_desc.filter = Ray::eFilterType::Tent;
+                        cam_desc.filter = Ray::ePixelFilter::Tent;
                     } else {
                         throw std::runtime_error("Unknown filter parameter!");
                     }
