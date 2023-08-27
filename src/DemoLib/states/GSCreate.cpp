@@ -2,26 +2,31 @@
 
 #include <stdexcept>
 
+#include "GSFilterTest.h"
 #include "GSHDRTest.h"
 #include "GSHybTest.h"
-#include "GSRayTest.h"
 #include "GSLightmapTest.h"
+#include "GSRayTest.h"
 #include "GSSamplingTest.h"
 #include "GSVNDFTest.h"
 
 std::shared_ptr<GameState> GSCreate(eGameState state, GameBase *game) {
-    if (state == GS_RAY_TEST) {
+    switch (state) {
+    case GS_RAY_TEST:
         return std::make_shared<GSRayTest>(game);
-    } else if (state == GS_SAMPLING_TEST) {
+    case GS_SAMPLING_TEST:
         return std::make_shared<GSSamplingTest>(game);
-    } else if (state == GS_HYB_TEST) {
+    case GS_HYB_TEST:
         return std::make_shared<GSHybTest>(game);
-    } else if (state == GS_HDR_TEST) {
+    case GS_HDR_TEST:
         return std::make_shared<GSHDRTest>(game);
-    } else if (state == GS_LM_TEST) {
+    case GS_LM_TEST:
         return std::make_shared<GSLightmapTest>(game);
-    } else if (state == GS_VNDF_TEST) {
+    case GS_VNDF_TEST:
         return std::make_shared<GSVNDFTest>(game);
+    case GS_FILTER_TEST:
+        return std::make_shared<GSFilterTest>(game);
+    default:
+        throw std::invalid_argument("Unknown game state!");
     }
-    throw std::invalid_argument("Unknown game state!");
 }

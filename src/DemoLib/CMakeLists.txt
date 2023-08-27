@@ -29,6 +29,8 @@ set(LOAD_SOURCES  load/Load.h
 
 set(STATES_SOURCES  states/GSCreate.h
 					states/GSCreate.cpp
+					states/GSFilterTest.h
+					states/GSFilterTest.cpp
 					states/GSHDRTest.h
 					states/GSHDRTest.cpp
 					states/GSHybTest.h
