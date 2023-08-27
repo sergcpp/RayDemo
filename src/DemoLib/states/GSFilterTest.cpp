@@ -16,78 +16,9 @@
 #include "../ren/Context.h"
 #include "../ren/MMat.h"
 
+#include <Ray/internal/CDFUtils.h>
+
 namespace GSFilterTestInternal {
-template <typename Func> std::vector<float> cdf_evaluate(const int res, const float from, const float to, Func func) {
-    const int cdf_count = res + 1;
-    const float range = to - from;
-
-    std::vector<float> cdf(cdf_count);
-    cdf[0] = 0.0f;
-    for (int i = 0; i < res; ++i) {
-        float x = from + range * float(i) / float(res - 1);
-        float y = func(x);
-        cdf[i + 1] = cdf[i] + std::abs(y);
-    }
-    // Normalize
-    float fac = (cdf[res] == 0.0f) ? 0.0f : 1.0f / cdf[res];
-    for (int i = 0; i <= res; ++i) {
-        cdf[i] *= fac;
-    }
-    cdf[res] = 1.0f;
-
-    return cdf;
-}
-
-std::vector<float> cdf_invert(const int res, const float from, const float to, const std::vector<float> &cdf,
-                              const bool make_symmetric) {
-    const int cdf_size = int(cdf.size());
-    assert(cdf[0] == 0.0f && cdf[cdf_size - 1] == 1.0f);
-
-    const float inv_res = 1.0f / float(res);
-    const float range = to - from;
-
-    std::vector<float> inv_cdf(res);
-
-    if (make_symmetric) {
-        const int half_size = (res - 1) / 2;
-        for (int i = 0; i <= half_size; ++i) {
-            float x = float(i) / float(half_size);
-            int index = int(std::upper_bound(begin(cdf), end(cdf), x) - begin(cdf));
-            float t;
-            if (index < cdf_size - 1) {
-                t = (x - cdf[index]) / (cdf[index + 1] - cdf[index]);
-            } else {
-                t = 0.0f;
-                index = cdf_size - 1;
-            }
-            float y = ((index + t) / (res - 1)) * 2.0f * range;
-            inv_cdf[half_size + i] = 0.5f * (1.0f + y);
-            inv_cdf[half_size - i] = 0.5f * (1.0f - y);
-        }
-    } else {
-        for (int i = 0; i < res; ++i) {
-            float x = (float(i) + 0.5f) * inv_res;
-            int index = int(std::upper_bound(begin(cdf), end(cdf), x) - begin(cdf) - 1);
-            float t;
-            if (index < cdf_size - 1) {
-                t = (x - cdf[index]) / (cdf[index + 1] - cdf[index]);
-            } else {
-                t = 0.0f;
-                index = res;
-            }
-            inv_cdf[i] = from + range * (float(index) + t) * inv_res;
-        }
-    }
-
-    return inv_cdf;
-}
-
-template <typename Func>
-std::vector<float> cdf_inverted(const int res, const float from, const float to, Func func, const bool make_symmetric) {
-    std::vector<float> cdf = cdf_evaluate(res - 1, from, to, func);
-    return cdf_invert(res, from, to, cdf, make_symmetric);
-}
-
 const int FilterTableSize = 1024;
 const float FilterWidth = 1.5f;
 } // namespace GSFilterTestInternal
@@ -122,8 +53,9 @@ void GSFilterTest::Enter() {
         return 0.35875f - 0.48829f * cosf(v) + 0.14128f * cosf(2.0f * v) - 0.01168f * cosf(3.0f * v);
     };
 
-    filter_table_ = cdf_inverted(FilterTableSize, 0.0f, FilterWidth * 0.5f,
-                     std::bind(filter_blackman_harris, std::placeholders::_1, FilterWidth), true /* make_symmetric */);
+    filter_table_ = Ray::CDFInverted(FilterTableSize, 0.0f, FilterWidth * 0.5f,
+                                     std::bind(filter_blackman_harris, std::placeholders::_1, FilterWidth),
+                                     true /* make_symmetric */);
 }
 
 void GSFilterTest::Exit() {}

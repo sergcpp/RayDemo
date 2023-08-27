@@ -791,11 +791,18 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     const JsString &js_filter = js_cam.at("filter").as_str();
                     if (js_filter.val == "box") {
                         cam_desc.filter = Ray::ePixelFilter::Box;
-                    } else if (js_filter.val == "tent") {
-                        cam_desc.filter = Ray::ePixelFilter::Tent;
+                    } else if (js_filter.val == "gaussian") {
+                        cam_desc.filter = Ray::ePixelFilter::Gaussian;
+                    } else if (js_filter.val == "blackman_harris") {
+                        cam_desc.filter = Ray::ePixelFilter::BlackmanHarris;
                     } else {
                         throw std::runtime_error("Unknown filter parameter!");
                     }
+                }
+
+                if (js_cam.Has("filter_width")) {
+                    const JsNumber &js_filter_width = js_cam.at("filter_width").as_num();
+                    cam_desc.filter_width = float(js_filter_width.val);
                 }
 
                 if (js_cam.Has("view_transform")) {

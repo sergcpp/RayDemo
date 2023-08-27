@@ -68,7 +68,7 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
         s.use_bindless = !nobindless;
         s.use_tex_compression = !nocompression;
         if (gpu_mode == 0) {
-            ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get(), Ray::eRendererType::Reference));
+            ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get(), Ray::RendererCPU));
         } else {
             ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get()));
         }
@@ -89,5 +89,5 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
     input_manager->SetConverter(InputManager::RAW_INPUT_P2_MOVE, nullptr);
 
     auto state_manager = GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    state_manager->Push(GSCreate(GS_FILTER_TEST, this));
+    state_manager->Push(GSCreate(GS_RAY_TEST, this));
 }
