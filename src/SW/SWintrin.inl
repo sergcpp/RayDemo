@@ -11,7 +11,9 @@
 #include <emmintrin.h>
 #include <immintrin.h>
 #include <smmintrin.h>
+#ifdef _MSC_VER
 #include <intrin.h>
+#endif
 #endif
 
 #if defined(USE_SSE2)
