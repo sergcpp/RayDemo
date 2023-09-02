@@ -4,7 +4,7 @@ stages:
   - test-img
   - deploy
 
-.windows-x86_64-build-job:
+.windows-x86_64-build-rel-job:
   stage: build
   tags:
     - windows
@@ -103,7 +103,7 @@ stages:
       - windows-x86_64_clang/
     expire_in: 1 week
 
-.windows-arm64-build-job:
+.windows-arm64-build-rel-job:
   stage: build
   tags:
     - windows
@@ -131,7 +131,7 @@ stages:
       - windows-arm64/
     expire_in: 1 week
 
-.linux-build-job:
+.linux-x86_64-build-rel-job:
   stage: build
   tags:
     - linux
@@ -161,7 +161,7 @@ stages:
       - linux-x86_64/
     expire_in: 1 week
 
-.macos-x86_64-build-job:
+.macos-x86_64-build-rel-job:
   stage: build
   tags:
     - macos
@@ -183,7 +183,7 @@ stages:
       - macos-x86_64/
     expire_in: 1 week
 
-.macos-arm64-build-job:
+.macos-arm64-build-rel-job:
   stage: build
   tags:
     - macos
@@ -328,9 +328,9 @@ stages:
       - ./*.exr
     expire_in: 1 week
 
-windows-x86_64-build-job:
+windows-x86_64-build-rel-job:
   extends:
-    - .windows-x86_64-build-job
+    - .windows-x86_64-build-rel-job
   tags:
     - windows,builder
 
@@ -358,27 +358,27 @@ windows-x86_64-build-clang-job:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
-windows-arm64-build-job:
+windows-arm64-build-rel-job:
   extends:
-    - .windows-arm64-build-job
+    - .windows-arm64-build-rel-job
   tags:
     - windows,builder
 
-linux-x86_64-build-job:
+linux-x86_64-build-rel-job:
   extends:
-    - .linux-build-job
+    - .linux-x86_64-build-rel-job
   tags:
     - linux,builder
 
-macos-x86_64-build-job:
+macos-x86_64-build-rel-job:
   extends:
-    - .macos-x86_64-build-job
+    - .macos-x86_64-build-rel-job
   tags:
     - macos,x86_64,builder
 
-macos-arm64-build-job:
+macos-arm64-build-rel-job:
   extends:
-    - .macos-arm64-build-job
+    - .macos-arm64-build-rel-job
   tags:
     - macos,arm64,builder
 
@@ -386,8 +386,8 @@ macos-universal-prepare-job:
   extends:
     - .macos-universal-prepare-job
   needs:
-    - macos-x86_64-build-job
-    - macos-arm64-build-job
+    - macos-x86_64-build-rel-job
+    - macos-arm64-build-rel-job
   tags:
     - macos,builder
 
@@ -398,7 +398,7 @@ windows-x86_64-cpu-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64
 
@@ -409,7 +409,7 @@ windows-x86_64-gpu-amd-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64,amd
 
@@ -420,7 +420,7 @@ windows-x86_64-gpu-nv-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64,nv
 
@@ -431,7 +431,7 @@ windows-x86_64-gpu-xe-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64,xe
 
@@ -442,7 +442,7 @@ windows-x86_64-gpu-arc-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64,arc
 
@@ -453,7 +453,7 @@ windows-x86_64-cpu-test-img-job:
   extends:
     - .windows-test-img-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64
   rules:
@@ -466,7 +466,7 @@ windows-x86_64-gpu-nv-test-img-job:
   extends:
     - .windows-test-img-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64,nv
   rules:
@@ -479,7 +479,7 @@ windows-x86_64-gpu-amd-test-img-job:
   extends:
     - .windows-test-img-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64,amd
   rules:
@@ -492,7 +492,7 @@ windows-x86_64-gpu-xe-test-img-job:
   extends:
     - .windows-test-img-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64,xe
   rules:
@@ -505,7 +505,7 @@ windows-x86_64-gpu-arc-test-img-job:
   extends:
     - .windows-test-img-job
   needs:
-    - windows-x86_64-build-job
+    - windows-x86_64-build-rel-job
   tags:
     - windows,x86_64,arc
   rules:
@@ -518,7 +518,7 @@ windows-arm64-cpu-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-arm64-build-job
+    - windows-arm64-build-rel-job
   tags:
     - windows,arm64
 
@@ -529,7 +529,7 @@ windows-arm64-gpu-adreno-test-job:
   extends:
     - .windows-test-job
   needs:
-    - windows-arm64-build-job
+    - windows-arm64-build-rel-job
   tags:
     - windows,arm64,adreno
 
@@ -540,7 +540,7 @@ windows-arm64-cpu-perf-test-job:
   extends:
     - .windows-perf-test-job
   needs:
-    - windows-arm64-build-job
+    - windows-arm64-build-rel-job
   tags:
     - windows,arm64,perf
   rules:
@@ -553,7 +553,7 @@ windows-arm64-gpu-perf-test-job:
   extends:
     - .windows-perf-test-job
   needs:
-    - windows-arm64-build-job
+    - windows-arm64-build-rel-job
   tags:
     - windows,arm64,perf
   rules:
@@ -566,7 +566,7 @@ windows-arm64-cpu-test-img-job:
   extends:
     - .windows-test-img-job
   needs:
-    - windows-arm64-build-job
+    - windows-arm64-build-rel-job
   tags:
     - windows,arm64
   rules:
@@ -579,7 +579,7 @@ windows-arm64-gpu-adreno-test-img-job:
   extends:
     - .windows-test-img-job
   needs:
-    - windows-arm64-build-job
+    - windows-arm64-build-rel-job
   tags:
     - windows,arm64,adreno
   rules:
@@ -592,7 +592,7 @@ linux-x86_64-cpu-test-job:
   extends:
     - .test-job
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
   tags:
     - linux,x86_64
 
@@ -603,7 +603,7 @@ linux-x86_64-gpu-nv-test-job:
   extends:
     - .test-job
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
   tags:
     - linux,x86_64,nv
 
@@ -614,7 +614,7 @@ linux-x86_64-gpu-amd-test-job:
   extends:
     - .test-job
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
   tags:
     - linux,x86_64,amd
 
@@ -625,7 +625,7 @@ linux-x86_64-cpu-test-img-job:
   extends:
     - .test-img-job
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
   tags:
     - linux,x86_64
   rules:
@@ -638,7 +638,7 @@ linux-x86_64-gpu-nv-test-img-job:
   extends:
     - .test-img-job
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
   tags:
     - linux,x86_64,nv
   rules:
@@ -651,7 +651,7 @@ linux-x86_64-gpu-amd-test-img-job:
   extends:
     - .test-img-job
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
   tags:
     - linux,x86_64,amd
   rules:
@@ -664,7 +664,7 @@ macos-x86_64-cpu-test-job:
   extends:
     - .test-job
   needs:
-    - macos-x86_64-build-job
+    - macos-x86_64-build-rel-job
   tags:
     - macos,x86_64
 
@@ -688,7 +688,7 @@ macos-arm64-cpu-test-job:
   extends:
     - .test-job
   needs:
-    - macos-arm64-build-job
+    - macos-arm64-build-rel-job
   tags:
     - macos,arm64
 
@@ -699,7 +699,7 @@ macos-arm64-gpu-m1-test-job:
   extends:
     - .test-job
   needs:
-    - macos-arm64-build-job
+    - macos-arm64-build-rel-job
   tags:
     - macos,arm64,m1
 
@@ -737,10 +737,10 @@ deploy-job:
     - echo "Deploying application..."
     - echo "Application successfully deployed."
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
     - macos-universal-prepare-job
-    - windows-arm64-build-job
-    - windows-x86_64-build-job
+    - windows-arm64-build-rel-job
+    - windows-x86_64-build-rel-job
   artifacts:
     paths:
       - windows-x86_64/
@@ -762,10 +762,10 @@ deploy-job-full-base:
     - cp windows-x86_64/DemoApp.exe ./
     - echo "Application successfully deployed."
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
     - macos-universal-prepare-job
-    - windows-arm64-build-job
-    - windows-x86_64-build-job
+    - windows-arm64-build-rel-job
+    - windows-x86_64-build-rel-job
   artifacts:
     name: "base_$CI_COMMIT_TAG"
     paths:
@@ -808,10 +808,10 @@ deploy-job-full-sponza:
     - cp windows-x86_64/DemoApp.exe ./
     - echo "Application successfully deployed."
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
     - macos-universal-prepare-job
-    - windows-arm64-build-job
-    - windows-x86_64-build-job
+    - windows-arm64-build-rel-job
+    - windows-x86_64-build-rel-job
   artifacts:
     name: "sponza_$CI_COMMIT_TAG"
     paths:
@@ -842,10 +842,10 @@ deploy-job-full-ai043:
     - cp windows-x86_64/DemoApp.exe ./
     - echo "Application successfully deployed."
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
     - macos-universal-prepare-job
-    - windows-arm64-build-job
-    - windows-x86_64-build-job
+    - windows-arm64-build-rel-job
+    - windows-x86_64-build-rel-job
   artifacts:
     name: "ai043_$CI_COMMIT_TAG"
     paths:
@@ -876,10 +876,10 @@ deploy-job-full-italian_flat:
     - cp windows-x86_64/DemoApp.exe ./
     - echo "Application successfully deployed."
   needs:
-    - linux-x86_64-build-job
+    - linux-x86_64-build-rel-job
     - macos-universal-prepare-job
-    - windows-arm64-build-job
-    - windows-x86_64-build-job
+    - windows-arm64-build-rel-job
+    - windows-x86_64-build-rel-job
   artifacts:
     name: "italian_flat_$CI_COMMIT_TAG"
     paths:
