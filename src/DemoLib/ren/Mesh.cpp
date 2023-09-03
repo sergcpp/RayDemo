@@ -179,7 +179,7 @@ void Ren::Mesh::InitMeshTerrain(std::istream &data, const material_load_callback
         p_fattrs[i * 9 + 8] = float(c);
     }
 
-    indices_size_ = (size_t)file_header.p[VTX_NDX_CHUNK].length;
+    indices_size_ = (uint32_t)file_header.p[VTX_NDX_CHUNK].length;
     indices_.reset(new char[indices_size_], std::default_delete<char[]>());
     data.read((char *)indices_.get(), indices_size_);
 
