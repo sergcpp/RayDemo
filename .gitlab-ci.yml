@@ -9,11 +9,6 @@ stages:
   tags:
     - windows
   script:
-    - echo "Compiling shaders..."
-    - cd src/Ray
-    - python scripts/compile_shaders.py
-    - git diff --quiet -- internal/shaders
-    - cd ../..
     - echo "Compiling the code..."
     - mkdir build
     - cd build
@@ -108,11 +103,6 @@ stages:
   tags:
     - windows
   script:
-    - echo "Compiling shaders..."
-    - cd src/Ray
-    - python scripts/compile_shaders.py
-    - git diff --quiet -- internal/shaders
-    - cd ../..
     - echo "Compiling the code..."
     - mkdir build
     - cd build
@@ -136,14 +126,6 @@ stages:
   tags:
     - linux
   script:
-    - echo "Compiling shaders..."
-    - cd src/Ray
-    - chmod +x third-party/spirv/linux/glslangValidator
-    - chmod +x third-party/spirv/linux/spirv-opt
-    - chmod +x third-party/spirv/linux/spirv-opt.sh
-    - python scripts/compile_shaders.py
-    - git diff --quiet -- internal/shaders
-    - cd ../..
     - echo "Compiling the code..."
     - mkdir build
     - cd build
