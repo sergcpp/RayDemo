@@ -11,7 +11,7 @@ stages:
   script:
     - echo "Compiling shaders..."
     - cd src/Ray
-    - python compile_shaders.py
+    - python scripts/compile_shaders.py
     - git diff --quiet -- internal/shaders
     - cd ../..
     - echo "Compiling the code..."
@@ -110,7 +110,7 @@ stages:
   script:
     - echo "Compiling shaders..."
     - cd src/Ray
-    - python compile_shaders.py
+    - python scripts/compile_shaders.py
     - git diff --quiet -- internal/shaders
     - cd ../..
     - echo "Compiling the code..."
@@ -141,7 +141,7 @@ stages:
     - chmod +x third-party/spirv/linux/glslangValidator
     - chmod +x third-party/spirv/linux/spirv-opt
     - chmod +x third-party/spirv/linux/spirv-opt.sh
-    - python compile_shaders.py
+    - python scripts/compile_shaders.py
     - git diff --quiet -- internal/shaders
     - cd ../..
     - echo "Compiling the code..."
