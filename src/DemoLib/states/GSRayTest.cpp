@@ -29,19 +29,17 @@ namespace GSRayTestInternal {
 const float FORWARD_SPEED = 8.0f;
 } // namespace GSRayTestInternal
 
-GSRayTest::GSRayTest(GameBase *game) : game_(game) {
-    state_manager_ = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_ = game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
+GSRayTest::GSRayTest(Viewer *viewer) : viewer_(viewer) {
+    state_manager_ = viewer->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
 
-    ui_renderer_ = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
-    ui_root_ = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
+    ui_renderer_ = viewer->ui_renderer.get();
+    ui_root_ = viewer->ui_root.get();
 
-    const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
-    font_ = fonts->FindFont("main_font");
+    font_ = viewer->ui_fonts->FindFont("main_font");
 
-    ray_renderer_ = game->GetComponent<Ray::RendererBase>(RAY_RENDERER_KEY);
+    ray_renderer_ = viewer->ray_renderer.get();
 
-    threads_ = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
+    threads_ = viewer->threads.get();
 }
 
 GSRayTest::~GSRayTest() = default;
@@ -53,10 +51,8 @@ void GSRayTest::UpdateRegionContexts() {
     int w, h;
     std::tie(w, h) = ray_renderer_->size();
 
-    auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
-
     Ray::unet_filter_properties_t unet_props;
-    if (app_params->denoise_method == 1) {
+    if (viewer_->app_params.denoise_method == 1) {
         ray_renderer_->InitUNetFilter(true, unet_props);
         unet_denoise_passes_ = unet_props.pass_count;
     } else {
@@ -118,9 +114,9 @@ void GSRayTest::UpdateRegionContexts() {
             denoise_task_ids[0].emplace_back();
             for (int j = 0; j < int(region_contexts_[i].size()); ++j) {
                 short id = -1;
-                if (app_params->denoise_method == 0) {
+                if (viewer_->app_params.denoise_method == 0) {
                     id = render_and_denoise_tasks_->AddTask(denoise_job_nlm, i, j);
-                } else if (app_params->denoise_method == 1) {
+                } else if (viewer_->app_params.denoise_method == 1) {
                     id = render_and_denoise_tasks_->AddTask(denoise_job_unet, 0, i, j);
                 }
 
@@ -140,7 +136,7 @@ void GSRayTest::UpdateRegionContexts() {
             }
         }
 
-        if (app_params->denoise_method == 1) {
+        if (viewer_->app_params.denoise_method == 1) {
             for (int pass = 1; pass < unet_props.pass_count; ++pass) {
                 for (int y = 0, i = 0; y < h; y += TileSize, ++i) {
                     denoise_task_ids[pass].emplace_back();
@@ -229,10 +225,8 @@ void GSRayTest::Enter() {
 
     JsObject js_scene;
 
-    auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
-
     {
-        std::ifstream in_file(app_params->scene_name, std::ios::binary);
+        std::ifstream in_file(viewer_->app_params.scene_name, std::ios::binary);
         if (!js_scene.Read(in_file)) {
             ray_renderer_->log()->Error("Failed to parse scene file!");
         }
@@ -241,7 +235,7 @@ void GSRayTest::Enter() {
     if (js_scene.Size()) {
         try {
             const uint64_t t1 = Sys::GetTimeMs();
-            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res, threads_.get());
+            ray_scene_ = LoadScene(ray_renderer_, js_scene, viewer_->app_params.max_tex_res, threads_);
             const uint64_t t2 = Sys::GetTimeMs();
             ray_renderer_->log()->Info("Scene loaded in %.1fs", double(t2 - t1) * 0.001);
         } catch (std::exception &e) {
@@ -273,22 +267,22 @@ void GSRayTest::Enter() {
 
     focal_distance_ = cam_desc.focus_distance;
 
-    cam_desc.max_diff_depth = app_params->diff_depth;
-    cam_desc.max_spec_depth = app_params->spec_depth;
-    cam_desc.max_refr_depth = app_params->refr_depth;
-    cam_desc.max_transp_depth = app_params->transp_depth;
-    cam_desc.max_total_depth = total_depth_ = app_params->total_depth;
+    cam_desc.max_diff_depth = viewer_->app_params.diff_depth;
+    cam_desc.max_spec_depth = viewer_->app_params.spec_depth;
+    cam_desc.max_refr_depth = viewer_->app_params.refr_depth;
+    cam_desc.max_transp_depth = viewer_->app_params.transp_depth;
+    cam_desc.max_total_depth = total_depth_ = viewer_->app_params.total_depth;
 
-    if (app_params->output_aux || app_params->denoise_after != -1) {
+    if (viewer_->app_params.output_aux || viewer_->app_params.denoise_after != -1) {
         cam_desc.output_base_color = true;
         cam_desc.output_depth_normals = true;
     }
 
-    cam_desc.clamp_direct = app_params->clamp_direct;
-    cam_desc.clamp_indirect = app_params->clamp_indirect;
+    cam_desc.clamp_direct = viewer_->app_params.clamp_direct;
+    cam_desc.clamp_indirect = viewer_->app_params.clamp_indirect;
 
-    cam_desc.min_samples = app_params->min_samples;
-    cam_desc.variance_threshold = app_params->variance_threshold;
+    cam_desc.min_samples = viewer_->app_params.min_samples;
+    cam_desc.variance_threshold = viewer_->app_params.variance_threshold;
 
     ray_scene_->SetCamera(current_cam_, cam_desc);
 
@@ -306,9 +300,9 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     using namespace GSRayTestInternal;
 
     const uint64_t t1 = Sys::GetTimeMs();
-    auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
+    const auto &app_params = viewer_->app_params;
 
-    if (app_params->ref_name.empty()) { // make sure camera doesn't change during reference tests
+    if (app_params.ref_name.empty()) { // make sure camera doesn't change during reference tests
         Ray::camera_desc_t cam_desc;
         ray_scene_->GetCamera(current_cam_, cam_desc);
 
@@ -344,24 +338,24 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     const auto rt = ray_renderer_->type();
 
     const bool denoise_image =
-        app_params->denoise_after != -1 && region_contexts_[0][0].iteration >= app_params->denoise_after;
+        app_params.denoise_after != -1 && region_contexts_[0][0].iteration >= app_params.denoise_after;
 
     if (Ray::RendererSupportsMultithreading(rt)) {
-        for (int i = 0; i < app_params->iteration_steps; ++i) {
-            if (denoise_image && i == app_params->iteration_steps - 1) {
+        for (int i = 0; i < app_params.iteration_steps; ++i) {
+            if (denoise_image && i == app_params.iteration_steps - 1) {
                 threads_->Enqueue(*render_and_denoise_tasks_).wait();
             } else {
                 threads_->Enqueue(*render_tasks_).wait();
             }
         }
     } else {
-        for (int i = 0; i < app_params->iteration_steps; ++i) {
+        for (int i = 0; i < app_params.iteration_steps; ++i) {
             for (auto &regions_row : region_contexts_) {
                 for (auto &region : regions_row) {
                     ray_renderer_->RenderScene(ray_scene_.get(), region);
                 }
             }
-            if (denoise_image && i == app_params->iteration_steps - 1) {
+            if (denoise_image && i == app_params.iteration_steps - 1) {
                 if (unet_denoise_passes_ != -1) {
                     for (int pass = 0; pass < unet_denoise_passes_; ++pass) {
                         for (const auto &regions_row : region_contexts_) {
@@ -455,13 +449,13 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     bool write_output = region_contexts_[0][0].iteration > 0;
     // write output image periodically
     write_output &= (region_contexts_[0][0].iteration % 128) == 0;
-    if (app_params->max_samples != -1) {
+    if (app_params.max_samples != -1) {
         // write output image once target sample count has been reached
-        write_output |= (region_contexts_[0][0].iteration == app_params->max_samples);
+        write_output |= (region_contexts_[0][0].iteration == app_params.max_samples);
     }
 
     if (write_output) {
-        std::string base_name = app_params->scene_name;
+        std::string base_name = app_params.scene_name;
 
         const size_t n1 = base_name.find_last_of('/');
         if (n1 != std::string::npos) {
@@ -476,7 +470,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         // Write tonemapped image
         WritePNG(pixel_data.ptr, pixel_data.pitch, w, h, 3, false /* flip */, (base_name + ".png").c_str());
 
-        if (app_params->output_exr) { // Write untonemapped image
+        if (app_params.output_exr) { // Write untonemapped image
             const auto raw_pixel_data = ray_renderer_->get_raw_pixels_ref();
 
             std::vector<Ray::color_rgba_t> raw_pixel_data_out(w * h);
@@ -496,7 +490,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             pixel_data = ray_renderer_->get_pixels_ref();
         }
 
-        if (app_params->output_aux) { // Output base color, normals, depth
+        if (app_params.output_aux) { // Output base color, normals, depth
             const auto base_color = ray_renderer_->get_aux_pixels_ref(Ray::eAUXBuffer::BaseColor);
             WritePNG(base_color.ptr, base_color.pitch, w, h, 3, false /* flip */,
                      (base_name + "_base_color.png").c_str());
@@ -521,12 +515,12 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                                    region_contexts_[0][0].iteration);
     }
 
-    const bool should_compare_result = write_output && !app_params->ref_name.empty();
+    const bool should_compare_result = write_output && !app_params.ref_name.empty();
     if (should_compare_result) {
         const int DiffThres = 32;
 
         int ref_w, ref_h;
-        auto ref_data = Load_stb_image(app_params->ref_name.c_str(), ref_w, ref_h);
+        auto ref_data = Load_stb_image(app_params.ref_name.c_str(), ref_w, ref_h);
         if (!ref_data.empty() && ref_w == w && ref_h == h) {
             int error_pixels = 0;
             double mse = 0.0f;
@@ -562,19 +556,19 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                                        region_contexts_[0][0].iteration);
             fflush(stdout);
 
-            if (app_params->threshold != -1 && app_params->max_samples != -1 &&
-                region_contexts_[0][0].iteration >= app_params->max_samples) {
+            if (app_params.threshold != -1 && app_params.max_samples != -1 &&
+                region_contexts_[0][0].iteration >= app_params.max_samples) {
                 ray_renderer_->log()->Info("Elapsed time: %.2fm",
                                            double(Sys::GetTimeMs() - test_start_time_) / 60000.0);
-                if (psnr < app_params->psnr || error_pixels > app_params->threshold) {
+                if (psnr < app_params.psnr || error_pixels > app_params.threshold) {
                     ray_renderer_->log()->Info("Test failed: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr,
-                                               app_params->psnr, error_pixels, app_params->threshold);
-                    game_->return_code = -1;
+                                               app_params.psnr, error_pixels, app_params.threshold);
+                    viewer_->return_code = -1;
                 } else {
                     ray_renderer_->log()->Info("Test success: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr,
-                                               app_params->psnr, error_pixels, app_params->threshold);
+                                               app_params.psnr, error_pixels, app_params.threshold);
                 }
-                game_->terminated = true;
+                viewer_->terminated = true;
             }
         }
     }
@@ -802,7 +796,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         Ray::RendererBase::stats_t st = {};
         ray_renderer_->GetStats(st);
 
-        const float font_height = font_->height(ui_root_.get());
+        const float font_height = font_->height(ui_root_);
 
         std::string stats1;
         stats1 += "res:   ";
@@ -827,17 +821,17 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         stats5 += std::to_string(cur_time_stat_ms_);
         stats5 += " ms";
 
-        font_->DrawText(ui_renderer_.get(), stats1.c_str(), {-1, 1 - 1 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats2.c_str(), {-1, 1 - 2 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats3.c_str(), {-1, 1 - 3 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats4.c_str(), {-1, 1 - 4 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats5.c_str(), {-1, 1 - 5 * font_height}, ui_root_.get());
+        font_->DrawText(ui_renderer_, stats1.c_str(), {-1, 1 - 1 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats2.c_str(), {-1, 1 - 2 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats3.c_str(), {-1, 1 - 3 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats4.c_str(), {-1, 1 - 4 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats5.c_str(), {-1, 1 - 5 * font_height}, ui_root_);
 
         std::string stats6 = std::to_string(time_total / 1000);
         stats6 += " ms";
 
-        font_->DrawText(ui_renderer_.get(), stats6.c_str(),
-                        {-1 + 2 * 135.0f / float(w), 1 - 2 * 4.0f / float(h) - font_height}, ui_root_.get());
+        font_->DrawText(ui_renderer_, stats6.c_str(),
+                        {-1 + 2 * 135.0f / float(w), 1 - 2 * 4.0f / float(h) - font_height}, ui_root_);
 
         //
         const float xx = -1.0f + 2.0f * (180.0f + 152.0f) / float(ui_root_->size_px()[0]);
@@ -845,55 +839,55 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "Denoise", {xx, 1 - 2 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_, "Denoise", {xx, 1 - 2 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "SecShadow", {xx, 1 - 3 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_, "SecShadow", {xx, 1 - 3 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 0.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "SecShade", {xx, 1 - 4 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_, "SecShade", {xx, 1 - 4 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{0.0f, 1.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "SecTrace", {xx, 1 - 5 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_, "SecTrace", {xx, 1 - 5 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{0.0f, 0.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "SecSort", {xx, 1 - 6 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_, "SecSort", {xx, 1 - 6 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "1stShadow", {xx, 1 - 7 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_, "1stShadow", {xx, 1 - 7 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{0.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "1stShade", {xx, 1 - 8 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_, "1stShade", {xx, 1 - 8 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 0.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "1stTrace", {xx, 1 - 9 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_, "1stTrace", {xx, 1 - 9 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_.get(), "Raygen", {xx, 1 - 10 * font_height}, ui_root_.get());
+            font_->DrawText(ui_renderer_, "Raygen", {xx, 1 - 10 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
 

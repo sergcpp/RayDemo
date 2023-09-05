@@ -3,6 +3,7 @@
 #include <random>
 #include <thread>
 
+#include <Ray/Ray.h>
 #include <Sys/AssetFileIO.h>
 #include <Sys/Json.h>
 #include <Sys/Time_.h>
@@ -18,22 +19,19 @@
 GameBase::GameBase(const int w, const int h, const char * /*local_dir*/) : width(w), height(h) {
     terminated = false;
 
-    auto log =
+    log =
 #if !defined(__ANDROID__)
-        std::make_shared<LogStdout>();
+        std::make_unique<LogStdout>();
 #else
-        std::make_shared<LogAndroid>("APP_JNI");
+        std::make_unique<LogAndroid>("APP_JNI");
 #endif
-    AddComponent(LOG_KEY, log);
 
-    auto ctx = std::make_shared<Ren::Context>();
-    ctx->Init(w, h);
-    AddComponent(REN_CONTEXT_KEY, ctx);
+    ren_ctx = std::make_unique<Ren::Context>();
+    ren_ctx->Init(w, h);
 
 #if !defined(__EMSCRIPTEN__)
     auto num_threads = std::max(std::thread::hardware_concurrency(), 1u);
-    auto pool = std::make_shared<Sys::ThreadPool>(num_threads);
-    AddComponent(THREAD_POOL_KEY, pool);
+    threads = std::make_unique<Sys::ThreadPool>(num_threads);
 #endif
 
     auto state_manager = std::make_shared<GameStateManager>();
@@ -42,21 +40,16 @@ GameBase::GameBase(const int w, const int h, const char * /*local_dir*/) : width
     auto input_manager = std::make_shared<InputManager>();
     AddComponent(INPUT_MANAGER_KEY, input_manager);
 
-    auto random_engine = std::make_shared<Random>(std::random_device{}());
-    AddComponent(RANDOM_KEY, random_engine);
+    random = std::make_unique<Random>(std::random_device{}());
 
     JsObject config;
     config[Gui::GL_DEFINES_KEY] = JsString{ "" };
-    auto ui_renderer = std::make_shared<Gui::Renderer>(*ctx.get(), config);
-    AddComponent(UI_RENDERER_KEY, ui_renderer);
-
-    auto ui_root = std::make_shared<Gui::RootElement>(Gui::Vec2i(w, h));
-    AddComponent(UI_ROOT_KEY, ui_root);
+    ui_renderer = std::make_unique<Gui::Renderer>(*ren_ctx.get(), config);
+    ui_root = std::make_unique<Gui::RootElement>(Gui::Vec2i(w, h));
 }
 
 GameBase::~GameBase() {
     // context should be deleted last
-    auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
     components_.clear();
 
     //Sys::StopWorker();
@@ -66,10 +59,8 @@ void GameBase::Resize(const int w, const int h) {
     width = w;
     height = h;
 
-    auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
-    ctx->Resize(width, height);
+    ren_ctx->Resize(width, height);
 
-    auto ui_root = GetComponent<Gui::RootElement>(UI_ROOT_KEY);
     ui_root->set_zone({ width, height });
     ui_root->Resize(nullptr);
 }

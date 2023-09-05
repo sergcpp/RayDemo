@@ -3,64 +3,6 @@
 #include <algorithm>
 #include <istream>
 
-Ren::MeshRef Ren::Context::LoadMesh(const char *name, std::istream &data, material_load_callback on_mat_load) {
-    return LoadMesh(name, data, on_mat_load, default_vertex_buf_, default_indices_buf_);
-}
-
-Ren::MeshRef Ren::Context::LoadMesh(const char *name, std::istream &data, material_load_callback on_mat_load,
-                                    const BufferRef &vertex_buf, const BufferRef &index_buf) {
-    MeshRef ref;
-    for (auto it = meshes_.begin(); it != meshes_.end(); ++it) {
-        if (strcmp(it->name(), name) == 0) {
-            ref = { &meshes_, it.index() };
-        }
-    }
-
-    if (!ref) {
-        ref = meshes_.Add(name, data, on_mat_load, vertex_buf, index_buf);
-    }
-
-    return ref;
-}
-
-Ren::MaterialRef Ren::Context::LoadMaterial(const char *name, const char *mat_src, eMatLoadStatus *status, const program_load_callback &on_prog_load,
-        const texture_load_callback &on_tex_load) {
-    MaterialRef ref;
-    for (auto it = materials_.begin(); it != materials_.end(); ++it) {
-        if (strcmp(it->name(), name) == 0) {
-            ref = { &materials_, it.index() };
-        }
-    }
-
-    if (!ref) {
-        ref = materials_.Add(name, mat_src, status, on_prog_load, on_tex_load);
-    } else {
-        if (ref->ready()) {
-            if (status) *status = MatFound;
-        } else if (!ref->ready() && mat_src) {
-            ref->Init(name, mat_src, status, on_prog_load, on_tex_load);
-        }
-    }
-
-    return ref;
-}
-
-int Ren::Context::NumMaterialsNotReady() {
-    return (int)std::count_if(materials_.begin(), materials_.end(), [](const Material &m) {
-        return !m.ready();
-    });
-}
-
-void Ren::Context::ReleaseMaterials() {
-    if (!materials_.Size()) return;
-    fprintf(stderr, "---------REMAINING MATERIALS--------\n");
-    for (const auto &m : materials_) {
-        fprintf(stderr, "%s\n", m.name());
-    }
-    fprintf(stderr, "-----------------------------------\n");
-    materials_.Clear();
-}
-
 int Ren::Context::NumProgramsNotReady() {
     return (int)std::count_if(programs_.begin(), programs_.end(), [](const Program &p) {
         return !p.ready();
@@ -138,43 +80,6 @@ void Ren::Context::ReleaseTextures() {
     textures_.Clear();
 }
 
-Ren::AnimSeqRef Ren::Context::LoadAnimSequence(const char *name, std::istream &data) {
-    AnimSeqRef ref;
-    for (auto it = anims_.begin(); it != anims_.end(); ++it) {
-        if (strcmp(it->name(), name) == 0) {
-            ref = { &anims_, it.index() };
-            break;
-        }
-    }
-
-    if (!ref) {
-        ref = anims_.Add(name, data);
-    } else {
-        if (ref->ready()) {
-        } else if (!ref->ready() && data) {
-            ref->Init(name, data);
-        }
-    }
-
-    return ref;
-}
-
-int Ren::Context::NumAnimsNotReady() {
-    return (int)std::count_if(anims_.begin(), anims_.end(), [](const AnimSequence &a) {
-        return !a.ready();
-    });
-}
-
-void Ren::Context::ReleaseAnims() {
-    if (!anims_.Size()) return;
-    fprintf(stderr, "---------REMAINING ANIMS--------\n");
-    for (const auto &a : anims_) {
-        fprintf(stderr, "%s\n", a.name());
-    }
-    fprintf(stderr, "-----------------------------------\n");
-    anims_.Clear();
-}
-
 Ren::BufferRef Ren::Context::CreateBuffer(uint32_t initial_size) {
     return buffers_.Add(initial_size);
 }
@@ -190,12 +95,9 @@ void Ren::Context::ReleaseBuffers() {
 }
 
 void Ren::Context::ReleaseAll() {
-    meshes_.Clear();
     default_vertex_buf_ = {};
     default_indices_buf_ = {};
 
-    ReleaseAnims();
-    ReleaseMaterials();
     ReleaseTextures();
     ReleaseBuffers();
 }

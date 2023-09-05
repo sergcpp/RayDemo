@@ -11,13 +11,13 @@
 namespace Ray {
 class RendererBase;
 class SceneBase;
-}
+} // namespace Ray
 
 namespace Sys {
 class ThreadPool;
 }
 
-std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, int max_tex_res,
+std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, int max_tex_res,
                                           Sys::ThreadPool *threads);
 
 std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadOBJ(const char *file_name);

@@ -54,27 +54,19 @@ set(GUI_SOURCES gui/BaseElement.h
 		        gui/Utils.h
 		        gui/Utils.cpp)
 
-set(REN_SOURCES ren/Anim.h
-		        ren/Anim.cpp
-		        ren/Buffer.h
+set(REN_SOURCES ren/Buffer.h
 		        ren/Buffer.cpp
 		        ren/Camera.h
 		        ren/Camera.cpp
 		        ren/Context.h
 		        ren/Context.cpp
 		        ren/ContextSW.cpp
-		        ren/Fwd.h
-		        ren/Material.h
-		        ren/Material.cpp
-		        ren/Mesh.h
-		        ren/Mesh.cpp
 		        ren/MMat.h
 		        ren/MQuat.h
 		        ren/MVec.h
 		        ren/Program.h
 		        ren/ProgramSW.h
 		        ren/ProgramSW.cpp
-		        ren/RingBuffer.h
 		        ren/SmallVector.h
 		        ren/SparseArray.h
 		        ren/Storage.h

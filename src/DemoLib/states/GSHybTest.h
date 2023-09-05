@@ -8,9 +8,8 @@
 #include "../ren/Program.h"
 #include "../ren/Texture.h"
 
-class GameBase;
 class GameStateManager;
-class FontStorage;
+class Viewer;
 
 namespace Sys {
 class ThreadPool;
@@ -23,21 +22,20 @@ class Renderer;
 }
 
 class GSHybTest : public GameState {
-    GameBase *game_;
+    Viewer *viewer_ = nullptr;
     std::weak_ptr<GameStateManager> state_manager_;
-    std::shared_ptr<Ren::Context> ctx_;
 
-    std::shared_ptr<Gui::Renderer> ui_renderer_;
-    std::shared_ptr<Gui::BaseElement> ui_root_;
-    std::shared_ptr<Gui::BitmapFont> font_;
+    Gui::Renderer *ui_renderer_ = nullptr;
+    Gui::BaseElement *ui_root_ = nullptr;
+    Gui::BitmapFont *font_ = nullptr;
 
     std::vector<std::shared_ptr<Ray::RendererBase>> gpu_tracers_;
     std::vector<std::shared_ptr<Ray::SceneBase>> gpu_scenes_;
 
-    std::shared_ptr<Ray::RendererBase> cpu_tracer_;
-    std::shared_ptr<Ray::SceneBase> cpu_scene_;
+    std::unique_ptr<Ray::RendererBase> cpu_tracer_;
+    std::unique_ptr<Ray::SceneBase> cpu_scene_;
 
-    std::shared_ptr<Sys::ThreadPool> threads_;
+    Sys::ThreadPool *threads_ = nullptr;
 
     bool animate_ = false;
     bool view_grabbed_ = false;
@@ -70,7 +68,7 @@ class GSHybTest : public GameState {
     void UpdateRegionContexts();
     void UpdateEnvironment(const Ren::Vec3f &sun_dir);
 public:
-    explicit GSHybTest(GameBase *game);
+    explicit GSHybTest(Viewer *viewer);
 
     void Enter() override;
     void Exit() override;

@@ -4,8 +4,8 @@
 
 #include <Ray/internal/Core.h>
 #include <Ray/internal/Halton.h>
-#include <Sys/Json.h>
 #include <SW/SW.h>
+#include <Sys/Json.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
@@ -131,27 +131,17 @@ FSHADER vtx_color_fs(FS_IN, FS_OUT) {
 }
 }
 
-GSVNDFTest::GSVNDFTest(GameBase *game) {
+GSVNDFTest::GSVNDFTest(Viewer *viewer) : viewer_(viewer) {
     using namespace GSVNDFTestInternal;
 
-    state_manager_ = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_ = game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
-    renderer_ = game->GetComponent<Renderer>(RENDERER_KEY);
-
-    random_ = game->GetComponent<Random>(RANDOM_KEY);
-
-    ui_renderer_ = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
-    ui_root_ = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
-
-    const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
-    font_ = fonts->FindFont("main_font");
+    state_manager_ = viewer->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
 
     {
         const Ren::Attribute attrs[] = {{"pos", A_POS, SW_VEC3, 1}, {"col", A_COL, SW_VEC3, 1}, {}};
         const Ren::Attribute unifs[] = {{"mvp", U_MVP, SW_MAT4, 1}, {}};
         Ren::eProgLoadStatus status;
-        vtx_color_prog_ =
-            ctx_->LoadProgramSW("vtx_color", (void *)vtx_color_vs, (void *)vtx_color_fs, 3, attrs, unifs, &status);
+        vtx_color_prog_ = viewer->ren_ctx->LoadProgramSW("vtx_color", (void *)vtx_color_vs, (void *)vtx_color_fs, 3,
+                                                         attrs, unifs, &status);
     }
 }
 
@@ -182,7 +172,7 @@ void GSVNDFTest::Draw(uint64_t dt_us) {
     const auto cam_target = Ren::Vec3f{0.0f, 0.0f, 0.0f};
     const auto cam_up = Ren::Vec3f{0.0f, 1.0f, 0.0f};
 
-    const float k = float(ctx_->w()) / ctx_->h();
+    const float k = float(viewer_->ren_ctx->w()) / viewer_->ren_ctx->h();
     cam_.Perspective(45.0f, k, 0.1f, 100.0f);
     cam_.SetupView(cam_center, cam_target, cam_up);
 

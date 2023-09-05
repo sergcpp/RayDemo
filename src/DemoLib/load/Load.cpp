@@ -250,9 +250,9 @@ struct DDS_HEADER_DXT10 {
 };
 } // namespace
 
-std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res,
+std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res,
                                           Sys::ThreadPool *threads) {
-    auto new_scene = std::shared_ptr<Ray::SceneBase>(r->CreateScene());
+    auto new_scene = std::unique_ptr<Ray::SceneBase>(r->CreateScene());
 
     std::vector<Ray::CameraHandle> cameras;
     std::map<std::string, Ray::TextureHandle> textures;

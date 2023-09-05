@@ -15,9 +15,6 @@
 Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams &_app_params, const int gpu_mode,
                const bool nobindless, const bool nocompression)
     : GameBase(w, h, local_dir) {
-    auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
-    auto log = GetComponent<Ray::ILog>(LOG_KEY);
-
     JsObject main_config;
 
     { // load config
@@ -37,22 +34,18 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
     const JsObject &ui_settings = main_config.at("ui_settings").as_obj();
 
     { // load fonts
-        auto font_storage = std::make_shared<FontStorage>();
-        AddComponent(UI_FONTS_KEY, font_storage);
+        ui_fonts = std::make_unique<FontStorage>();
 
         const JsObject &fonts = ui_settings.at("fonts").as_obj();
         for (auto &el : fonts.elements) {
             const std::string &name = el.first;
             const JsString &file_name = el.second.as_str();
 
-            font_storage->LoadFont(name, file_name.val, ctx.get());
+            ui_fonts->LoadFont(name, file_name.val, ren_ctx.get());
         }
     }
 
-    {
-        auto app_params = std::make_shared<AppParams>(_app_params);
-        AddComponent(APP_PARAMS_KEY, app_params);
-    }
+    app_params = _app_params;
 
     { // create ray renderer
         Ray::settings_t s;
@@ -62,15 +55,13 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
             s.preferred_device = _app_params.device_name.c_str();
         }
 
-        std::shared_ptr<Ray::RendererBase> ray_renderer;
-
         s.use_hwrt = (gpu_mode == 2);
         s.use_bindless = !nobindless;
         s.use_tex_compression = !nocompression;
         if (gpu_mode == 0) {
-            ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get(), Ray::RendererCPU));
+            ray_renderer.reset(Ray::CreateRenderer(s, log.get(), Ray::RendererCPU));
         } else {
-            ray_renderer = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(s, log.get()));
+            ray_renderer.reset(Ray::CreateRenderer(s, log.get()));
         }
 
         if (!_app_params.device_name.empty() && !_app_params.ref_name.empty()) {
@@ -80,8 +71,6 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
                 throw std::runtime_error("Requested device not found!");
             }
         }
-
-        AddComponent(RAY_RENDERER_KEY, ray_renderer);
     }
 
     auto input_manager = GetComponent<InputManager>(INPUT_MANAGER_KEY);
@@ -91,3 +80,5 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
     auto state_manager = GetComponent<GameStateManager>(STATE_MANAGER_KEY);
     state_manager->Push(GSCreate(GS_RAY_TEST, this));
 }
+
+Viewer::~Viewer() = default;

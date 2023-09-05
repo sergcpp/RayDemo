@@ -40,10 +40,6 @@ void Ren::Context::Init(const int w, const int h) {
     max_uniform_vec4 = swGetInteger(SW_MAX_VERTEX_UNIFORM_VECTORS);
     printf("\tMax uniforms\t: %i\n", max_uniform_vec4);
 
-    // how many bones(mat4) can be used at time
-    Mesh::max_gpu_bones = max_uniform_vec4 / 2;
-    printf("\tBones per pass\t: %i\n", Mesh::max_gpu_bones);
-
     printf("===========================================\n\n");
 
     default_vertex_buf_ = buffers_.Add(32 * 1024 * 1024);

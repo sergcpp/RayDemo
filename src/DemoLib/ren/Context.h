@@ -1,9 +1,6 @@
 #pragma once
 
-#include "Anim.h"
 #include "Buffer.h"
-#include "Material.h"
-#include "Mesh.h"
 #include "Program.h"
 #include "Texture.h"
 
@@ -14,11 +11,8 @@ class Context {
 protected:
     int w_ = 0, h_ = 0;
 
-    MeshStorage      meshes_;
-    MaterialStorage  materials_;
     ProgramStorage   programs_;
     Texture2DStorage textures_;
-    AnimSeqStorage   anims_;
     BufferStorage    buffers_;
 
     BufferRef       default_vertex_buf_, default_indices_buf_;
@@ -42,17 +36,6 @@ public:
 
     void Resize(int w, int h);
 
-    /*** Mesh ***/
-    MeshRef LoadMesh(const char *name, std::istream &data, material_load_callback on_mat_load);
-    MeshRef LoadMesh(const char *name, std::istream &data, material_load_callback on_mat_load,
-                     const BufferRef &vertex_buf, const BufferRef &index_buf);
-
-    /*** Material ***/
-    MaterialRef LoadMaterial(const char *name, const char *mat_src, eMatLoadStatus *status, const program_load_callback &on_prog_load,
-                             const texture_load_callback &on_tex_load);
-    int NumMaterialsNotReady();
-    void ReleaseMaterials();
-
     /*** Program ***/
     ProgramRef LoadProgramSW(const char *name, void *vs_shader, void *fs_shader, int num_fvars,
                              const Attribute *attrs, const Uniform *unifs, eProgLoadStatus *load_status);
@@ -65,11 +48,6 @@ public:
 
     int NumTexturesNotReady();
     void ReleaseTextures();
-
-    /*** Anims ***/
-    AnimSeqRef LoadAnimSequence(const char *name, std::istream &data);
-    int NumAnimsNotReady();
-    void ReleaseAnims();
 
     /*** Buffers ***/
     BufferRef CreateBuffer(uint32_t initial_size);

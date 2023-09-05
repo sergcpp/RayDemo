@@ -11,6 +11,7 @@
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
+#include "../gui/BaseElement.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
 #include "../load/Load.h"
@@ -19,27 +20,22 @@ namespace GSHybTestInternal {
 const float FORWARD_SPEED = 0.5f;
 }
 
-GSHybTest::GSHybTest(GameBase *game) : game_(game) {
-    state_manager_ = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_ = game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
+GSHybTest::GSHybTest(Viewer *viewer) : viewer_(viewer) {
+    state_manager_ = viewer->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
 
-    ui_renderer_ = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
-    ui_root_ = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
+    ui_renderer_ = viewer->ui_renderer.get();
+    ui_root_ = viewer->ui_root.get();
 
-    const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
-    font_ = fonts->FindFont("main_font");
+    font_ = viewer->ui_fonts->FindFont("main_font");
 
-    auto log = game->GetComponent<Ray::ILog>(LOG_KEY);
+    Ray::ILog *log = viewer->log.get();
 
     Ray::settings_t s;
-    s.w = game->width;
-    s.h = game->height;
-    cpu_tracer_ = std::shared_ptr<Ray::RendererBase>(Ray::CreateRenderer(
-        s, log.get(),
-        Ray::Bitmask<Ray::eRendererType>{Ray::eRendererType::SIMD_AVX2} | Ray::eRendererType::SIMD_AVX |
-            Ray::eRendererType::SIMD_SSE2 | Ray::eRendererType::SIMD_SSE41 | Ray::eRendererType::Reference));
+    s.w = viewer->width;
+    s.h = viewer->height;
+    cpu_tracer_.reset(Ray::CreateRenderer(s, log, Ray::RendererCPU));
 
-    threads_ = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
+    threads_ = viewer->threads.get();
 }
 
 void GSHybTest::UpdateRegionContexts() {
@@ -49,18 +45,20 @@ void GSHybTest::UpdateRegionContexts() {
     if (gpu_cpu_div_fac_ > 0.95f)
         gpu_cpu_div_fac_ = 0.95f;
 
-    const int gpu_start_hor = int(ctx_->h() * gpu_cpu_div_fac_);
+    const Ren::Context *ctx = viewer_->ren_ctx.get();
+
+    const int gpu_start_hor = int(ctx->h() * gpu_cpu_div_fac_);
 
     { // setup gpu renderers
         if (gpu_tracers_.size() == 2) {
-            auto rect1 = Ray::rect_t{0, 0, (int)(ctx_->w() * gpu_gpu_div_fac_), gpu_start_hor};
+            auto rect1 = Ray::rect_t{0, 0, (int)(ctx->w() * gpu_gpu_div_fac_), gpu_start_hor};
             gpu_region_contexts_.emplace_back(rect1);
 
-            auto rect2 = Ray::rect_t{(int)(ctx_->w() * gpu_gpu_div_fac_), 0,
-                                     (int)(ctx_->w() * (1.0f - gpu_gpu_div_fac_)), gpu_start_hor};
+            auto rect2 = Ray::rect_t{(int)(ctx->w() * gpu_gpu_div_fac_), 0, (int)(ctx->w() * (1.0f - gpu_gpu_div_fac_)),
+                                     gpu_start_hor};
             gpu_region_contexts_.emplace_back(rect2);
         } else if (gpu_tracers_.size() == 1) {
-            auto rect = Ray::rect_t{0, 0, ctx_->w(), gpu_start_hor};
+            auto rect = Ray::rect_t{0, 0, ctx->w(), gpu_start_hor};
             gpu_region_contexts_.emplace_back(rect);
         }
     }
@@ -68,10 +66,10 @@ void GSHybTest::UpdateRegionContexts() {
     { // setup cpu renderers
         const int BUCKET_SIZE_X = 128, BUCKET_SIZE_Y = 64;
 
-        for (int y = gpu_start_hor; y < ctx_->h(); y += BUCKET_SIZE_Y) {
-            for (int x = 0; x < ctx_->w(); x += BUCKET_SIZE_X) {
+        for (int y = gpu_start_hor; y < ctx->h(); y += BUCKET_SIZE_Y) {
+            for (int x = 0; x < ctx->w(); x += BUCKET_SIZE_X) {
                 auto rect =
-                    Ray::rect_t{x, y, std::min(ctx_->w() - x, BUCKET_SIZE_X), std::min(ctx_->h() - y, BUCKET_SIZE_Y)};
+                    Ray::rect_t{x, y, std::min(ctx->w() - x, BUCKET_SIZE_X), std::min(ctx->h() - y, BUCKET_SIZE_Y)};
 
                 cpu_region_contexts_.emplace_back(rect);
             }
@@ -117,8 +115,6 @@ void GSHybTest::Enter() {
     }*/
 #endif
 
-    auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
-
     JsObject js_scene;
 
     {
@@ -133,15 +129,14 @@ void GSHybTest::Enter() {
         gpu_scenes_.resize(gpu_tracers_.size());
         for (size_t i = 0; i < gpu_tracers_.size(); i++) {
             events.push_back(threads_->Enqueue(
-                [this, &js_scene, app_params](size_t i) {
+                [this, &js_scene](size_t i) {
                     gpu_scenes_[i] =
-                        LoadScene(gpu_tracers_[i].get(), js_scene, app_params->max_tex_res, threads_.get());
+                        LoadScene(gpu_tracers_[i].get(), js_scene, viewer_->app_params.max_tex_res, threads_);
                 },
                 i));
         }
 
-        auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
-        cpu_scene_ = LoadScene(cpu_tracer_.get(), js_scene, app_params->max_tex_res, threads_.get());
+        cpu_scene_ = LoadScene(cpu_tracer_.get(), js_scene, viewer_->app_params.max_tex_res, threads_);
 
         for (auto &e : events) {
             e.wait();
@@ -496,7 +491,7 @@ void GSHybTest::Draw(uint64_t dt_us) {
         Ray::RendererBase::stats_t st = {};
         gpu_tracers_[0]->GetStats(st);
 
-        float font_height = font_->height(ui_root_.get());
+        float font_height = font_->height(ui_root_);
 
         std::string stats1;
         stats1 += "res:   ";
@@ -521,17 +516,16 @@ void GSHybTest::Draw(uint64_t dt_us) {
         stats5 += std::to_string(cur_time_stat_ms_);
         stats5 += " ms";
 
-        font_->DrawText(ui_renderer_.get(), stats1.c_str(), {-1, 1 - 1 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats2.c_str(), {-1, 1 - 2 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats3.c_str(), {-1, 1 - 3 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats4.c_str(), {-1, 1 - 4 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats5.c_str(), {-1, 1 - 5 * font_height}, ui_root_.get());
+        font_->DrawText(ui_renderer_, stats1.c_str(), {-1, 1 - 1 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats2.c_str(), {-1, 1 - 2 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats3.c_str(), {-1, 1 - 3 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats4.c_str(), {-1, 1 - 4 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats5.c_str(), {-1, 1 - 5 * font_height}, ui_root_);
 
         std::string stats6 = std::to_string(time_total / 1000);
         stats6 += " ms";
 
-        font_->DrawText(ui_renderer_.get(), stats6.c_str(), {-1 + 2 * 135.0f / w, 1 - 2 * 4.0f / h - font_height},
-                        ui_root_.get());
+        font_->DrawText(ui_renderer_, stats6.c_str(), {-1 + 2 * 135.0f / w, 1 - 2 * 4.0f / h - font_height}, ui_root_);
 
         ui_renderer_->EndDraw();
     }

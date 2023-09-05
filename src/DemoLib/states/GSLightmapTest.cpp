@@ -12,6 +12,7 @@
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
+#include "../gui/BaseElement.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
 #include "../load/Load.h"
@@ -20,19 +21,17 @@ namespace GSLightmapTestInternal {
 const float FORWARD_SPEED = 1.0f;
 }
 
-GSLightmapTest::GSLightmapTest(GameBase *game) : game_(game) {
-    state_manager_ = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_ = game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
+GSLightmapTest::GSLightmapTest(Viewer *viewer) : viewer_(viewer) {
+    state_manager_ = viewer->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
 
-    ui_renderer_ = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
-    ui_root_ = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
+    ui_renderer_ = viewer->ui_renderer.get();
+    ui_root_ = viewer->ui_root.get();
 
-    const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
-    font_ = fonts->FindFont("main_font");
+    font_ = viewer->ui_fonts->FindFont("main_font");
 
-    ray_renderer_ = game->GetComponent<Ray::RendererBase>(RAY_RENDERER_KEY);
+    ray_renderer_ = viewer->ray_renderer.get();
 
-    threads_ = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
+    threads_ = viewer->threads.get();
 }
 
 void GSLightmapTest::UpdateRegionContexts() {
@@ -77,7 +76,7 @@ void GSLightmapTest::Enter() {
 
     max_fwd_speed_ = GSLightmapTestInternal::FORWARD_SPEED;
 
-    auto app_params = game_->GetComponent<AppParams>(APP_PARAMS_KEY);
+    const auto &app_params = viewer_->app_params;
 
     JsObject js_scene;
 
@@ -90,7 +89,7 @@ void GSLightmapTest::Enter() {
 
     if (js_scene.Size()) {
         try {
-            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene, app_params->max_tex_res, threads_.get());
+            ray_scene_ = LoadScene(ray_renderer_, js_scene, app_params.max_tex_res, threads_);
         } catch (std::exception &e) {
             ray_renderer_->log()->Error("%s", e.what());
         }
@@ -368,7 +367,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
         Ray::RendererBase::stats_t st = {};
         ray_renderer_->GetStats(st);
 
-        float font_height = font_->height(ui_root_.get());
+        float font_height = font_->height(ui_root_);
 
         std::string stats1;
         stats1 += "res:   ";
@@ -393,17 +392,16 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
         stats5 += std::to_string(cur_time_stat_ms_);
         stats5 += " ms";
 
-        font_->DrawText(ui_renderer_.get(), stats1.c_str(), {-1, 1 - 1 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats2.c_str(), {-1, 1 - 2 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats3.c_str(), {-1, 1 - 3 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats4.c_str(), {-1, 1 - 4 * font_height}, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats5.c_str(), {-1, 1 - 5 * font_height}, ui_root_.get());
+        font_->DrawText(ui_renderer_, stats1.c_str(), {-1, 1 - 1 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats2.c_str(), {-1, 1 - 2 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats3.c_str(), {-1, 1 - 3 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats4.c_str(), {-1, 1 - 4 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats5.c_str(), {-1, 1 - 5 * font_height}, ui_root_);
 
         std::string stats6 = std::to_string(time_total / 1000);
         stats6 += " ms";
 
-        font_->DrawText(ui_renderer_.get(), stats6.c_str(), {-1 + 2 * 135.0f / w, 1 - 2 * 4.0f / h - font_height},
-                        ui_root_.get());
+        font_->DrawText(ui_renderer_, stats6.c_str(), {-1 + 2 * 135.0f / w, 1 - 2 * 4.0f / h - font_height}, ui_root_);
 
         ui_renderer_->EndDraw();
     }

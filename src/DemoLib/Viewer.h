@@ -2,13 +2,6 @@
 
 #include "eng/GameBase.h"
 
-const char UI_FONTS_KEY[] = "ui_fonts";
-
-const char RENDERER_KEY[] = "renderer";
-const char RAY_RENDERER_KEY[] = "ray_renderer";
-
-const char APP_PARAMS_KEY[] = "app_params";
-
 struct AppParams {
     std::string scene_name;
     std::string ref_name;
@@ -33,8 +26,14 @@ struct AppParams {
     float variance_threshold = 0.0f;
 };
 
+class FontStorage;
+
 class Viewer : public GameBase {
   public:
     Viewer(int w, int h, const char *local_dir, const AppParams &app_params, int gpu_mode, bool nobindless,
            bool nocompression);
+    ~Viewer();
+
+    AppParams app_params = {};
+    std::unique_ptr<FontStorage> ui_fonts;
 };

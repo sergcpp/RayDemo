@@ -9,8 +9,9 @@
 #include "GSRayTest.h"
 #include "GSSamplingTest.h"
 #include "GSVNDFTest.h"
+#include "../Viewer.h"
 
-std::shared_ptr<GameState> GSCreate(eGameState state, GameBase *game) {
+std::shared_ptr<GameState> GSCreate(eGameState state, Viewer *game) {
     switch (state) {
     case GS_RAY_TEST:
         return std::make_shared<GSRayTest>(game);

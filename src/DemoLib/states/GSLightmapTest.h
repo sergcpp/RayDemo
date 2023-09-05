@@ -7,9 +7,8 @@
 #include "../ren/Program.h"
 #include "../ren/Texture.h"
 
-class GameBase;
 class GameStateManager;
-class FontStorage;
+class Viewer;
 
 namespace Sys {
 class ThreadPool;
@@ -19,32 +18,29 @@ namespace Gui {
 class BaseElement;
 class BitmapFont;
 class Renderer;
-}
+} // namespace Gui
 
 class GSLightmapTest : public GameState {
-    GameBase *game_;
+    Viewer *viewer_;
     std::weak_ptr<GameStateManager> state_manager_;
-    std::shared_ptr<Ren::Context> ctx_;
 
-    std::shared_ptr<Gui::Renderer> ui_renderer_;
-    std::shared_ptr<Gui::BaseElement> ui_root_;
-    std::shared_ptr<Gui::BitmapFont> font_;
+    Gui::Renderer *ui_renderer_ = nullptr;
+    Gui::BaseElement *ui_root_ = nullptr;
+    Gui::BitmapFont *font_ = nullptr;
 
-    std::shared_ptr<Ray::RendererBase> ray_renderer_;
-    std::shared_ptr<Ray::SceneBase> ray_scene_;
+    Ray::RendererBase *ray_renderer_ = nullptr;
+    std::unique_ptr<Ray::SceneBase> ray_scene_;
 
-    std::shared_ptr<Sys::ThreadPool> threads_;
+    Sys::ThreadPool *threads_ = nullptr;
 
     bool animate_ = false;
     bool view_grabbed_ = false;
     bool view_targeted_ = false;
-    Ren::Vec3f view_origin_ = { 0, 20, 3 },
-               view_dir_ = { -1, 0, 0 },
-               view_target_ = { 0, 0, 0 };
+    Ren::Vec3f view_origin_ = {0, 20, 3}, view_dir_ = {-1, 0, 0}, view_target_ = {0, 0, 0};
 
     float max_fwd_speed_, focal_distance_ = 100.0f;
 
-    Ren::Vec3f sun_dir_ = { 0, 1, 0 };
+    Ren::Vec3f sun_dir_ = {0, 1, 0};
 
     bool invalidate_preview_ = true;
 
@@ -61,8 +57,9 @@ class GSLightmapTest : public GameState {
 
     void UpdateRegionContexts();
     void UpdateEnvironment(const Ren::Vec3f &sun_dir);
-public:
-    explicit GSLightmapTest(GameBase *game);
+
+  public:
+    explicit GSLightmapTest(Viewer *viewer);
 
     void Enter() override;
     void Exit() override;

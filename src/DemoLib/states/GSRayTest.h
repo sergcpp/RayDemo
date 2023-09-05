@@ -8,9 +8,8 @@
 #include "../ren/Program.h"
 #include "../ren/Texture.h"
 
-class GameBase;
 class GameStateManager;
-class FontStorage;
+class Viewer;
 
 namespace Sys {
 class ThreadPool;
@@ -24,18 +23,17 @@ class Renderer;
 } // namespace Gui
 
 class GSRayTest : public GameState {
-    GameBase *game_;
+    Viewer *viewer_;
     std::weak_ptr<GameStateManager> state_manager_;
-    std::shared_ptr<Ren::Context> ctx_;
 
-    std::shared_ptr<Gui::Renderer> ui_renderer_;
-    std::shared_ptr<Gui::BaseElement> ui_root_;
-    std::shared_ptr<Gui::BitmapFont> font_;
+    Gui::Renderer *ui_renderer_ = nullptr;
+    Gui::BaseElement *ui_root_ = nullptr;
+    Gui::BitmapFont *font_ = nullptr;
 
-    std::shared_ptr<Ray::RendererBase> ray_renderer_;
-    std::shared_ptr<Ray::SceneBase> ray_scene_;
+    Ray::RendererBase *ray_renderer_ = nullptr;
+    std::unique_ptr<Ray::SceneBase> ray_scene_;
 
-    std::shared_ptr<Sys::ThreadPool> threads_;
+    Sys::ThreadPool *threads_ = nullptr;
     std::unique_ptr<Sys::TaskList> render_tasks_, render_and_denoise_tasks_;
 
     int unet_denoise_passes_ = -1;
@@ -74,7 +72,7 @@ class GSRayTest : public GameState {
     void UpdateEnvironment(const Ren::Vec3f &sun_dir);
 
   public:
-    explicit GSRayTest(GameBase *game);
+    explicit GSRayTest(Viewer *game);
     ~GSRayTest();
 
     void Enter() override;

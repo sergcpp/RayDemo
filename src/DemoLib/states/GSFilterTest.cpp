@@ -23,18 +23,9 @@ const int FilterTableSize = 1024;
 const float FilterWidth = 1.5f;
 } // namespace GSFilterTestInternal
 
-GSFilterTest::GSFilterTest(GameBase *game) : game_(game) {
-    state_manager_ = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_ = game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
-    renderer_ = game->GetComponent<Renderer>(RENDERER_KEY);
-
-    random_ = game->GetComponent<Random>(RANDOM_KEY);
-
-    ui_renderer_ = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
-    ui_root_ = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
-
-    const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
-    font_ = fonts->FindFont("main_font");
+GSFilterTest::GSFilterTest(Viewer *viewer) : viewer_(viewer) {
+    state_manager_ = viewer->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
+    random_ = viewer->random.get();
 }
 
 void GSFilterTest::Enter() {
@@ -64,7 +55,7 @@ void GSFilterTest::Draw(uint64_t dt_us) {
     using namespace Ren;
     using namespace GSFilterTestInternal;
 
-    int width = game_->width, height = game_->height;
+    int width = viewer_->width, height = viewer_->height;
 
     int sample_limit = 32;
     if (++iteration_ > sample_limit) {

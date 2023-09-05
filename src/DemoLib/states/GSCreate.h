@@ -6,5 +6,6 @@ enum eGameState { GS_RAY_TEST, GS_SAMPLING_TEST, GS_HYB_TEST, GS_HDR_TEST, GS_LM
 
 class GameBase;
 class GameState;
+class Viewer;
 
-std::shared_ptr<GameState> GSCreate(eGameState state, GameBase *game);
+std::shared_ptr<GameState> GSCreate(eGameState state, Viewer *game);

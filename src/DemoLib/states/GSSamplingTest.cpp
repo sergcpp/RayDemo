@@ -4,8 +4,8 @@
 
 #include <Ray/internal/Core.h>
 #include <Ray/internal/Halton.h>
-#include <Sys/Json.h>
 #include <SW/SW.h>
+#include <Sys/Json.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
@@ -31,28 +31,19 @@ float construct_float(uint32_t m) {
     const uint32_t ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
     const uint32_t ieeeOne = 0x3F800000u;      // 1.0 in IEEE binary32
 
-    m &= ieeeMantissa;                     // Keep only mantissa bits (fractional part)
-    m |= ieeeOne;                          // Add fractional part to 1.0
+    m &= ieeeMantissa; // Keep only mantissa bits (fractional part)
+    m |= ieeeOne;      // Add fractional part to 1.0
 
-    float  f = reinterpret_cast<float &>(m);                // Range [1:2]
+    float f = reinterpret_cast<float &>(m); // Range [1:2]
     return f - 1.0f;                        // Range [0:1]
 }
 
 std::vector<uint16_t> radical_inv_perms;
-}
+} // namespace GSSamplingTestInternal
 
-GSSamplingTest::GSSamplingTest(GameBase *game) : game_(game) {
-    state_manager_	= game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_			= game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
-    renderer_		= game->GetComponent<Renderer>(RENDERER_KEY);
-
-    random_         = game->GetComponent<Random>(RANDOM_KEY);
-
-    ui_renderer_ = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
-    ui_root_ = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
-
-    const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
-    font_ = fonts->FindFont("main_font");
+GSSamplingTest::GSSamplingTest(Viewer *viewer) : viewer_(viewer) {
+    state_manager_ = viewer->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
+    random_ = viewer->random.get();
 }
 
 void GSSamplingTest::Enter() {
@@ -64,22 +55,17 @@ void GSSamplingTest::Enter() {
     radical_inv_perms = Ray::ComputeRadicalInversePermutations(Ray::g_primes, Ray::PrimesCount, ::rand);
 }
 
-void GSSamplingTest::Exit() {
-
-}
+void GSSamplingTest::Exit() {}
 
 void GSSamplingTest::Draw(uint64_t dt_us) {
     using namespace Ren;
     using namespace GSSamplingTestInternal;
 
-    //renderer_->set_current_cam(&cam_);
-    //renderer_->ClearColorAndDepth(0, 0, 0, 1);
-
-    const auto width = uint32_t(game_->width), height = uint32_t(game_->height);
+    const auto width = uint32_t(viewer_->width), height = uint32_t(viewer_->height);
 
     int sample_limit = 32;
     if (++iteration_ > sample_limit) {
-        //return;
+        // return;
     }
 
     pixels_.resize(width * height * 4);
@@ -98,7 +84,8 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
 
                 for (uint32_t ny = 0; ny < nsamplesy; ++ny) {
                     for (uint32_t nx = 0; nx < nsamplesx; ++nx) {
-                        sum += EvalFunc(float(x) + (iteration_ - 1) / float(sample_limit) + (float(nx) + 0.5f) / float(nsamplesx * sample_limit),
+                        sum += EvalFunc(float(x) + (iteration_ - 1) / float(sample_limit) +
+                                            (float(nx) + 0.5f) / float(nsamplesx * sample_limit),
                                         float(y) + (float(ny) + 0.5f) / float(nsamplesy), float(width), float(height));
                     }
                 }
@@ -115,8 +102,8 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
 
                 for (uint32_t ny = 0; ny < nsamplesy; ++ny) {
                     for (uint32_t nx = 0; nx < nsamplesx; ++nx) {
-                        sum += EvalFunc(x + random_->GetNormalizedFloat(),
-                                        y + random_->GetNormalizedFloat(), float(width), float(height));
+                        sum += EvalFunc(x + random_->GetNormalizedFloat(), y + random_->GetNormalizedFloat(),
+                                        float(width), float(height));
                     }
                 }
 
@@ -133,7 +120,8 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
                 for (uint32_t ny = 0; ny < nsamplesy; ++ny) {
                     for (uint32_t nx = 0; nx < nsamplesx; ++nx) {
                         sum += EvalFunc((x + (nx + random_->GetNormalizedFloat()) / nsamplesx),
-                                        (y + (ny + random_->GetNormalizedFloat()) / nsamplesy), float(width), float(height));
+                                        (y + (ny + random_->GetNormalizedFloat()) / nsamplesy), float(width),
+                                        float(height));
                     }
                 }
 
@@ -150,22 +138,23 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
 
                 int i = int(iteration_) - 0;
 
-
                 for (uint32_t ny = 0; ny < nsamplesy; ++ny) {
                     for (uint32_t nx = 0; nx < nsamplesx; ++nx) {
-                        //int last_ndx = ndx;
-                        //ndx = ((y - 3 * (height / 4)) * width + x) * nsamplesx * sample_limit * 31 + i * nsamplesx + nx;
+                        // int last_ndx = ndx;
+                        // ndx = ((y - 3 * (height / 4)) * width + x) * nsamplesx * sample_limit * 31 + i * nsamplesx +
+                        // nx;
                         ndx = ((y - 3 * (height / 4)) * width + x) * 31 + i * nsamplesx + nx;
-                        //ndx = (i * (width + height) + x) * nsamplesx + nx;
+                        // ndx = (i * (width + height) + x) * nsamplesx + nx;
 
                         float ff = construct_float(hash(x));
 
-                        //float rx = RadicalInverse<3>(ndx);
+                        // float rx = RadicalInverse<3>(ndx);
                         float _unused;
-                        float rx = std::modf(Ray::ScrambledRadicalInverse(29, &radical_inv_perms[100], ndx) + ff, &_unused);
-                        float ry = 0;//RadicalInverse<2>(i * nsamplesx + nx);
+                        float rx =
+                            std::modf(Ray::ScrambledRadicalInverse(29, &radical_inv_perms[100], ndx) + ff, &_unused);
+                        float ry = 0; // RadicalInverse<2>(i * nsamplesx + nx);
 
-                        //sum += EvalFunc(x + (nx + rx) / nsamplesx, y + (ny + ry) / nsamplesy, width, height);
+                        // sum += EvalFunc(x + (nx + rx) / nsamplesx, y + (ny + ry) / nsamplesy, width, height);
                         sum += EvalFunc(x + rx, y + ry, float(width), float(height));
                     }
                 }
@@ -241,9 +230,7 @@ void GSSamplingTest::Draw(uint64_t dt_us) {
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, width, height, &pixels_[0], 1);
 }
 
-void GSSamplingTest::Update(uint64_t dt_us) {
-
-}
+void GSSamplingTest::Update(uint64_t dt_us) {}
 
 void GSSamplingTest::HandleInput(const InputManager::Event &evt) {
     switch (evt.type) {
@@ -260,8 +247,7 @@ void GSSamplingTest::HandleInput(const InputManager::Event &evt) {
         if (evt.key == InputManager::RAW_INPUT_BUTTON_SPACE) {
             iteration_ = 0;
         }
-    }
-    break;
+    } break;
     case InputManager::RAW_INPUT_RESIZE:
         iteration_ = 0;
         break;
