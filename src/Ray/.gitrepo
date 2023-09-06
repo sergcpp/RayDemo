@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = pitch_black_fix
-	commit = d14c73e0f6cb6583ac7a7eeb734b3b8a878d2dbc
+	branch = refactor_07_09
+	commit = 9e10a53cfdd6452c526c7fb4fef1f2514f07811a
 	method = merge
 	cmdver = 0.4.6
-	parent = 184aee97ad67dd844aaf65e322405da0ba57319c
+	parent = ea73f581d5ad3177f4b53448b90722fe12e75114
