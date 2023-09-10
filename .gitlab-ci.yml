@@ -372,6 +372,8 @@ macos-universal-prepare-job:
     - macos-arm64-build-rel-job
   tags:
     - macos,builder
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
 
 windows-x86_64-cpu-test-job:
   variables:
@@ -720,7 +722,10 @@ deploy-job:
     - echo "Application successfully deployed."
   needs:
     - linux-x86_64-build-rel-job
-    - macos-universal-prepare-job
+    - macos-x86_64-build-rel-job
+    - macos-arm64-build-rel-job
+    - job: macos-universal-prepare-job
+      optional: true
     - windows-arm64-build-rel-job
     - windows-x86_64-build-rel-job
   artifacts:
