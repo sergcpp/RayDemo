@@ -2,11 +2,12 @@
 
 #include <cassert>
 #include <cctype>
+#include <cfloat>
+#include <climits>
 
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
-#include <limits>
 #include <map>
 #include <sstream>
 
@@ -1670,11 +1671,10 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 
     const int SearchGridRes = 32;
     std::vector<Ren::SmallVector<uint32_t, 16>> search_grid(SearchGridRes * SearchGridRes * SearchGridRes);
-    auto bbox_min = Ren::Vec3f{std::numeric_limits<float>::max()},
-         bbox_max = Ren::Vec3f{std::numeric_limits<float>::lowest()};
+    auto bbox_min = Ren::Vec3f{FLT_MAX}, bbox_max = Ren::Vec3f{-FLT_MAX};
 
     auto grid_index = [&](Ren::Vec3f p) -> int {
-        p = (p - bbox_min) / (bbox_max - bbox_min + Ren::Vec3f{std::numeric_limits<float>::epsilon()});
+        p = (p - bbox_min) / (bbox_max - bbox_min + Ren::Vec3f{FLT_EPSILON});
         p *= float(SearchGridRes);
 
         const int ix = int(p[0]);
