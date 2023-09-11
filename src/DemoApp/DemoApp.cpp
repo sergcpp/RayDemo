@@ -110,7 +110,8 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
         fprintf(stderr, "%s\n", s);
         return -1;
     }
-    texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
+    texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w / scaling_factor_,
+                                 h / scaling_factor_);
     if (!texture_) {
         const char *s = SDL_GetError();
         fprintf(stderr, "%s\n", s);
@@ -131,7 +132,7 @@ int DemoApp::Init(int w, int h, const AppParams &app_params, bool nogpu, bool no
 #endif
 
     try {
-        CreateViewer(w, h, app_params, nogpu, nohwrt, nobindless, nocompression);
+        CreateViewer(w / scaling_factor_, h / scaling_factor_, app_params, nogpu, nohwrt, nobindless, nocompression);
     } catch (std::exception &e) {
         fprintf(stderr, "%s", e.what());
         return -1;
@@ -264,6 +265,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.clamp_indirect = float(atof(argv[i]));
         } else if (strcmp(argv[i], "--variance_threshold") == 0 && (++i != argc)) {
             app_params.variance_threshold = float(atof(argv[i]));
+        } else if (strcmp(argv[i], "--downscale") == 0 && (++i != argc)) {
+            scaling_factor_ = int(strtol(argv[i], nullptr, 10));
         }
     }
 
@@ -419,15 +422,15 @@ void DemoApp::PollEvents() {
         case SDL_WINDOWEVENT:
             if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
                 evt.type = InputManager::RAW_INPUT_RESIZE;
-                evt.point.x = float(e.window.data1);
-                evt.point.y = float(e.window.data2);
+                evt.point.x = float(e.window.data1 / scaling_factor_);
+                evt.point.y = float(e.window.data2 / scaling_factor_);
 
-                viewer_->Resize(e.window.data1, e.window.data2);
+                viewer_->Resize(e.window.data1 / scaling_factor_, e.window.data2 / scaling_factor_);
 
                 SDL_RenderPresent(renderer_);
                 SDL_DestroyTexture(texture_);
                 texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-                                             e.window.data1, e.window.data2);
+                                             e.window.data1 / scaling_factor_, e.window.data2 / scaling_factor_);
             }
             break;
         default:
