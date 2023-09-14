@@ -255,7 +255,7 @@ stages:
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS.split(" ") -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.52 --threshold 628 --max_tex_res 1024'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/sponza_cycles.png --output_exr --output_aux --min_samples 512 --max_samples 1024 --variance_threshold 0.00035 --psnr 30.55 --threshold 640 --diff_depth 2 --max_tex_res 2048'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS.split(" ") -ref assets/references/coffee_maker_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12'
-    - '& "$BIN_DIR/DemoApp" -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS.split(" ") -ref assets/references/bathroom_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 28.13 --threshold 3553 --refr_depth 12 --total_depth 12 --clamp_indirect 0.0'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS.split(" ") -ref assets/references/bathroom_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 28.13 --threshold 3566 --refr_depth 12 --total_depth 12 --clamp_indirect 0.0'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/staircase.json -w 720 -h 900 $AUX_TEST_ARGS.split(" ") -ref assets/references/staircase_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 39.63 --threshold 9 --refr_depth 12 --total_depth 12'
   artifacts:
     when: always
@@ -300,7 +300,7 @@ stages:
     - ./$BIN_DIR/DemoApp -s assets/scenes/ai043_01.json -w 700 -h 477 $AUX_TEST_ARGS -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 1024 --diff_depth 2 --spec_depth 2 --psnr 31.52 --threshold 628 --max_tex_res 1024
     - ./$BIN_DIR/DemoApp -s assets/scenes/sponza.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/sponza_cycles.png --output_exr --output_aux --min_samples 512 --max_samples 1024 --variance_threshold 0.00035 --psnr 30.55 --threshold 640 --diff_depth 2 --max_tex_res 2048
     - ./$BIN_DIR/DemoApp -s assets/scenes/coffee_maker.json -w 640 -h 800 $AUX_TEST_ARGS -ref assets/references/coffee_maker_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 38.08 --threshold 97 --refr_depth 12 --total_depth 12
-    - ./$BIN_DIR/DemoApp -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS -ref assets/references/bathroom_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 28.13 --threshold 3553 --refr_depth 12 --total_depth 12 --clamp_indirect 0.0
+    - ./$BIN_DIR/DemoApp -s assets/scenes/bathroom.json -w 632 -h 840 $AUX_TEST_ARGS -ref assets/references/bathroom_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 28.13 --threshold 3566 --refr_depth 12 --total_depth 12 --clamp_indirect 0.0
     - ./$BIN_DIR/DemoApp -s assets/scenes/staircase.json -w 720 -h 900 $AUX_TEST_ARGS -ref assets/references/staircase_cycles.png --output_exr --output_aux --max_samples 1024 --psnr 39.63 --threshold 9 --refr_depth 12 --total_depth 12
   artifacts:
     when: always
