@@ -1124,6 +1124,11 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     mat_desc.emission_strength = float(js_emission_strength.val);
                 }
 
+                if (js_mat_obj.Has("multiple_importance")) {
+                    const JsLiteral &js_mult_imp = js_mat_obj.at("multiple_importance").as_lit();
+                    mat_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
+                }
+
                 if (js_mat_obj.Has("alpha")) {
                     const JsNumber &js_alpha = js_mat_obj.at("alpha").as_num();
                     mat_desc.alpha = float(js_alpha.val);
