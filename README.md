@@ -15,7 +15,11 @@ Test application for a Ray library bundled with many test scenes. Mostly needed 
 
 <div>
 <div float="left" >
-  <img src="bistro.png" width="46.95%" />
+  <img src="bistro.png" width="44.7%" />
+  <img src="bistro_night.png" width="44.7%" />
+</div>
+<div float="left" >
+  <img src="bistro_interior.png" width="46.95%" />
   <img src="mustang.png" width="42.45%" />
 </div>
 <div float="left" >
