@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = scaled_mesh_lights
-	commit = 0e8d5a16073a75d1a6b2068feede7535c70721a2
+	branch = singlesided_mesh_lights
+	commit = 4f2baa21f25c89da2b21168dd90e199d5426d7f6
 	method = merge
 	cmdver = 0.4.6
-	parent = be529f349831fa4feb9ebbc47b8d8e5a845eef33
+	parent = 5d7e4f5b6f080479eb5f83bb47708507bbf9e853
