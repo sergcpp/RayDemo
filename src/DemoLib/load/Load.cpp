@@ -1260,9 +1260,17 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             std::vector<Ray::mat_group_desc_t> mat_groups;
             for (size_t i = 0; i < groups.size(); i += 2) {
-                const JsString &js_mat_name = js_materials.at(i / 2).as_str();
-                const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
-                mat_groups.emplace_back(mat_handle, mat_handle, groups[i], groups[i + 1]);
+                if (js_materials.at(i / 2).type() == JsType::String) {
+                    const JsString &js_mat_name = js_materials.at(i / 2).as_str();
+                    const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
+                    mat_groups.emplace_back(mat_handle, mat_handle, groups[i], groups[i + 1]);
+                } else if (js_materials.at(i / 2).type() == JsType::Array) {
+                    const JsString &js_mat_name_front = js_materials.at(i / 2).as_arr().at(0).as_str();
+                    const JsString &js_mat_name_back = js_materials.at(i / 2).as_arr().at(1).as_str();
+                    const Ray::MaterialHandle mat_handle_front = materials.at(js_mat_name_front.val);
+                    const Ray::MaterialHandle mat_handle_back = materials.at(js_mat_name_back.val);
+                    mat_groups.emplace_back(mat_handle_front, mat_handle_back, groups[i], groups[i + 1]);
+                }
             }
             mesh_desc.groups = mat_groups;
 
