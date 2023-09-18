@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = singlesided_mesh_lights
-	commit = 4f2baa21f25c89da2b21168dd90e199d5426d7f6
+	branch = qualcomm_fix
+	commit = b21be85d44c030095560cf085115d900c084a43e
 	method = merge
 	cmdver = 0.4.6
-	parent = 5d7e4f5b6f080479eb5f83bb47708507bbf9e853
+	parent = 6c0af4519146b0d64d58a832e3521c0775b17cd6
