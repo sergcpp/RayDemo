@@ -235,7 +235,8 @@ void GSRayTest::Enter() {
     if (js_scene.Size()) {
         try {
             const uint64_t t1 = Sys::GetTimeMs();
-            ray_scene_ = LoadScene(ray_renderer_, js_scene, viewer_->app_params.max_tex_res, threads_);
+            ray_scene_ = LoadScene(ray_renderer_, js_scene, viewer_->app_params.max_tex_res, threads_,
+                                   viewer_->app_params.camera_index);
             const uint64_t t2 = Sys::GetTimeMs();
             ray_renderer_->log()->Info("Scene loaded in %.1fs", double(t2 - t1) * 0.001);
         } catch (std::exception &e) {

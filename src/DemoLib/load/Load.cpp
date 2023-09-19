@@ -252,7 +252,7 @@ struct DDS_HEADER_DXT10 {
 } // namespace
 
 std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, const int max_tex_res,
-                                          Sys::ThreadPool *threads) {
+                                          Sys::ThreadPool *threads, int camera_index) {
     auto new_scene = std::unique_ptr<Ray::SceneBase>(r->CreateScene());
 
     std::vector<Ray::CameraHandle> cameras;
@@ -841,7 +841,9 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 cameras.emplace_back(new_scene->AddCamera(cam_desc));
             }
 
-            if (js_scene.Has("current_cam")) {
+            if (camera_index != -1) {
+                new_scene->set_current_cam(cameras[camera_index]);
+            } else if (js_scene.Has("current_cam")) {
                 const JsNumber &js_current_cam = js_scene.at("current_cam").as_num();
                 new_scene->set_current_cam(cameras[int(js_current_cam.val)]);
             }

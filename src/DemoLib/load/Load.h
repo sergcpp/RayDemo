@@ -18,7 +18,7 @@ class ThreadPool;
 }
 
 std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene, int max_tex_res,
-                                          Sys::ThreadPool *threads);
+                                          Sys::ThreadPool *threads, int camera_index = -1);
 
 std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadOBJ(const char *file_name);
 std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadBIN(const char *file_name);

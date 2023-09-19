@@ -267,6 +267,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.variance_threshold = float(atof(argv[i]));
         } else if (strcmp(argv[i], "--downscale") == 0 && (++i != argc)) {
             scaling_factor_ = int(strtol(argv[i], nullptr, 10));
+        } else if (strcmp(argv[i], "--camera") == 0 && (++i != argc)) {
+            app_params.camera_index = int(strtol(argv[i], nullptr, 10));
         }
     }
 
