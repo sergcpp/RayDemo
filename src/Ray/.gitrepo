@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = qualcomm_fix
-	commit = b21be85d44c030095560cf085115d900c084a43e
+	branch = fixes_21_09
+	commit = b0407501cf44dbff2d72be5c5e7bb11bdf10ba82
 	method = merge
 	cmdver = 0.4.6
-	parent = 6c0af4519146b0d64d58a832e3521c0775b17cd6
+	parent = 0d777dca6ebfa71708c26ae1c7799dda3aa7e9f6
