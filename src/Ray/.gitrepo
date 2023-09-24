@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = hierarchical_nee
-	commit = ec694bdf78536140575481381ff013d4388008b5
+	branch = sponza_ivy
+	commit = 5ae307f342cb31eb1251cd9bd9ad22f96c53478f
 	method = merge
 	cmdver = 0.4.6
-	parent = fb67ed70e626c0343f0660a862d5232ea7371024
+	parent = fcd03592449d01027ab6878a1ab76003ec72b699
