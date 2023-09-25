@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = sponza_ivy
-	commit = 5ae307f342cb31eb1251cd9bd9ad22f96c53478f
+	branch = fixes_24_09
+	commit = 8467b0e9e532615389135fceb12d12a8b3310d6b
 	method = merge
 	cmdver = 0.4.6
-	parent = fcd03592449d01027ab6878a1ab76003ec72b699
+	parent = f362022fc236527a188e9abb67d811687186c969
