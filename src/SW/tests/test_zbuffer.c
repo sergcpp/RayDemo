@@ -50,7 +50,7 @@ void test_zbuffer() {
         for (int j = 0; j < RES_H; j++) {
             for (int i = 0; i < RES_W; i++) {
                 SWfloat z = (100 * 0.01f * i + j * 0.01f);
-                require(fabs(swZbufGetDepth(&zb_, i, j) - z) < eps);
+                require(fabsf(swZbufGetDepth(&zb_, i, j) - z) < eps);
                 require(!swZbufTestDepth(&zb_, i, j, z + 0.01f));
                 require(swZbufTestDepth(&zb_, i, j, z - 0.01f));
             }

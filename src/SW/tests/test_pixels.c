@@ -31,10 +31,10 @@ static const SWfloat px_FRGBA[] = { 0, 0, 0, 1,         1, 0, 0, 0,             
     require((vec)[3] == (_3));
 
 #define REQUIRE_FVEC4_EQ(vec, _0, _1, _2, _3)   \
-    require(fabs((vec)[0] - (_0)) < 0.1f);      \
-    require(fabs((vec)[1] - (_1)) < 0.1f);      \
-    require(fabs((vec)[2] - (_2)) < 0.1f);      \
-    require(fabs((vec)[3] - (_3)) < 0.1f);
+    require(fabsf((vec)[0] - (_0)) < 0.1f);      \
+    require(fabsf((vec)[1] - (_1)) < 0.1f);      \
+    require(fabsf((vec)[2] - (_2)) < 0.1f);      \
+    require(fabsf((vec)[3] - (_3)) < 0.1f);
 
 void test_pixels() {
 
