@@ -22,7 +22,7 @@ class GSSamplingTest : public GameState {
     Random *random_ = nullptr;
 
     std::vector<float> pixels_;
-    float iteration_ = 0;
+    int iteration_ = 0;
 
 public:
     explicit GSSamplingTest(Viewer *viewer);
