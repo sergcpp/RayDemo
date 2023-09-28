@@ -24,12 +24,9 @@ class GSFilterTest : public GameState {
     Random *random_ = nullptr;
 
     std::vector<Ray::color_rgba8_t> img_;
-    int img_w_, img_h_;
     float mul_ = 0.001f;
 
     std::vector<Ren::Vec4f> quadtree_[16];
-    int quadtree_res_ = 0;
-    int quadtree_count_ = 0;
 
     std::vector<float> pixels_;
     float iteration_ = 0;

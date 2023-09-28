@@ -44,6 +44,9 @@ void GSFilterTest::Enter() {
         return 0.35875f - 0.48829f * cosf(v) + 0.14128f * cosf(2.0f * v) - 0.01168f * cosf(3.0f * v);
     };
 
+    (void)filter_box;
+    (void)filter_gaussian;
+
     filter_table_ = Ray::CDFInverted(FilterTableSize, 0.0f, FilterWidth * 0.5f,
                                      std::bind(filter_blackman_harris, std::placeholders::_1, FilterWidth),
                                      true /* make_symmetric */);

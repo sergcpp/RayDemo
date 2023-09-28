@@ -3,17 +3,22 @@
 #include <fstream>
 
 #include <Ray/internal/Core.h>
-#include <Ray/internal/Halton.h>
 #include <SW/SW.h>
 #include <Sys/Json.h>
 
 #include "../Viewer.h"
 #include "../eng/GameStateManager.h"
+#include "../eng/Halton.h"
 #include "../eng/Random.h"
 #include "../gui/FontStorage.h"
 #include "../gui/Renderer.h"
 #include "../ren/Context.h"
 #include "../ren/Program.h"
+
+namespace GSSamplingTestInternal {
+extern const int g_primes[];
+extern const int g_primes_count;
+} // namespace GSSamplingTestInternal
 
 namespace GSVNDFTestInternal {
 enum { A_POS, A_COL };
@@ -151,7 +156,8 @@ void GSVNDFTest::Enter() {
 
     using namespace GSVNDFTestInternal;
 
-    radical_inv_perms = Ray::ComputeRadicalInversePermutations(Ray::g_primes, Ray::PrimesCount, ::rand);
+    radical_inv_perms = ComputeRadicalInversePermutations(GSSamplingTestInternal::g_primes,
+                                                          GSSamplingTestInternal::g_primes_count, ::rand);
 }
 
 void GSVNDFTest::Exit() {}
@@ -216,10 +222,10 @@ void GSVNDFTest::Draw(uint64_t dt_us) {
 
     { // draw reflected rays
         for (int i = 0; i < 256; ++i) {
-            const float rx = Ray::ScrambledRadicalInverse(3, &radical_inv_perms[2], i);
-            const float ry = Ray::ScrambledRadicalInverse(5, &radical_inv_perms[5], i);
+            const float rx = ScrambledRadicalInverse(3, &radical_inv_perms[2], i);
+            const float ry = ScrambledRadicalInverse(5, &radical_inv_perms[5], i);
 
-            float lines_col[2][3] = {0.0f};
+            float lines_col[2][3] = {};
 
             Ren::Vec3f H_ts;
             if (mode_ == 0) {
