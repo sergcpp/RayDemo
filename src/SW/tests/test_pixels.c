@@ -50,8 +50,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA(4, 4, px_RGB888, 0, 0, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 0, 255);
         REQUIRE_VEC4_EQ(bgra, 0, 0, 0, 255);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0f);
 
         swPx_RGB888_GetColor_RGBA8888(4, 4, px_RGB888, 3, 0, rgba);
         swPx_RGB888_GetColor_BGRA8888(4, 4, px_RGB888, 3, 0, bgra);
@@ -59,8 +59,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA(4, 4, px_RGB888, 3, 0, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 255, 255);
         REQUIRE_VEC4_EQ(bgra, 255, 0, 0, 255);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 1.0, 0, 0, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0f, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 1.0f, 0, 0, 1.0f);
 
         // Last row
         swPx_RGB888_GetColor_RGBA8888(4, 4, px_RGB888, 0, 3, rgba);
@@ -69,8 +69,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA(4, 4, px_RGB888, 0, 3, fbgra);
         REQUIRE_VEC4_EQ(rgba, 10, 111, 12, 255);
         REQUIRE_VEC4_EQ(bgra, 12, 111, 10, 255);
-        REQUIRE_FVEC4_EQ(frgba, 10.0 / 255, 111.0 / 255, 12.0 / 255, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 12.0 / 255, 111.0 / 255, 10.0 / 255, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 10.0f / 255, 111.0f / 255, 12.0f / 255, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 12.0f / 255, 111.0f / 255, 10.0f / 255, 1.0f);
 
         swPx_RGB888_GetColor_RGBA8888(4, 4, px_RGB888, 3, 3, rgba);
         swPx_RGB888_GetColor_BGRA8888(4, 4, px_RGB888, 3, 3, bgra);
@@ -78,8 +78,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA(4, 4, px_RGB888, 3, 3, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 1, 255);
         REQUIRE_VEC4_EQ(bgra, 1, 0, 0, 255);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0 / 255, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 1.0 / 255, 0, 0, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0f / 255, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 1.0f / 255, 0, 0, 1.0f);
     }
 
     {
@@ -94,8 +94,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA(4, 4, px_RGB888, 0, 0, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 0, 255);
         REQUIRE_VEC4_EQ(bgra, 0, 0, 0, 255);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0f);
 
         swPx_RGB888_GetColor_RGBA8888(4, 4, px_RGB888, 3, 0, rgba);
         swPx_RGB888_GetColor_BGRA8888(4, 4, px_RGB888, 3, 0, bgra);
@@ -103,8 +103,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA(4, 4, px_RGB888, 3, 0, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 255, 255);
         REQUIRE_VEC4_EQ(bgra, 255, 0, 0, 255);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 1.0, 0, 0, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0f, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 1.0f, 0, 0, 1.0f);
 
         // Last row
         swPx_RGB888_GetColor_RGBA8888(4, 4, px_RGB888, 0, 3, rgba);
@@ -113,8 +113,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA(4, 4, px_RGB888, 0, 3, fbgra);
         REQUIRE_VEC4_EQ(rgba, 10, 111, 12, 255);
         REQUIRE_VEC4_EQ(bgra, 12, 111, 10, 255);
-        REQUIRE_FVEC4_EQ(frgba, 10.0 / 255, 111.0 / 255, 12.0 / 255, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 12.0 / 255, 111.0 / 255, 10.0 / 255, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 10.0f / 255, 111.0f / 255, 12.0f / 255, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 12.0f / 255, 111.0f / 255, 10.0f / 255, 1.0f);
 
         swPx_RGB888_GetColor_RGBA8888(4, 4, px_RGB888, 3, 3, rgba);
         swPx_RGB888_GetColor_BGRA8888(4, 4, px_RGB888, 3, 3, bgra);
@@ -122,8 +122,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA(4, 4, px_RGB888, 3, 3, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 1, 255);
         REQUIRE_VEC4_EQ(bgra, 1, 0, 0, 255);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0 / 255, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 1.0 / 255, 0, 0, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0f / 255, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 1.0f / 255, 0, 0, 1.0f);
     }
 
     {
@@ -138,8 +138,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA_UV(4, 4, px_RGB888, 0.1f, 0.1f, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 0, 255);
         REQUIRE_VEC4_EQ(bgra, 0, 0, 0, 255);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0f);
 
         swPx_RGB888_GetColor_RGBA8888_UV(4, 4, px_RGB888, 0.7f, 0.1f, rgba);
         swPx_RGB888_GetColor_BGRA8888_UV(4, 4, px_RGB888, 0.7f, 0.1f, bgra);
@@ -147,8 +147,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA_UV(4, 4, px_RGB888, 0.7f, 0.1f, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 1, 0, 255);
         REQUIRE_VEC4_EQ(bgra, 0, 1, 0, 255);
-        REQUIRE_FVEC4_EQ(frgba, 0, 1.0 / 255, 0, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 0, 1.0 / 255, 0, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 0, 1.0f / 255, 0, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 0, 1.0f / 255, 0, 1.0f);
 
         // Last row
         swPx_RGB888_GetColor_RGBA8888_UV(4, 4, px_RGB888, 1.1f, 0.9f, rgba);
@@ -157,8 +157,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA_UV(4, 4, px_RGB888, 1.1f, 0.9f, fbgra);
         REQUIRE_VEC4_EQ(rgba, 10, 111, 12, 255);
         REQUIRE_VEC4_EQ(bgra, 12, 111, 10, 255);
-        REQUIRE_FVEC4_EQ(frgba, 10.0 / 255, 111.0 / 255, 12.0 / 255, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 12.0 / 255, 111.0 / 255, 10.0 / 255, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 10.0f / 255, 111.0f / 255, 12.0f / 255, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 12.0f / 255, 111.0f / 255, 10.0f / 255, 1.0f);
 
         swPx_RGB888_GetColor_RGBA8888_UV(4, 4, px_RGB888, 1.9f, 1.9f, rgba);
         swPx_RGB888_GetColor_BGRA8888_UV(4, 4, px_RGB888, 1.9f, 1.9f, bgra);
@@ -166,8 +166,8 @@ void test_pixels() {
         swPx_RGB888_GetColor_FBGRA_UV(4, 4, px_RGB888, 1.9f, 1.9f, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 1, 255);
         REQUIRE_VEC4_EQ(bgra, 1, 0, 0, 255);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0 / 255, 1.0);
-        REQUIRE_FVEC4_EQ(fbgra, 1.0 / 255, 0, 0, 1.0);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0f / 255, 1.0f);
+        REQUIRE_FVEC4_EQ(fbgra, 1.0f / 255, 0, 0, 1.0f);
     }
 
     {
@@ -182,8 +182,8 @@ void test_pixels() {
         swPx_RGBA8888_GetColor_FBGRA(4, 4, px_RGBA8888, 0, 0, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 0, 1);
         REQUIRE_VEC4_EQ(bgra, 0, 0, 0, 1);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0 / 255);
-        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0 / 255);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0f / 255);
+        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0f / 255);
 
         swPx_RGBA8888_GetColor_RGBA8888(4, 4, px_RGBA8888, 3, 0, rgba);
         swPx_RGBA8888_GetColor_BGRA8888(4, 4, px_RGBA8888, 3, 0, bgra);
@@ -191,8 +191,8 @@ void test_pixels() {
         swPx_RGBA8888_GetColor_FBGRA(4, 4, px_RGBA8888, 3, 0, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 255, 4);
         REQUIRE_VEC4_EQ(bgra, 255, 0, 0, 4);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0, 4.0 / 255);
-        REQUIRE_FVEC4_EQ(fbgra, 1.0, 0, 0, 4.0 / 255);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0f, 4.0f / 255);
+        REQUIRE_FVEC4_EQ(fbgra, 1.0f, 0, 0, 4.0f / 255);
 
         // Last row
         swPx_RGBA8888_GetColor_RGBA8888(4, 4, px_RGBA8888, 0, 3, rgba);
@@ -201,8 +201,8 @@ void test_pixels() {
         swPx_RGBA8888_GetColor_FBGRA(4, 4, px_RGBA8888, 0, 3, fbgra);
         REQUIRE_VEC4_EQ(rgba, 10, 111, 12, 9);
         REQUIRE_VEC4_EQ(bgra, 12, 111, 10, 9);
-        REQUIRE_FVEC4_EQ(frgba, 10.0 / 255, 111.0 / 255, 12.0 / 255, 9.0 / 255);
-        REQUIRE_FVEC4_EQ(fbgra, 12.0 / 255, 111.0 / 255, 10.0 / 255, 9.0 / 255);
+        REQUIRE_FVEC4_EQ(frgba, 10.0f / 255, 111.0f / 255, 12.0f / 255, 9.0f / 255);
+        REQUIRE_FVEC4_EQ(fbgra, 12.0f / 255, 111.0f / 255, 10.0f / 255, 9.0f / 255);
 
         swPx_RGBA8888_GetColor_RGBA8888(4, 4, px_RGBA8888, 3, 3, rgba);
         swPx_RGBA8888_GetColor_BGRA8888(4, 4, px_RGBA8888, 3, 3, bgra);
@@ -210,8 +210,8 @@ void test_pixels() {
         swPx_RGBA8888_GetColor_FBGRA(4, 4, px_RGBA8888, 3, 3, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 1, 12);
         REQUIRE_VEC4_EQ(bgra, 1, 0, 0, 12);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0 / 255, 12.0 / 255);
-        REQUIRE_FVEC4_EQ(fbgra, 1.0 / 255, 0, 0, 12.0 / 255);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0f / 255, 12.0f / 255);
+        REQUIRE_FVEC4_EQ(fbgra, 1.0f / 255, 0, 0, 12.0f / 255);
     }
 
     {
@@ -226,8 +226,8 @@ void test_pixels() {
         swPx_RGBA8888_GetColor_FBGRA_UV(4, 4, px_RGBA8888, 0.1f, 0.1f, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 0, 1);
         REQUIRE_VEC4_EQ(bgra, 0, 0, 0, 1);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0 / 255);
-        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0 / 255);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 0, 1.0f / 255);
+        REQUIRE_FVEC4_EQ(fbgra, 0, 0, 0, 1.0f / 255);
 
         swPx_RGBA8888_GetColor_RGBA8888_UV(4, 4, px_RGBA8888, 0.7f, 0.1f, rgba);
         swPx_RGBA8888_GetColor_BGRA8888_UV(4, 4, px_RGBA8888, 0.7f, 0.1f, bgra);
@@ -235,8 +235,8 @@ void test_pixels() {
         swPx_RGBA8888_GetColor_FBGRA_UV(4, 4, px_RGBA8888, 0.7f, 0.1f, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 1, 0, 3);
         REQUIRE_VEC4_EQ(bgra, 0, 1, 0, 3);
-        REQUIRE_FVEC4_EQ(frgba, 0, 1.0 / 255, 0, 3.0 / 255);
-        REQUIRE_FVEC4_EQ(fbgra, 0, 1.0 / 255, 0, 3.0 / 255);
+        REQUIRE_FVEC4_EQ(frgba, 0, 1.0f / 255, 0, 3.0f / 255);
+        REQUIRE_FVEC4_EQ(fbgra, 0, 1.0f / 255, 0, 3.0f / 255);
 
         // Last row
         swPx_RGBA8888_GetColor_RGBA8888_UV(4, 4, px_RGBA8888, -0.9f, 0.9f, rgba); // wrong but ok
@@ -245,8 +245,8 @@ void test_pixels() {
         swPx_RGBA8888_GetColor_FBGRA_UV(4, 4, px_RGBA8888, -0.9f, 0.9f, fbgra);
         REQUIRE_VEC4_EQ(rgba, 190, 111, 20, 10);
         REQUIRE_VEC4_EQ(bgra, 20, 111, 190, 10);
-        REQUIRE_FVEC4_EQ(frgba, 190.0 / 255, 111.0 / 255, 20.0 / 255, 10.0 / 255);
-        REQUIRE_FVEC4_EQ(fbgra, 20.0 / 255, 111.0 / 255, 190.0 / 255, 10.0 / 255);
+        REQUIRE_FVEC4_EQ(frgba, 190.0f / 255, 111.0f / 255, 20.0f / 255, 10.0f / 255);
+        REQUIRE_FVEC4_EQ(fbgra, 20.0f / 255, 111.0f / 255, 190.0f / 255, 10.0f / 255);
 
         swPx_RGBA8888_GetColor_RGBA8888_UV(4, 4, px_RGBA8888, 1.9f, 1.9f, rgba);
         swPx_RGBA8888_GetColor_BGRA8888_UV(4, 4, px_RGBA8888, 1.9f, 1.9f, bgra);
@@ -254,8 +254,8 @@ void test_pixels() {
         swPx_RGBA8888_GetColor_FBGRA_UV(4, 4, px_RGBA8888, 1.9f, 1.9f, fbgra);
         REQUIRE_VEC4_EQ(rgba, 0, 0, 1, 12);
         REQUIRE_VEC4_EQ(bgra, 1, 0, 0, 12);
-        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0 / 255, 12.0 / 255);
-        REQUIRE_FVEC4_EQ(fbgra, 1.0 / 255, 0, 0, 12.0 / 255);
+        REQUIRE_FVEC4_EQ(frgba, 0, 0, 1.0f / 255, 12.0f / 255);
+        REQUIRE_FVEC4_EQ(fbgra, 1.0f / 255, 0, 0, 12.0f / 255);
     }
 
     {
