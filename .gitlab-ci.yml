@@ -212,16 +212,15 @@ stages:
     - '& "../../../$BIN_DIR/test_Ray" --mt $TEST_ARGS.split(" ") $AUX_TEST_ARGS.split(" ") | tee test_data/output.txt'
     - cd ../../../
   after_script:
-    - cp src/Ray/tests/test_data/material_*.tga ./
-    - cp src/Ray/tests/test_data/errors.txt ./
-    - cp src/Ray/tests/test_data/output.txt ./
+    - mkdir $CI_JOB_NAME
+    - cp src/Ray/tests/test_data/material_*.tga ./$CI_JOB_NAME
+    - cp src/Ray/tests/test_data/errors.txt ./$CI_JOB_NAME
+    - cp src/Ray/tests/test_data/output.txt ./$CI_JOB_NAME
   artifacts:
     when: always
-    name: "$env:CI_JOB_NAME"
+    name: "$CI_JOB_NAME"
     paths:
-      - material_*.tga
-      - errors.txt
-      - output.txt
+      - $CI_JOB_NAME
     expire_in: 1 week
 
 .windows-test-img-job:
@@ -243,7 +242,7 @@ stages:
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/staircase.json -w 720 -h 900 $AUX_TEST_ARGS.split(" ") -ref assets/references/staircase_cycles.png --output_exr --output_aux --max_samples 256 --psnr 35.44 --threshold 536 --refr_depth 12 --total_depth 12'
   artifacts:
     when: always
-    name: "$env:CI_JOB_NAME"
+    name: "$CI_JOB_NAME"
     paths:
       - ./*.png
       - ./*.exr
@@ -261,16 +260,15 @@ stages:
     - ../../../$BIN_DIR/test_Ray --mt $TEST_ARGS $AUX_TEST_ARGS | tee test_data/output.txt
     - cd ../../../
   after_script:
-    - cp src/Ray/tests/test_data/material_*.tga ./
-    - cp src/Ray/tests/test_data/errors.txt ./
-    - cp src/Ray/tests/test_data/output.txt ./
+    - mkdir $CI_JOB_NAME
+    - cp src/Ray/tests/test_data/material_*.tga ./$CI_JOB_NAME
+    - cp src/Ray/tests/test_data/errors.txt ./$CI_JOB_NAME
+    - cp src/Ray/tests/test_data/output.txt ./$CI_JOB_NAME
   artifacts:
     when: always
     name: "$CI_JOB_NAME"
     paths:
-      - material_*.tga
-      - errors.txt
-      - output.txt
+      - $CI_JOB_NAME
     expire_in: 1 week
 
 .test-img-job:
@@ -674,6 +672,31 @@ macos-arm64-gpu-m1-test-img-job:
     - macos,arm64,m1
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
+
+analyze-job:
+  stage: deploy
+  script:
+    - echo "Analyzing test results..."
+    - python src/Ray/scripts/analyze_output.py linux-x86_64-cpu-test-job/output.txt linux-x86_64-gpu-amd-test-job/output.txt linux-x86_64-gpu-nv-test-job/output.txt macos-arm64-cpu-test-job/output.txt macos-arm64-gpu-m1-test-job/output.txt macos-x86_64-cpu-test-job/output.txt windows-arm64-cpu-test-job/output.txt windows-arm64-gpu-adreno-test-job/output.txt windows-x86_64-cpu-test-job/output.txt windows-x86_64-gpu-amd-test-job/output.txt windows-x86_64-gpu-arc-test-job/output.txt windows-x86_64-gpu-nv-test-job/output.txt windows-x86_64-gpu-xe-test-job/output.txt
+  needs:
+    - linux-x86_64-cpu-test-job
+    - linux-x86_64-gpu-amd-test-job
+    - linux-x86_64-gpu-nv-test-job
+    - macos-arm64-cpu-test-job
+    - macos-arm64-gpu-m1-test-job
+    - macos-x86_64-cpu-test-job
+    - windows-arm64-cpu-test-job
+    - windows-arm64-gpu-adreno-test-job
+    - windows-x86_64-cpu-test-job
+    - windows-x86_64-gpu-amd-test-job
+    - windows-x86_64-gpu-arc-test-job
+    - windows-x86_64-gpu-nv-test-job
+    - windows-x86_64-gpu-xe-test-job
+  tags:
+    - deployer
+  rules:
+    - if: $CI_COMMIT_BRANCH
+  when: always
 
 deploy-job:
   stage: deploy
