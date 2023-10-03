@@ -209,17 +209,19 @@ stages:
     - '& "$BIN_DIR/test_SW"'
     - '& "$BIN_DIR/test_Sys"'
     - cd src/Ray/tests
-    - '& "../../../$BIN_DIR/test_Ray" --mt $TEST_ARGS.split(" ") $AUX_TEST_ARGS.split(" ")'
+    - '& "../../../$BIN_DIR/test_Ray" --mt $TEST_ARGS.split(" ") $AUX_TEST_ARGS.split(" ") | tee test_data/output.txt'
     - cd ../../../
   after_script:
     - cp src/Ray/tests/test_data/material_*.tga ./
     - cp src/Ray/tests/test_data/errors.txt ./
+    - cp src/Ray/tests/test_data/output.txt ./
   artifacts:
     when: always
     name: "$env:CI_JOB_NAME"
     paths:
       - material_*.tga
       - errors.txt
+      - output.txt
     expire_in: 1 week
 
 .windows-test-img-job:
@@ -256,17 +258,19 @@ stages:
     - $BIN_DIR/test_SW
     - $BIN_DIR/test_Sys
     - cd src/Ray/tests
-    - ../../../$BIN_DIR/test_Ray --mt $TEST_ARGS $AUX_TEST_ARGS
+    - ../../../$BIN_DIR/test_Ray --mt $TEST_ARGS $AUX_TEST_ARGS | tee test_data/output.txt
     - cd ../../../
   after_script:
     - cp src/Ray/tests/test_data/material_*.tga ./
     - cp src/Ray/tests/test_data/errors.txt ./
+    - cp src/Ray/tests/test_data/output.txt ./
   artifacts:
     when: always
     name: "$CI_JOB_NAME"
     paths:
       - material_*.tga
       - errors.txt
+      - output.txt
     expire_in: 1 week
 
 .test-img-job:
