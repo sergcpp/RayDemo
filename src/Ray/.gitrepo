@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = texture_sizes
-	commit = 65f6568faf0cf9fb0ef2f3295025ec5c26cd102c
+	branch = master
+	commit = 2d261f562f580dc20d4c2efde4c37e034f3d729d
 	method = merge
 	cmdver = 0.4.6
-	parent = 9266fa1c5265826929a423402c403ddb7af02ae6
+	parent = 6096d5a907676963e90ae49a429c82461e92dba2
