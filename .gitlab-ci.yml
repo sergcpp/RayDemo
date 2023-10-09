@@ -10,16 +10,34 @@ stages:
     - windows
   script:
     - echo "Compiling the code..."
+    - |
+      function Invoke-Environment {
+        param
+        (
+            # Any cmd shell command, normally a configuration batch file.
+            [Parameter(Mandatory=$true)]
+            [string] $Command
+        )
+
+        $Command = "`"" + $Command + "`""
+        cmd /c "$Command > nul 2>&1 && set" | . { process {
+            if ($_ -match '^([^=]+)=(.*)') {
+                [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2])
+            }
+        }}
+      }
+    - 'if (Test-Path "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat") { Invoke-Environment "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" }'
+    - 'if (Test-Path "D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat") { Invoke-Environment "D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" }'
     - mkdir build
     - cd build
-    - cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_UNITY_BUILD=ON
+    - cmake .. -G "Ninja" -DCMAKE_UNITY_BUILD=ON -DCMAKE_BUILD_TYPE=Release
     - cd ..
-    - cmake --build build --target ALL_BUILD --config Release --parallel 16
+    - cmake --build build --config Release --parallel 16
     - echo "Compile complete."
     - mkdir windows-x86_64
-    - copy build/src/Ray/tests/Release/test_Ray.exe windows-x86_64
-    - copy build/src/SW/tests/Release/test_SW.exe windows-x86_64
-    - copy build/src/Sys/tests/Release/test_Sys.exe windows-x86_64
+    - copy build/src/Ray/tests/test_Ray.exe windows-x86_64
+    - copy build/src/SW/tests/test_SW.exe windows-x86_64
+    - copy build/src/Sys/tests/test_Sys.exe windows-x86_64
     - copy DemoApp.exe windows-x86_64
   artifacts:
     name: windows-x86_64
