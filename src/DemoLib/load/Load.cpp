@@ -917,7 +917,6 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             const JsObject &js_materials = js_scene.at("materials").as_obj();
             for (const auto &js_mat : js_materials.elements) {
-                const std::string &js_mat_name = js_mat.first;
                 const JsObject &js_mat_obj = js_mat.second.as_obj();
                 const JsString &js_type = js_mat_obj.at("type").as_str();
                 if (js_type.val == "principled") {
