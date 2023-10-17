@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = fixes_17_10
-	commit = ca43ac8b4f889ec44528c3c9ec5184b13e86afd8
+	branch = spherical_sampling
+	commit = 08c1957aa053e165ac45263130075244a87b8463
 	method = merge
 	cmdver = 0.4.6
-	parent = 06ff6874ab6dd624fd36c09ba0d1664ef5944ce6
+	parent = 5065d244b1be05657b94db415d3c461448d4c54f
