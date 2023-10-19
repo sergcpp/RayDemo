@@ -247,6 +247,10 @@ stages:
     - echo "Cleaning repository..."
     - '& git clean -fx -e "$BIN_DIR"'
     - echo "Running image tests..."
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/villa_cycles.png --output_exr --output_aux --max_samples 256 --psnr 28.86 --threshold 4527 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 0'
+    #- '& "$BIN_DIR/DemoApp" -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/villa_pool_cycles.png --output_exr --output_aux --max_samples 256 --psnr 26.39 --threshold 29608 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 1'
+    #- '& "$BIN_DIR/DemoApp" -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/villa_garage_cycles.png --output_exr --output_aux --max_samples 256 --psnr 30.91 --threshold 6953 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 2'
+    #- '& "$BIN_DIR/DemoApp" -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/villa_bathroom_cycles.png --output_exr --output_aux --max_samples 256 --psnr 35.21 --threshold 1258 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 3'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/mustang.json -w 960 -h 600 $AUX_TEST_ARGS.split(" ") -ref assets/references/mustang_cycles.png --output_exr --output_aux --max_samples 256 --psnr 34.61 --threshold 1828 --refr_depth 12 --total_depth 12 --clamp_indirect 10.0'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/bistro.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 256 --psnr 32.65 --threshold 1733 --clamp_indirect 10.0'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/bistro_night.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/bistro_night_cycles.png --output_exr --output_aux --max_samples 256 --psnr 27.41 --threshold 13071 --clamp_indirect 10.0 --camera 0'
@@ -295,6 +299,10 @@ stages:
     - echo "Cleaning repository..."
     - git clean -fx -e $BIN_DIR
     - echo "Running image tests..."
+    - ./$BIN_DIR/DemoApp -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/villa_cycles.png --output_exr --output_aux --max_samples 256 --psnr 28.86 --threshold 4527 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 0
+    #- ./$BIN_DIR/DemoApp -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/villa_pool_cycles.png --output_exr --output_aux --max_samples 256 --psnr 26.39 --threshold 29608 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 1
+    #- ./$BIN_DIR/DemoApp -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/villa_garage_cycles.png --output_exr --output_aux --max_samples 256 --psnr 30.91 --threshold 6953 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 2
+    #- ./$BIN_DIR/DemoApp -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/villa_bathroom_cycles.png --output_exr --output_aux --max_samples 256 --psnr 35.21 --threshold 1258 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 3
     - ./$BIN_DIR/DemoApp -s assets/scenes/mustang.json -w 960 -h 600 $AUX_TEST_ARGS -ref assets/references/mustang_cycles.png --output_exr --output_aux --max_samples 256 --psnr 34.61 --threshold 1828 --refr_depth 12 --total_depth 12 --clamp_indirect 10.0
     - ./$BIN_DIR/DemoApp -s assets/scenes/bistro.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 256 --psnr 32.65 --threshold 1733 --clamp_indirect 10.0
     - ./$BIN_DIR/DemoApp -s assets/scenes/bistro_night.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/bistro_night_cycles.png --output_exr --output_aux --max_samples 256 --psnr 27.41 --threshold 13071 --clamp_indirect 10.0 --camera 0
