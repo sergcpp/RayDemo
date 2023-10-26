@@ -40,8 +40,12 @@ Test application for a Ray library bundled with a lot of heavy test scenes. Most
   <img src="sponza.png" width="62.9%" />
 </div>
 <div float="left" >
-  <img src="coffee_maker.png" width="44.1%" />
-  <img src="staircase.png" width="45.35%" />
+  <img src="italian_flat_kitchen.png" width="60.0%" />
+  <img src="coffee_maker.png" width="29.4%" />
+</div>
+<div float="left" >
+  <img src="staircase.png" width="29.9%" />
+  <img src="italian_flat_back.png" width="59.5%" />
 </div>
 </div>
 </details>
