@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = villa_scene
-	commit = baf99ca6dfbef3d9c261bd0c730073d46310c7f6
+	branch = bounded_vndf
+	commit = 2642705d0752740b0676475cd884034116701046
 	method = merge
 	cmdver = 0.4.6
-	parent = fdcf63089cdc300f41c60e786e0a056bb08ca4e0
+	parent = dbd324b076332701fca1589e40e794d8c74cb82f
