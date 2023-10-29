@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = fixes_26_10
-	commit = 0b0ace8c2c2fbc99f7f1da938804ad99a713c060
+	branch = meshlight_triangles
+	commit = 15359222e4eb8996d8003f5cd2f8291e922655b6
 	method = merge
 	cmdver = 0.4.6
-	parent = e0425baeda37872845fe93ce921f4aec78ae95c7
+	parent = ab0a10d9db80fd8488e0c940eb0322b73e8e9c82
