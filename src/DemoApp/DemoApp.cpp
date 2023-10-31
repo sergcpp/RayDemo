@@ -194,6 +194,8 @@ void DemoApp::Frame() {
 
 #if !defined(__ANDROID__)
 int DemoApp::Run(int argc, char *argv[]) {
+    printf("RayDemo Version: %s\n", Version());
+
     int w = 640, h = 360;
 
     AppParams app_params;
@@ -456,6 +458,8 @@ void DemoApp::CreateViewer(int w, int h, const AppParams &app_params, const bool
     viewer_ = std::make_unique<Viewer>(w, h, "./", app_params, nogpu ? 0 : (nohwrt ? 1 : 2), nobindless, nocompression);
     p_input_manager_ = viewer_->GetComponent<InputManager>(INPUT_MANAGER_KEY);
 }
+
+const char *DemoApp::Version() const { return "unknown"; }
 
 //
 // Dirty workaround for Intel discrete GPU

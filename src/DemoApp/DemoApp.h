@@ -47,5 +47,7 @@ class DemoApp {
     int Run(int argc, char *argv[]);
 #endif
 
+    const char *Version() const;
+
     bool terminated() const { return quit_; }
 };
