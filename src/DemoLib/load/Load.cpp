@@ -1350,7 +1350,12 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
-                    float mul = power / (4.0f * Ren::Pi<float>() * new_light.radius * new_light.radius);
+                    float mul;
+                    if (new_light.radius > 0.0f) {
+                        mul = power / (4.0f * Ren::Pi<float>() * new_light.radius * new_light.radius);
+                    } else {
+                        mul = power / (4.0f * Ren::Pi<float>());
+                    }
                     mul /= Ren::Pi<float>(); // ???
 
                     new_light.color[0] *= mul;
