@@ -284,6 +284,7 @@ void GSRayTest::Enter() {
 
     cam_desc.min_samples = viewer_->app_params.min_samples;
     cam_desc.variance_threshold = viewer_->app_params.variance_threshold;
+    cam_desc.regularize_alpha = viewer_->app_params.regularize_alpha;
 
     ray_scene_->SetCamera(current_cam_, cam_desc);
 

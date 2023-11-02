@@ -25,6 +25,7 @@ struct AppParams {
     float clamp_indirect = 10.0f;
     float variance_threshold = 0.0f;
     int camera_index = -1; // -1 means 'use camera set in scene description'
+    float regularize_alpha = 0.03f;
 };
 
 class FontStorage;

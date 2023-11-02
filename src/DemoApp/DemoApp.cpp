@@ -271,6 +271,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             scaling_factor_ = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--camera") == 0 && (++i != argc)) {
             app_params.camera_index = int(strtol(argv[i], nullptr, 10));
+        } else if (strcmp(argv[i], "--regularize_alpha") == 0 && (++i != argc)) {
+            app_params.regularize_alpha = float(atof(argv[i]));
         }
     }
 
