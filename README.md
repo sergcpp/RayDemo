@@ -47,5 +47,8 @@ Test application for a Ray library bundled with a lot of heavy test scenes. Most
   <img src="staircase.png" width="29.9%" />
   <img src="italian_flat_kitchen.png" width="59.5%" />
 </div>
+<div float="left" >
+  <img src="mustang_interior.png" width="89.8%" />
+</div>
 </div>
 </details>
