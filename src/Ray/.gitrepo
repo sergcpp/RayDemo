@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = point_light
-	commit = 065076f2f94e29edcdf045bead357f0af2a16cdb
+	branch = path_regularization
+	commit = 2ab89b93316d0b7218d09d7c58aa9dffbea23a97
 	method = merge
 	cmdver = 0.4.6
-	parent = 62e668dace4101a6b933e788d1e0ebe62108b6ae
+	parent = c90fef12c4327ea145d9656d5c1c0de43059bc5e
