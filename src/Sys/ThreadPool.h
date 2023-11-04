@@ -158,7 +158,7 @@ inline ThreadPool::ThreadPool(const int threads_count, const eThreadPriority pri
 
             for (;;) {
                 std::function<void()> task;
-                SmallVectorImpl<Task> *cur_list = nullptr;
+                Task *cur_tasks = nullptr;
                 SmallVector<short, 8> dependents;
 
                 {
@@ -173,18 +173,17 @@ inline ThreadPool::ThreadPool(const int threads_count, const eThreadPriority pri
                         auto &list = task_lists_[l];
                         for (int i = int(list.size()) - 1; i >= 0; --i) {
                             if (list[i].func && list[i].dependencies == 0) {
-                                cur_list = &list;
+                                cur_tasks = list.data();
                                 task = std::move(list[i].func);
                                 list[i].func = nullptr;
                                 dependents = std::move(list[i].dependents);
                                 --active_tasks_;
+                                while (!list.empty() && !list.back().func) {
+                                    list.pop_back();
+                                }
                                 break;
                             }
                         }
-                    }
-
-                    while (cur_list && !cur_list->empty() && !cur_list->back().func) {
-                        cur_list->pop_back();
                     }
 
                     while (!task_lists_.empty() && task_lists_.front().empty()) {
@@ -198,7 +197,7 @@ inline ThreadPool::ThreadPool(const int threads_count, const eThreadPriority pri
                     task();
 
                     for (const int i : dependents) {
-                        if ((*cur_list)[i].dependencies.fetch_sub(1) == 1) {
+                        if (cur_tasks[i].dependencies.fetch_sub(1) == 1) {
                             ++active_tasks_;
                             condition_.notify_one();
                         }

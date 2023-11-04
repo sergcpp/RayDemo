@@ -260,6 +260,8 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     std::map<std::string, Ray::MaterialHandle> materials;
     std::map<std::string, Ray::MeshHandle> meshes;
 
+    stbi_set_flip_vertically_on_load(1);
+
     // auto jpg_decompressor = std::unique_ptr<void, int (*)(tjhandle)>(tjInitDecompress(), &tjDestroy);
 
     thread_local std::unique_ptr<void, int (*)(tjhandle)> jpg_decompressor(nullptr, &tjDestroy);
@@ -383,7 +385,6 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 if ((channel_to_extract != -1 && channel_to_extract != 3 && format == Ray::eTextureFormat::BC3) ||
                     (channel_to_extract != -1 && format == Ray::eTextureFormat::BC1) || w < 4 || h < 4) {
                     // We can not extract rgb channels from BC3, uncompress
-                    stbi_set_flip_vertically_on_load(1);
                     int channels = 0;
                     img_data = stbi_load(_name.c_str(), &w, &h, &channels, 0);
                     img_data_len = w * h * channels;
@@ -429,7 +430,6 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     }
                 }
             } else {
-                stbi_set_flip_vertically_on_load(1);
                 int channels = 0;
                 img_data = stbi_load(_name.c_str(), &w, &h, &channels, 0);
                 img_data_len = w * h * channels;
