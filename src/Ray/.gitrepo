@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = path_regularization
-	commit = 2ab89b93316d0b7218d09d7c58aa9dffbea23a97
+	branch = fixes_04_11
+	commit = da20bb71d8518e557791cbff5670582dd413f8c3
 	method = merge
 	cmdver = 0.4.6
-	parent = c90fef12c4327ea145d9656d5c1c0de43059bc5e
+	parent = e8ff27ad5cdeba2496a91dd129757c0a871776c3
