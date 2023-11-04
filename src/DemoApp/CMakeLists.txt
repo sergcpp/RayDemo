@@ -37,6 +37,7 @@ target_link_libraries(DemoApp DemoLib ${LIBS})
 set_target_properties(DemoApp PROPERTIES OUTPUT_NAME_DEBUG DemoApp-dbg)
 set_target_properties(DemoApp PROPERTIES OUTPUT_NAME_RELWITHDEBINFO DemoApp-dev)
 set_target_properties(DemoApp PROPERTIES OUTPUT_NAME_ASAN DemoApp-asan)
+set_target_properties(DemoApp PROPERTIES OUTPUT_NAME_TSAN DemoApp-tsan)
 set_target_properties(DemoApp PROPERTIES OUTPUT_NAME_RELEASE DemoApp)
 
 add_custom_command(TARGET DemoApp

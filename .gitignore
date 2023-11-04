@@ -5,10 +5,12 @@ DemoApp.exe
 DemoApp-dbg.exe
 DemoApp-dev.exe
 DemoApp-asan.exe
+DemoApp-tsan.exe
 DemoApp
 DemoApp-dbg
 DemoApp-dev
 DemoApp-asan
+DemoApp-tsan
 cmake-build-*
 *.blend1
 *.blend2
