@@ -59,7 +59,7 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
         s.use_bindless = !nobindless;
         s.use_tex_compression = !nocompression;
         if (gpu_mode == 0) {
-            ray_renderer.reset(Ray::CreateRenderer(s, log.get(), Ray::RendererCPU));
+            ray_renderer.reset(Ray::CreateRenderer(s, log.get(), Ray::eRendererType::Reference));
         } else {
             ray_renderer.reset(Ray::CreateRenderer(s, log.get()));
         }
