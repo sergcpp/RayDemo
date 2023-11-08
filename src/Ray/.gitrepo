@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = fused_transforms
-	commit = 56e5a113e951468fc7577ac4771c9e1d07131377
+	branch = fixes_07_11
+	commit = 84269e3ff8a6d8aece0533a1af8655346975941f
 	method = merge
 	cmdver = 0.4.6
-	parent = 87be8ade4345ea50c6ffa20ec8d82870de01b216
+	parent = 89117cbf9222d62ffa7d53289dc4c5264dee040b
