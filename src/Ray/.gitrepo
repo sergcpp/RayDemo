@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = sky_fix
-	commit = b9b9e638a83389804434ea47cff006c64a762f0f
+	branch = fused_transforms
+	commit = 56e5a113e951468fc7577ac4771c9e1d07131377
 	method = merge
 	cmdver = 0.4.6
-	parent = 2aa5a349883debc0cb7aeddb54c4d2281da2c9d0
+	parent = 87be8ade4345ea50c6ffa20ec8d82870de01b216
