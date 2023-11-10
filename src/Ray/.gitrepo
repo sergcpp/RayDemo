@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = fixes_07_11
-	commit = 84269e3ff8a6d8aece0533a1af8655346975941f
+	branch = vtx_attributes
+	commit = a922edfd93ac13efca57e583905ed3cf8414e1cb
 	method = merge
 	cmdver = 0.4.6
-	parent = 89117cbf9222d62ffa7d53289dc4c5264dee040b
+	parent = 431ad080532baf8cbc151d9dfde98cd95b0ea6cc
