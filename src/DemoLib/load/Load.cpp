@@ -1254,8 +1254,9 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             Ray::mesh_desc_t mesh_desc;
             mesh_desc.name = mesh_name;
             mesh_desc.prim_type = Ray::ePrimType::TriangleList;
-            mesh_desc.layout = Ray::eVertexLayout::PxyzNxyzTuv;
-            mesh_desc.vtx_attrs = attrs;
+            mesh_desc.vtx_positions = {attrs, 0, 8};
+            mesh_desc.vtx_normals = {attrs, 3, 8};
+            mesh_desc.vtx_uvs = {attrs, 6, 8};
             mesh_desc.vtx_indices = indices;
             mesh_desc.use_fast_bvh_build = global_settings.use_fast_bvh_build;
 
