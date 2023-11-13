@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <vector>
 
+#include <SOIL2/stb_image.h>
 #include <SOIL2/stb_image_write.h>
 
 #define TINYEXR_USE_MINIZ 0
@@ -231,6 +232,45 @@ void GSRayTest::Enter() {
             ray_renderer_->log()->Error("Failed to parse scene file!");
         }
     }
+
+#if 0
+    {
+        int w = 0, h = 0, channels = 0;
+        uint8_t *img_data = stbi_load("weather.png", &w, &h, &channels, 0);
+
+        std::ofstream out_file("src/Ray/internal/precomputed/__weather_tex.inl", std::ios::binary);
+
+        out_file << "extern const int WEATHER_TEX_W = " << w << ";\n";
+        out_file << "extern const int WEATHER_TEX_H = " << h << ";\n";
+
+        out_file << "extern const uint8_t __weather_tex[" << w * h * channels << "] = {\n    ";
+        for (int i = 0; i < w * h * channels; ++i) {
+            out_file << int(img_data[i]) << ", ";
+        }
+        out_file << "\n};\n";
+
+        stbi_image_free(img_data);
+    }
+#endif
+
+#if 0
+    {
+        std::ifstream in_file("cloudShape.raw", std::ios::binary);
+        std::ofstream out_file("src/Ray/internal/precomputed/__3d_noise_tex.inl", std::ios::binary);
+
+        out_file << "extern const int NOISE_3D_RES = " << 128 << ";\n";
+
+        out_file << "extern const uint8_t __3d_noise_tex[" << 128 * 128 * 128 << "] = {\n    ";
+        for (int i = 0; i < 128; ++i) {
+            uint8_t data[128 * 128];
+            in_file.read((char *)data, sizeof(data));
+            for (int j = 0; j < 128 * 128; ++j) {
+                out_file << int(data[j]) << ", ";
+            }
+        }
+        out_file << "\n};\n";
+    }
+#endif
 
     if (js_scene.Size()) {
         try {

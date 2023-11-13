@@ -870,6 +870,27 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 }
             }
 
+            if (js_env.Has("env_map_res")) {
+                const JsNumber &js_env_map_res = js_env.at("env_map_res").as_num();
+                env_desc.envmap_resolution = int(js_env_map_res.val);
+            }
+
+            if (js_env.Has("clouds_variety")) {
+                const JsNumber &js_clouds_variety = js_env.at("clouds_variety").as_num();
+                env_desc.atmosphere.clouds_variety = float(js_clouds_variety.val);
+            }
+
+            if (js_env.Has("clouds_density")) {
+                const JsNumber &js_clouds_density = js_env.at("clouds_density").as_num();
+                env_desc.atmosphere.clouds_density = float(js_clouds_density.val);
+            }
+
+            if (js_env.Has("clouds_offset")) {
+                const JsArray &js_clouds_offset = js_env.at("clouds_offset").as_arr();
+                env_desc.atmosphere.clouds_offset_x = float(js_clouds_offset.at(0).as_num().val);
+                env_desc.atmosphere.clouds_offset_z = float(js_clouds_offset.at(1).as_num().val);
+            }
+
             if (js_env.Has("env_map_rot")) {
                 const JsNumber &js_env_map_rot = js_env.at("env_map_rot").as_num();
                 env_desc.env_map_rotation = float(js_env_map_rot.val) * Ren::Pi<float>() / 180.0f;
