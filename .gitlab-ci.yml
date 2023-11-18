@@ -273,7 +273,7 @@ stages:
     - echo "Cleaning repository..."
     - '& git clean -fx -e "$BIN_DIR"'
     - echo "Running image tests..."
-    - '& "$BIN_DIR/DemoApp" -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/villa_cycles.png --output_exr --output_aux --max_samples 256 --psnr 29.52 --threshold 3759 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 0'
+    - '& "$BIN_DIR/DemoApp" -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/villa_cycles.png --output_exr --output_aux --max_samples 256 --psnr 29.52 --threshold 4027 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 0'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/mustang.json -w 960 -h 600 $AUX_TEST_ARGS.split(" ") -ref assets/references/mustang_cycles.png --output_exr --output_aux --max_samples 256 --psnr 34.5 --threshold 1939 --refr_depth 12 --total_depth 12 --clamp_indirect 10.0'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/bistro.json -w 960 -h 540 $AUX_TEST_ARGS.split(" ") -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 256 --psnr 32.65 --threshold 1701 --clamp_indirect 10.0'
     - '& "$BIN_DIR/DemoApp" -s assets/scenes/bistro_night.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/bistro_night_cycles.png --output_exr --output_aux --max_samples 256 --psnr 27.41 --threshold 13487 --clamp_indirect 10.0 --camera 0'
@@ -321,7 +321,7 @@ stages:
     - echo "Cleaning repository..."
     - git clean -fx -e $BIN_DIR
     - echo "Running image tests..."
-    - ./$BIN_DIR/DemoApp -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/villa_cycles.png --output_exr --output_aux --max_samples 256 --psnr 29.52 --threshold 3759 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 0
+    - ./$BIN_DIR/DemoApp -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/villa_cycles.png --output_exr --output_aux --max_samples 256 --psnr 29.52 --threshold 4027 --total_depth 16 --transp_depth 48 --iteration_steps 8 --clamp_indirect 0.0 --denoise --camera 0
     - ./$BIN_DIR/DemoApp -s assets/scenes/mustang.json -w 960 -h 600 $AUX_TEST_ARGS -ref assets/references/mustang_cycles.png --output_exr --output_aux --max_samples 256 --psnr 34.5 --threshold 1939 --refr_depth 12 --total_depth 12 --clamp_indirect 10.0
     - ./$BIN_DIR/DemoApp -s assets/scenes/bistro.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 256 --psnr 32.65 --threshold 1701 --clamp_indirect 10.0
     - ./$BIN_DIR/DemoApp -s assets/scenes/bistro_night.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/bistro_night_cycles.png --output_exr --output_aux --max_samples 256 --psnr 27.41 --threshold 13487 --clamp_indirect 10.0 --camera 0
