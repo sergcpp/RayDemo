@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = better_clamp
-	commit = aa2c2042ccfec4b1509a8835c1e8d2dad08e9f86
+	branch = fixes_19_11
+	commit = 5e02ef51bdd962c4d4626c1f868a43a806bd9aec
 	method = merge
 	cmdver = 0.4.6
-	parent = 39a4394fa7e1c77029455d3988a78652ca6b08b0
+	parent = 9d50bae25081738ed55c082ced765c1d86d9a9d6
