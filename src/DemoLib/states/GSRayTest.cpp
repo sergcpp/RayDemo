@@ -1066,6 +1066,23 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
             side_speed_ = 0;
         } else if (evt.raw_key == 'u') {
             ui_enabled_ = !ui_enabled_;
+        } else if (evt.raw_key == 'n') {
+            // toggle denoising
+            if (viewer_->app_params.denoise_after != -1) {
+                viewer_->app_params.denoise_after = -1;
+            } else {
+                viewer_->app_params.denoise_after = 1;
+
+                // Make sure AUX channels are enabled (for better denoising)
+                Ray::camera_desc_t cam_desc;
+                ray_scene_->GetCamera(current_cam_, cam_desc);
+
+                cam_desc.output_base_color = true;
+                cam_desc.output_depth_normals = true;
+
+                ray_scene_->SetCamera(current_cam_, cam_desc);
+            }
+            UpdateRegionContexts();
         }
     } break;
     case InputManager::RAW_INPUT_RESIZE:
