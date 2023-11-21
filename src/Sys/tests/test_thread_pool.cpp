@@ -172,4 +172,16 @@ void test_thread_pool() {
         require(A_finished && B_finished && C_finished && D_finished && E_finished && F_finished && G_finished &&
                 H_finished && I_finished && J_finished);
     }
-}
+
+    { // parallel for wrapper
+        int data[128] = {};
+
+        Sys::ThreadPool threads(16);
+        threads.ParallelFor(0, 64, [&](const int i) { ++data[i]; });
+        threads.ParallelFor(64, 128, [&](const int i) { ++data[i]; });
+
+        for (int i = 0; i < 128; ++i) {
+            require(data[i] == 1);
+        }
+    }
+}

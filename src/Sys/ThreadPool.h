@@ -122,6 +122,8 @@ class ThreadPool {
     std::future<void> Enqueue(const TaskList &task_list);
     std::future<void> Enqueue(TaskList &&task_list);
 
+    template <class UnaryFunction> void ParallelFor(int from, int to, UnaryFunction &&f);
+
     int workers_count() const { return int(workers_.size()); }
 
     bool SetPriority(int i, eThreadPriority priority);
@@ -331,6 +333,17 @@ inline std::future<void> ThreadPool::Enqueue(TaskList &&task_list) {
     condition_.notify_all();
 
     return res;
+}
+
+template <class UnaryFunction> inline void ThreadPool::ParallelFor(const int from, const int to, UnaryFunction &&f) {
+    TaskList loop_tasks;
+
+    for (int i = from; i < to; ++i) {
+        loop_tasks.AddTask(f, i);
+        loop_tasks.tasks_order.push_back(i - from);
+    }
+
+    Enqueue(loop_tasks).wait();
 }
 
 // the destructor joins all threads
