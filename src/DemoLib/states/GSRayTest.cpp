@@ -272,6 +272,26 @@ void GSRayTest::Enter() {
     }
 #endif
 
+#if 0
+    {
+        int w = 0, h = 0, channels = 0;
+        uint8_t *img_data = stbi_load("moon.png", &w, &h, &channels, 0);
+
+        std::ofstream out_file("src/Ray/internal/precomputed/__moon_tex.inl", std::ios::binary);
+
+        out_file << "extern const int MOON_TEX_W = " << w << ";\n";
+        out_file << "extern const int MOON_TEX_H = " << h << ";\n";
+
+        out_file << "extern const uint8_t __moon_tex[" << w * h * channels << "] = {\n    ";
+        for (int i = 0; i < w * h * channels; ++i) {
+            out_file << int(img_data[i]) << ", ";
+        }
+        out_file << "\n};\n";
+
+        stbi_image_free(img_data);
+    }
+#endif
+
     if (js_scene.Size()) {
         try {
             const uint64_t t1 = Sys::GetTimeMs();

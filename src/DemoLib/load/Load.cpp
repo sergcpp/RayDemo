@@ -1694,7 +1694,7 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     }
 
     using namespace std::placeholders;
-    new_scene->Finalize(std::bind(&Sys::ThreadPool::ParallelFor<Ray::UnaryFunction>, threads, _1, _2, _3));
+    new_scene->Finalize(std::bind(&Sys::ThreadPool::ParallelFor<Ray::ParallelForFunction>, threads, _1, _2, _3));
 
     return new_scene;
 }
