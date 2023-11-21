@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = new_atmosphere
-	commit = 83e943ac34d3eb8275392b430940a5a3488bb41a
+	branch = phys_sky_sample
+	commit = 9311a1be7170dc68d8d9c36c13d2f454e04b48cb
 	method = merge
 	cmdver = 0.4.6
-	parent = 2754193b6ff175fddeb1685b93af4024f39ad126
+	parent = 69cc4f7205f6e373828a2e196ed509a95d5f0607
