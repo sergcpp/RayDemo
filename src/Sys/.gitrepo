@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Sys-gitlab
-	branch = fixes_05_11
-	commit = 81335cb49cb217ae8acc3ff75e5ac8f6d64a5e90
+	branch = parallel_for
+	commit = 36a26b3d1598ceca85b70b79be909d46392e571f
 	method = merge
 	cmdver = 0.4.6
-	parent = 71824c7ecee272809c1df1498b8b244c126abff7
+	parent = 05cffdab6729b9c02e718394fe48096f8fdaed6a
