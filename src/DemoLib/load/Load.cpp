@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <map>
 #include <sstream>
+#include <utility>
 
 #include <Ray/Log.h>
 #include <Ray/RendererBase.h>
@@ -1692,7 +1693,8 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         return nullptr;
     }
 
-    new_scene->Finalize();
+    using namespace std::placeholders;
+    new_scene->Finalize(std::bind(&Sys::ThreadPool::ParallelFor<Ray::UnaryFunction>, threads, _1, _2, _3));
 
     return new_scene;
 }
