@@ -292,6 +292,27 @@ void GSRayTest::Enter() {
     }
 #endif
 
+#if 0
+    {
+        int w = 0, h = 0, channels = 0;
+        uint8_t *img_data = stbi_load("cirrus_combined.png", &w, &h, &channels, 0);
+
+        std::ofstream out_file("src/Ray/internal/precomputed/__cirrus_tex.inl", std::ios::binary);
+
+        out_file << "extern const int CIRRUS_TEX_W = " << w << ";\n";
+        out_file << "extern const int CIRRUS_TEX_H = " << h << ";\n";
+
+        out_file << "extern const uint8_t __cirrus_tex[" << w * h * 2 << "] = {\n    ";
+        for (int i = 0; i < w * h; ++i) {
+            out_file << int(img_data[i * channels + 0]) << ", ";
+            out_file << int(img_data[i * channels + 1]) << ", ";
+        }
+        out_file << "\n};\n";
+
+        stbi_image_free(img_data);
+    }
+#endif
+
     if (js_scene.Size()) {
         try {
             const uint64_t t1 = Sys::GetTimeMs();
