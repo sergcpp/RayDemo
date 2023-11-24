@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = master
-	commit = a379e3b33e81ce96b8971d1a2d142c834e82a681
+	branch = cirrus_clouds
+	commit = 1441e51ec331183168e312019fb38cf225128d39
 	method = merge
 	cmdver = 0.4.6
-	parent = 1c6b77b86718093a2f89795f7e287b20743700ca
+	parent = ce2e8fe5b020496f78d6ba607dcb45da4d3cc30b
