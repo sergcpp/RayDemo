@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = sky_multiscatter
-	commit = 67bbde84d8c3461308a0f8cfbf4726015b211d94
+	branch = clamp_fixes
+	commit = bb942b87b675a12e542c4d8539ec2653497f150d
 	method = merge
 	cmdver = 0.4.6
-	parent = 3d873d5db627e3eb7d0d46ba23eef923044121a8
+	parent = 0916e0c7927ad9fc3b450430bd0fce33884e558e
