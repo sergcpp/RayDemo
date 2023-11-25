@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = cirrus_clouds
-	commit = 1441e51ec331183168e312019fb38cf225128d39
+	branch = sky_multiscatter
+	commit = 67bbde84d8c3461308a0f8cfbf4726015b211d94
 	method = merge
 	cmdver = 0.4.6
-	parent = c30013818907ad16eb1c2335ba0d8625644c5a65
+	parent = 3d873d5db627e3eb7d0d46ba23eef923044121a8
