@@ -360,8 +360,12 @@ void GSRayTest::Enter() {
         cam_desc.output_depth_normals = true;
     }
 
-    cam_desc.clamp_direct = viewer_->app_params.clamp_direct;
-    cam_desc.clamp_indirect = viewer_->app_params.clamp_indirect;
+    if (viewer_->app_params.clamp_direct.initialized()) {
+        cam_desc.clamp_direct = viewer_->app_params.clamp_direct.GetValue();
+    }
+    if (viewer_->app_params.clamp_indirect.initialized()) {
+        cam_desc.clamp_indirect = viewer_->app_params.clamp_indirect.GetValue();
+    }
 
     cam_desc.min_samples = viewer_->app_params.min_samples;
     cam_desc.variance_threshold = viewer_->app_params.variance_threshold;

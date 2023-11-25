@@ -2,6 +2,8 @@
 
 #include "eng/GameBase.h"
 
+#include <Sys/Optional.h>
+
 struct AppParams {
     std::string scene_name;
     std::string ref_name;
@@ -21,8 +23,8 @@ struct AppParams {
     int iteration_steps = 1;
     bool output_exr = false;
     bool output_aux = false;
-    float clamp_direct = 0.0f;
-    float clamp_indirect = 10.0f;
+    Sys::Optional<float> clamp_direct;
+    Sys::Optional<float> clamp_indirect;
     float variance_threshold = 0.0f;
     int camera_index = -1; // -1 means 'use camera set in scene description'
     float regularize_alpha = 0.03f;

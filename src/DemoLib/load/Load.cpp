@@ -830,6 +830,18 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     }
                 }
 
+                cam_desc.clamp_direct = 0.0f;
+                if (js_cam.Has("clamp_direct")) {
+                    const JsNumber &js_clamp_direct = js_cam.at("clamp_direct").as_num();
+                    cam_desc.clamp_direct = float(js_clamp_direct.val);
+                }
+
+                cam_desc.clamp_indirect = 10.0f;
+                if (js_cam.Has("clamp_indirect")) {
+                    const JsNumber &js_clamp_indirect = js_cam.at("clamp_indirect").as_num();
+                    cam_desc.clamp_indirect = float(js_clamp_indirect.val);
+                }
+
                 if (view_targeted) {
                     Ren::Vec3f dir = view_origin - view_target;
                     view_dir = Normalize(-dir);
@@ -1643,6 +1655,11 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     if (js_light_obj.Has("angle")) {
                         const JsNumber &js_angle = js_light_obj.at("angle").as_num();
                         new_light.angle = float(js_angle.val);
+                    }
+
+                    if (js_light_obj.Has("cast_shadow")) {
+                        const JsLiteral &js_cast_shadow = js_light_obj.at("cast_shadow").as_lit();
+                        new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
                     if ((new_light.direction[0] != 0.0f || new_light.direction[1] != 0.0f ||
