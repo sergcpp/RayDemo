@@ -36,6 +36,8 @@ set(STATES_SOURCES  states/GSCreate.h
                     states/GSHDRTest.cpp
                     states/GSHybTest.h
                     states/GSHybTest.cpp
+                    states/GSNoiseTest.h
+                    states/GSNoiseTest.cpp
                     states/GSRayTest.h
                     states/GSRayTest.cpp
                     states/GSLightmapTest.h
