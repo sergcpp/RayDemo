@@ -888,14 +888,14 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 env_desc.envmap_resolution = int(js_env_map_res.val);
             }
 
-            if (js_env.Has("clouds_variety")) {
-                const JsNumber &js_clouds_variety = js_env.at("clouds_variety").as_num();
-                env_desc.atmosphere.clouds_variety = float(js_clouds_variety.val);
-            }
-
             if (js_env.Has("clouds_density")) {
                 const JsNumber &js_clouds_density = js_env.at("clouds_density").as_num();
                 env_desc.atmosphere.clouds_density = float(js_clouds_density.val);
+            }
+
+            if (js_env.Has("clouds_variety")) {
+                const JsNumber &js_clouds_variety = js_env.at("clouds_variety").as_num();
+                env_desc.atmosphere.clouds_variety = float(js_clouds_variety.val);
             }
 
             if (js_env.Has("clouds_offset")) {
@@ -907,6 +907,11 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             if (js_env.Has("env_map_rot")) {
                 const JsNumber &js_env_map_rot = js_env.at("env_map_rot").as_num();
                 env_desc.env_map_rotation = float(js_env_map_rot.val) * Ren::Pi<float>() / 180.0f;
+            }
+
+            if (js_env.Has("cirrus_clouds_amount")) {
+                const JsNumber &js_cirrus_clouds_amount = js_env.at("cirrus_clouds_amount").as_num();
+                env_desc.atmosphere.cirrus_clouds_amount = float(js_cirrus_clouds_amount.val);
             }
 
             if (js_env.Has("back_col")) {
