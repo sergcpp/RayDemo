@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = sun_brightness
-	commit = 7df08c058815e43bf3a594a09571f7a9d48807e7
+	branch = ground_fix
+	commit = 0782cf6f1a040dc5db826ec2cd77ca89e9f1873d
 	method = merge
 	cmdver = 0.4.6
-	parent = a6eafb0b5290c6f9a262aa7453ab2eab2eebc9a6
+	parent = 18af545c398acfb35d9d813b2109e7702988b863
