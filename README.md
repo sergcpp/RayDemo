@@ -2,9 +2,6 @@
 
 Test application for a Ray library bundled with a lot of heavy test scenes. Mostly needed for CI checks.
   - Library part can be found here: https://github.com/sergcpp/Ray
-<details>
-  <summary>Images</summary>
-
   - Links to the original test scenes:  \
     https://benedikt-bitterli.me/resources/  \
     https://www.blender.org/download/demo-files/  \
@@ -13,42 +10,3 @@ Test application for a Ray library bundled with a lot of heavy test scenes. Most
     https://wirewheelsclub.com/models/1965-ford-mustang-fastback \
     https://evermotion.org/shop/show_product/scene-1-ai43-archinteriors-for-blender/14564 \
     https://www.blendermarket.com/products/blender-eevee-modern-villa
-
-<div>
-<div float="left" >
-  <img src="villa.png" width="44.7%" />
-  <img src="villa_pool.png" width="44.7%" />
-</div>
-<div float="left" >
-  <img src="italian_flat.png" width="47.0%" />
-  <img src="ai043_01.png" width="42.4%" />
-</div>
-<div float="left" >
-  <img src="bistro_night.png" width="44.7%" />
-  <img src="bistro.png" width="44.7%" />
-</div>
-<div float="left" >
-  <img src="bistro_interior.png" width="46.95%" />
-  <img src="mustang.png" width="42.45%" />
-</div>
-<div float="left" >
-  <img src="villa_garage.png" width="44.7%" />
-  <img src="villa_bathroom.png" width="44.7%" />
-</div>
-<div float="left" >
-  <img src="bathroom.png" width="26.55%" />
-  <img src="sponza.png" width="62.9%" />
-</div>
-<div float="left" >
-  <img src="italian_flat_back.png" width="60.0%" />
-  <img src="coffee_maker.png" width="29.4%" />
-</div>
-<div float="left" >
-  <img src="staircase.png" width="29.9%" />
-  <img src="italian_flat_kitchen.png" width="59.5%" />
-</div>
-<div float="left" >
-  <img src="mustang_interior.png" width="89.8%" />
-</div>
-</div>
-</details>
