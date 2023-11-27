@@ -273,6 +273,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.camera_index = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--regularize_alpha") == 0 && (++i != argc)) {
             app_params.regularize_alpha = float(atof(argv[i]));
+        } else if (strcmp(argv[i], "--time_limit") == 0 && (++i != argc)) {
+            app_params.time_limit = int(strtol(argv[i], nullptr, 10));
         }
     }
 

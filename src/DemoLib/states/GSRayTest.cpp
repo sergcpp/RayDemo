@@ -380,6 +380,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                 }
             }
             invalidate_preview_ = false;
+            test_start_time_ = Sys::GetTimeMs();
         }
     }
 
@@ -494,12 +495,18 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     swBlitPixels(0, 0, pixel_data.pitch, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data.ptr, 1);
 
+    const double elapsed_time = double(Sys::GetTimeMs() - test_start_time_) / 1000.0;
+
     bool write_output = region_contexts_[0][0].iteration > 0;
     // write output image periodically
     write_output &= (region_contexts_[0][0].iteration % 128) == 0;
     if (app_params.max_samples != -1) {
         // write output image once target sample count has been reached
         write_output |= (region_contexts_[0][0].iteration == app_params.max_samples);
+    }
+    if (app_params.time_limit > 0) {
+        // write output image if time limit has reached
+        write_output |= (int(elapsed_time) >= app_params.time_limit);
     }
 
     if (write_output) {
@@ -606,8 +613,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
             if (app_params.threshold != -1 && app_params.max_samples != -1 &&
                 region_contexts_[0][0].iteration >= app_params.max_samples) {
-                ray_renderer_->log()->Info("Elapsed time: %.2fm",
-                                           double(Sys::GetTimeMs() - test_start_time_) / 60000.0);
+                ray_renderer_->log()->Info("Elapsed time: %.2fm", elapsed_time / 60.0);
                 if (psnr < app_params.psnr || error_pixels > app_params.threshold) {
                     ray_renderer_->log()->Info("Test failed: PSNR: %.2f/%.2f dB, Fireflies: %i/%i", psnr,
                                                app_params.psnr, error_pixels, app_params.threshold);
@@ -619,6 +625,10 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                 viewer_->terminated = true;
             }
         }
+    }
+
+    if (app_params.time_limit > 0 && int(elapsed_time) >= app_params.time_limit) {
+        viewer_->terminated = true;
     }
 
     if (ui_enabled_ && time_total) {
