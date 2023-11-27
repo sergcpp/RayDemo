@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = clouds_blend
-	commit = 15384a1271acb5f8b6bd0300cf4eb22a18b7e340
+	branch = clouds_final
+	commit = fdc7690dfc3f94995e8aa829bf3a57495d7491a0
 	method = merge
 	cmdver = 0.4.6
-	parent = 43e5c1249b3de52f1e65c102002142c5cb336ba3
+	parent = 893f0747b1922bb1028e3597de2c3c01d3e07356
