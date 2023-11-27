@@ -18,7 +18,7 @@ class DemoApp {
     SDL_Renderer *renderer_ = nullptr;
     SDL_Texture *texture_ = nullptr;
     SDL_Window *window_ = nullptr;
-    int scaling_factor_ = 1;
+    int pixel_size_ = 1;
 
     std::shared_ptr<InputManager> p_input_manager_;
 
