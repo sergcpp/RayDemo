@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/italian_flat.json -w 900 -h 550 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --nogpu --clamp_indirect 8.0 --denoise
+DemoApp.exe -s assets/scenes/italian_flat.json -w 900 -h 550 --diff_depth 8 --spec_depth 8 --refr_depth 12 --total_depth 12 --nogpu --denoise

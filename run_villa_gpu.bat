@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/villa.json -w 960 -h 540 --total_depth 16 --transp_depth 48 --clamp_indirect 0.0 --denoise
+DemoApp.exe -s assets/scenes/villa.json -w 960 -h 540 --total_depth 16 --transp_depth 48 --denoise
