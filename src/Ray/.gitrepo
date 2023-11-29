@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = villa_lights
-	commit = 05753cccc65b279db32f097eae49846c273b2d8c
+	branch = fixes_29_11
+	commit = 7f174655bde4555deb79b90dc6eecf5fb9a332f2
 	method = merge
 	cmdver = 0.4.6
-	parent = 354889b74f55e155c4b3391ea0c962c00e913963
+	parent = 0088623058fc65976cd15e857723135a6ecc9075
