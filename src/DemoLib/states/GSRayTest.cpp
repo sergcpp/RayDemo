@@ -316,11 +316,6 @@ void GSRayTest::Enter() {
     cam_desc.max_transp_depth = viewer_->app_params.transp_depth;
     cam_desc.max_total_depth = total_depth_ = viewer_->app_params.total_depth;
 
-    if (viewer_->app_params.output_aux || viewer_->app_params.denoise_after != -1) {
-        cam_desc.output_base_color = true;
-        cam_desc.output_depth_normals = true;
-    }
-
     if (viewer_->app_params.clamp_direct.initialized()) {
         cam_desc.clamp_direct = viewer_->app_params.clamp_direct.GetValue();
     }
@@ -1088,15 +1083,6 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
                 viewer_->app_params.denoise_after = -1;
             } else {
                 viewer_->app_params.denoise_after = 1;
-
-                // Make sure AUX channels are enabled (for better denoising)
-                Ray::camera_desc_t cam_desc;
-                ray_scene_->GetCamera(current_cam_, cam_desc);
-
-                cam_desc.output_base_color = true;
-                cam_desc.output_depth_normals = true;
-
-                ray_scene_->SetCamera(current_cam_, cam_desc);
             }
             UpdateRegionContexts();
         }
