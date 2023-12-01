@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = fixes_29_11
-	commit = 7f174655bde4555deb79b90dc6eecf5fb9a332f2
+	branch = compress_shaders
+	commit = 032e09077fb60dce1e417641c0f064cb8d11f20f
 	method = merge
 	cmdver = 0.4.6
-	parent = 0088623058fc65976cd15e857723135a6ecc9075
+	parent = dde80febdb7a6c5d70a4231be498e252b62b4727
