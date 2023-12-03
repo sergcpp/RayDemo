@@ -463,7 +463,7 @@ void DemoApp::CreateViewer(int w, int h, const AppParams &app_params, const bool
     p_input_manager_ = viewer_->GetComponent<InputManager>(INPUT_MANAGER_KEY);
 }
 
-const char *DemoApp::Version() const { return "v0.6.1-unknown-commit"; }
+const char *DemoApp::Version() const { return "v0.7.0-unknown-commit"; }
 
 //
 // Dirty workaround for Intel discrete GPU

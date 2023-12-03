@@ -4,7 +4,19 @@
 
 ### Added
 
+### Fixed
+
+### Changed
+
+### Removed
+
+
+## [0.7.0] - 2023-12-04
+
+### Added
+
 - Bistro scene
+- Mustang scene
 - Villa scene
 - Ivy mesh to sponza scene
 - Cmdline option to render downscaled image (--pixel_size)
@@ -198,7 +210,8 @@
 - BVH construction uses binning now for significant speedup
 - Shadow rays are traced in seperate stage
 
-[Unreleased]: https://gitlab.com/sergcpp/raydemo/-/compare/v0.6.1...master
+[Unreleased]: https://gitlab.com/sergcpp/raydemo/-/compare/v0.7.0...master
+[0.7.0]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.7.0
 [0.6.1]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.6.1
 [0.6.0]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.6.0
 [0.5.0]: https://gitlab.com/sergcpp/raydemo/-/releases/v0.5.0
