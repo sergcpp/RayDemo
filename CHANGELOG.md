@@ -4,11 +4,32 @@
 
 ### Added
 
+- Bistro scene
+- Villa scene
+- Ivy mesh to sponza scene
+- Cmdline option to render downscaled image (--pixel_size)
+- Cmdline option to limit render type (--time_limit)
+- Cmdline option to select scene camera (--camera)
+- Camera filter width to scene description
+- Hotkey to toggle denoising
+- Mustang interior camera
+- Version string
+
 ### Fixed
+
+- Flipped normalmaps in sponza scene
 
 ### Changed
 
+- Scenes with physical sky use clouds, moon and stars
+- Scenes with physical sky use realistic sun brightness
+- AI043_01 jars use original ray masks
+- Coffemaker scene uses original glossy-only lights
+- UVs in .obj data is allowed to be missing
+
 ### Removed
+
+- Sun from scene description (must use directional light)
 
 ## [0.6.1] - 2023-08-06
 
