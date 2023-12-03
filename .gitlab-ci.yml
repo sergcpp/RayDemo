@@ -403,7 +403,7 @@ macos-universal-prepare-job:
   tags:
     - macos,builder
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_COMMIT_TAG
 
 windows-x86_64-cpu-test-job:
   variables:
@@ -771,8 +771,6 @@ deploy-job:
 
 deploy-job-full-base:
   stage: deploy
-  variables:
-    GIT_STRATEGY: none
   script:
     - echo "Deploying application..."
     - cp windows-x86_64/DemoApp.exe ./
@@ -817,8 +815,6 @@ deploy-job-full-base:
 
 deploy-job-full-sponza:
   stage: deploy
-  variables:
-    GIT_STRATEGY: none
   script:
     - echo "Deploying application..."
     - cp windows-x86_64/DemoApp.exe ./
@@ -851,8 +847,6 @@ deploy-job-full-sponza:
 
 deploy-job-full-ai043:
   stage: deploy
-  variables:
-    GIT_STRATEGY: none
   script:
     - echo "Deploying application..."
     - cp windows-x86_64/DemoApp.exe ./
@@ -885,8 +879,6 @@ deploy-job-full-ai043:
 
 deploy-job-full-italian_flat:
   stage: deploy
-  variables:
-    GIT_STRATEGY: none
   script:
     - echo "Deploying application..."
     - cp windows-x86_64/DemoApp.exe ./
@@ -911,6 +903,105 @@ deploy-job-full-italian_flat:
       - DemoApp.exe
       - run_italian_flat_cpu.bat
       - run_italian_flat_gpu.bat
+    expire_in: 1 week
+  tags:
+    - deployer,linux
+  rules:
+    - if: $CI_COMMIT_TAG
+
+deploy-job-full-villa:
+  stage: deploy
+  script:
+    - echo "Deploying application..."
+    - cp windows-x86_64/DemoApp.exe ./
+    - echo "Application successfully deployed."
+  needs:
+    - linux-x86_64-build-rel-job
+    - macos-universal-prepare-job
+    - windows-arm64-build-rel-job
+    - windows-x86_64-build-rel-job
+  artifacts:
+    name: "villa_$CI_COMMIT_TAG"
+    paths:
+      - assets/fonts/
+      - assets/meshes/villa/
+      - assets/scenes/villa.json
+      - assets/textures/villa/
+      - assets/config.json
+      - windows-x86_64/
+      - windows-arm64/
+      - linux-x86_64/
+      - macos-universal/
+      - DemoApp.exe
+      - run_villa_cpu.bat
+      - run_villa_gpu.bat
+    expire_in: 1 week
+  tags:
+    - deployer,linux
+  rules:
+    - if: $CI_COMMIT_TAG
+
+deploy-job-full-mustang:
+  stage: deploy
+  script:
+    - echo "Deploying application..."
+    - cp windows-x86_64/DemoApp.exe ./
+    - echo "Application successfully deployed."
+  needs:
+    - linux-x86_64-build-rel-job
+    - macos-universal-prepare-job
+    - windows-arm64-build-rel-job
+    - windows-x86_64-build-rel-job
+  artifacts:
+    name: "mustang_$CI_COMMIT_TAG"
+    paths:
+      - assets/fonts/
+      - assets/meshes/mustang/
+      - assets/scenes/mustang.json
+      - assets/textures/mustang/
+      - assets/config.json
+      - windows-x86_64/
+      - windows-arm64/
+      - linux-x86_64/
+      - macos-universal/
+      - DemoApp.exe
+      - run_mustang_cpu.bat
+      - run_mustang_gpu.bat
+    expire_in: 1 week
+  tags:
+    - deployer,linux
+  rules:
+    - if: $CI_COMMIT_TAG
+
+deploy-job-full-bistro:
+  stage: deploy
+  script:
+    - echo "Deploying application..."
+    - cp windows-x86_64/DemoApp.exe ./
+    - echo "Application successfully deployed."
+  needs:
+    - linux-x86_64-build-rel-job
+    - macos-universal-prepare-job
+    - windows-arm64-build-rel-job
+    - windows-x86_64-build-rel-job
+  artifacts:
+    name: "bistro_$CI_COMMIT_TAG"
+    paths:
+      - assets/fonts/
+      - assets/meshes/bistro/
+      - assets/scenes/bistro.json
+      - assets/scenes/bistro_night.json
+      - assets/textures/bistro/
+      - assets/config.json
+      - windows-x86_64/
+      - windows-arm64/
+      - linux-x86_64/
+      - macos-universal/
+      - DemoApp.exe
+      - run_bistro_cpu.bat
+      - run_bistro_gpu.bat
+      - run_bistro_night_cpu.bat
+      - run_bistro_night_gpu.bat
     expire_in: 1 week
   tags:
     - deployer,linux
