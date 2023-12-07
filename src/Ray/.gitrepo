@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = spirv_parser
-	commit = 61bb4cbaa52112fbcc31a64f00d92e82d656ea2c
+	branch = master
+	commit = c8a6a5f2bfa583c388d15d5f3021a64472eb7bef
 	method = merge
 	cmdver = 0.4.6
-	parent = 5d5a40a5bc7e1c24deac4033a1da1ddaff4098ad
+	parent = 9d9811f43a884f3454c04acb7ed56ec1ca2c41bf
