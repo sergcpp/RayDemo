@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray-gitlab
-	branch = refactor_07_12
-	commit = 96f8e763c2e4ac2838bbe001c2321a4b2e731bef
+	branch = fixes_08_12
+	commit = 128803e0183cca296e57fd382b4eea9c3f4a2896
 	method = merge
 	cmdver = 0.4.6
-	parent = c0b91cc6c006bf42c56ca9100c05f3b23cceb068
+	parent = adff3cb05748f10ca1450f15f588edf21651eca8
