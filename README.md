@@ -1,5 +1,3 @@
-[![pipeline status](https://gitlab.com/sergcpp/raydemo/badges/master/pipeline.svg)](https://gitlab.com/sergcpp/raydemo/commits/master)
-
 Test application for a Ray library bundled with a lot of heavy test scenes. Mostly needed for CI checks.
   - Library part can be found here: https://github.com/sergcpp/Ray
   - Links to the original test scenes:  \
