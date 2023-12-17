@@ -1,0 +1,787 @@
+name: CI
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # Run every day at 1 o'clock
+
+jobs:
+  build-windows-x86_64-rel:
+    runs-on: [ windows, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-windows-ninja
+        with:
+          cmake-args: "-DCMAKE_UNITY_BUILD=ON"
+          config: "Release"
+          bin-dir: "windows-x86_64"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-x86_64
+          path: windows-x86_64/
+  build-windows-x86_64-dbg:
+    runs-on: [ windows, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-windows-ninja
+        with:
+          cmake-args: "-DCMAKE_UNITY_BUILD=OFF"
+          config: "Debug"
+  build-windows-x86_64-dev:
+    runs-on: [ windows, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-windows-ninja
+        with:
+          cmake-args: "-DCMAKE_UNITY_BUILD=OFF"
+          config: "RelWithDebInfo"
+  build-windows-x86_64-clang-rel:
+    runs-on: [ windows, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-windows
+        with:
+          cmake-args: "-A x64 -T ClangCL -DCMAKE_UNITY_BUILD=ON"
+          config: "Release"
+  build-windows-x86_64-clang-dbg:
+    runs-on: [ windows, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-windows
+        with:
+          cmake-args: "-A x64 -T ClangCL"
+          config: "Debug"
+  build-windows-x86_64-clang-dev:
+    runs-on: [ windows, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-windows
+        with:
+          cmake-args: "-A x64 -T ClangCL"
+          config: "RelWithDebInfo"
+  build-windows-arm64-rel:
+    runs-on: [ windows, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-windows
+        with:
+          cmake-args: "-A ARM64 -DCMAKE_UNITY_BUILD=ON -DENABLE_VK_IMPL=OFF -DENABLE_DX_IMPL=ON"
+          config: "Release"
+          bin-dir: "windows-arm64"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-arm64
+          path: windows-arm64/
+  build-windows-arm64-dbg:
+    runs-on: [ windows, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-windows
+        with:
+          cmake-args: "-A ARM64 -DENABLE_VK_IMPL=OFF -DENABLE_DX_IMPL=ON"
+          config: "Debug"
+  build-windows-arm64-dev:
+    runs-on: [ windows, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-windows
+        with:
+          cmake-args: "-A ARM64 -DENABLE_VK_IMPL=OFF -DENABLE_DX_IMPL=ON"
+          config: "RelWithDebInfo"
+  build-linux-x86_64-rel:
+    runs-on: [ linux, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-linux
+        with:
+          cmake-args: "-DCMAKE_UNITY_BUILD=ON"
+          config: "Release"
+          bin-dir: "linux-x86_64"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-x86_64
+          path: linux-x86_64/
+  build-linux-x86_64-dbg:
+    runs-on: [ linux, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-linux
+        with:
+          cmake-args: ""
+          config: "Debug"
+  build-linux-x86_64-dev:
+    runs-on: [ linux, builder ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-linux
+        with:
+          cmake-args: ""
+          config: "RelWithDebInfo"
+  build-macos-x86_64-rel:
+    runs-on: [ macos, builder, x86_64 ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-macos
+        with:
+          cmake-args: "-DCMAKE_APPLE_SILICON_PROCESSOR=x86_64 -DCMAKE_UNITY_BUILD=ON"
+          config: "Release"
+          bin-dir: "macos-x86_64"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-x86_64
+          path: macos-x86_64/
+  build-macos-x86_64-dbg:
+    runs-on: [ macos, builder, x86_64 ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-macos
+        with:
+          cmake-args: "-DCMAKE_APPLE_SILICON_PROCESSOR=x86_64"
+          config: "Debug"
+  build-macos-x86_64-dev:
+    runs-on: [ macos, builder, x86_64 ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-macos
+        with:
+          cmake-args: "-DCMAKE_APPLE_SILICON_PROCESSOR=x86_64"
+          config: "RelWithDebInfo"
+  build-macos-arm64-rel:
+    runs-on: [ macos, builder, arm64 ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-macos
+        with:
+          cmake-args: "-DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_UNITY_BUILD=ON"
+          config: "Release"
+          bin-dir: "macos-arm64"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-arm64
+          path: macos-arm64/
+  build-macos-arm64-dbg:
+    runs-on: [ macos, builder, arm64 ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-macos
+        with:
+          cmake-args: "-DCMAKE_APPLE_SILICON_PROCESSOR=arm64"
+          config: "Debug"
+  build-macos-arm64-dev:
+    runs-on: [ macos, builder, arm64 ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Compile the code
+        uses: ./.gitea/actions/build-macos
+        with:
+          cmake-args: "-DCMAKE_APPLE_SILICON_PROCESSOR=arm64"
+          config: "RelWithDebInfo"
+  build-macos-universal-rel:
+    runs-on: [ macos, builder ]
+    needs:
+      - build-macos-x86_64-rel
+      - build-macos-arm64-rel
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Download x86_64 executable
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-x86_64
+          path: macos-x86_64/
+      - name: Download arm64 executable
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-arm64
+          path: macos-arm64/
+      - name: Build universal binary
+        run: |
+          mkdir macos-universal
+          lipo -create -output macos-universal/DemoApp macos-x86_64/DemoApp macos-arm64/DemoApp
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-universal
+          path: macos-universal/
+  test-windows-x86_64-cpu:
+    runs-on: [ windows, x86_64 ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--nogpu"
+  test-windows-x86_64-gpu-nv:
+    runs-on: [ windows, x86_64, nv ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--device NV --nocpu"
+  test-windows-x86_64-gpu-amd:
+    runs-on: [ windows, x86_64, amd ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--device AMD --nocpu"
+  test-windows-x86_64-gpu-arc:
+    runs-on: [ windows, x86_64, arc ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--device Arc --nocpu"
+  test-windows-x86_64-gpu-xe:
+    runs-on: [ windows, x86_64, xe ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--device Xe --nocpu"
+  test-windows-arm64-cpu:
+    runs-on: [ windows, arm64 ]
+    needs:
+      - build-windows-arm64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "windows-arm64"
+          test-args: "--nogpu"
+  test-windows-arm64-gpu-adreno:
+    runs-on: [ windows, arm64, adreno ]
+    needs:
+      - build-windows-arm64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "windows-arm64"
+          test-args: "--device Adreno --nocpu"
+  test-linux-x86_64-cpu:
+    runs-on: [ linux, x86_64 ]
+    needs:
+      - build-linux-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "linux-x86_64"
+          test-args: "--nogpu"
+  test-linux-x86_64-gpu-amd:
+    runs-on: [ linux, x86_64, amd ]
+    needs:
+      - build-linux-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "linux-x86_64"
+          test-args: "--device AMD --nocpu"
+  test-linux-x86_64-gpu-nv:
+    runs-on: [ linux, x86_64, nv ]
+    needs:
+      - build-linux-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "linux-x86_64"
+          test-args: "--device NV --nocpu"
+  test-macos-arm64-cpu:
+    runs-on: [ macos, arm64 ]
+    needs:
+      - build-macos-arm64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "macos-arm64"
+          test-args: "--nogpu"
+  test-macos-arm64-gpu-m1:
+    runs-on: [ macos, arm64, m1 ]
+    needs:
+      - build-macos-arm64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "macos-arm64"
+          test-args: "--device M1 --nocpu"
+  test-macos-x86_64-cpu:
+    runs-on: [ macos, x86_64 ]
+    needs:
+      - build-macos-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test
+        with:
+          bin-dir: "macos-x86_64"
+          test-args: "--nogpu"
+  test-img-windows-x86_64-cpu:
+    runs-on: [ windows, x86_64 ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--nogpu"
+  test-img-windows-x86_64-gpu-nv:
+    runs-on: [ windows, x86_64, nv ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--device NV"
+  test-img-windows-x86_64-gpu-amd:
+    runs-on: [ windows, x86_64, amd ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--device AMD"
+  test-img-windows-x86_64-gpu-arc:
+    runs-on: [ windows, x86_64, arc ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--device Arc"
+  test-img-windows-x86_64-gpu-xe:
+    runs-on: [ windows, x86_64, xe ]
+    needs:
+      - build-windows-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "windows-x86_64"
+          test-args: "--device Xe"
+  test-img-windows-arm64-cpu:
+    runs-on: [ windows, arm64 ]
+    needs:
+      - build-windows-arm64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "windows-arm64"
+          test-args: "--nogpu"
+  test-img-windows-arm64-gpu-adreno:
+    runs-on: [ windows, arm64, adreno ]
+    needs:
+      - build-windows-arm64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "windows-arm64"
+          test-args: "--device Adreno"
+  test-img-linux-x86_64-cpu:
+    runs-on: [ linux, x86_64 ]
+    needs:
+      - build-linux-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "linux-x86_64"
+          test-args: "--nogpu"
+  test-img-linux-x86_64-gpu-nv:
+    runs-on: [ linux, x86_64, nv ]
+    needs:
+      - build-linux-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "linux-x86_64"
+          test-args: "--device NV"
+  test-img-linux-x86_64-gpu-amd:
+    runs-on: [ linux, x86_64, amd ]
+    needs:
+      - build-linux-x86_64-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run ImgTests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "linux-x86_64"
+          test-args: "--device AMD"
+  test-img-macos-x86_64-cpu:
+    runs-on: [ macos, x86_64 ]
+    needs:
+      - build-macos-universal-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "macos-universal"
+          test-args: "--nogpu"
+  test-img-macos-arm64-cpu:
+    runs-on: [ macos, arm64 ]
+    needs:
+      - build-macos-universal-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Img Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "macos-universal"
+          test-args: "--nogpu"
+  test-img-macos-arm64-gpu-m1:
+    runs-on: [ macos, arm64, m1 ]
+    needs:
+      - build-macos-universal-rel
+    steps:
+      - name: Checkout Workflows
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .gitea
+      - name: Re-initialize repository
+        uses: ./.gitea/actions/checkout
+      - name: Run Tests
+        uses: ./.gitea/actions/test-img
+        with:
+          bin-dir: "macos-universal"
+          test-args: "--device M1"
