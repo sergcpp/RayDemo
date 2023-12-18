@@ -16,7 +16,7 @@ runs:
         chmod +x ./${{ inputs.bin-dir }}/test_Ray
         chmod +x ./${{ inputs.bin-dir }}/test_Sys
         WORK_DIR=`pwd`
-        cd ../../builds/ArchBench
+        cd ../../builds/RayDemo
         $WORK_DIR/${{ inputs.bin-dir }}/test_SW
         $WORK_DIR/${{ inputs.bin-dir }}/test_Sys
         cd src/Ray/tests

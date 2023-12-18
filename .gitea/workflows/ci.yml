@@ -9,9 +9,6 @@ env:
 jobs:
   build-windows-x86_64-rel:
     runs-on: [ windows, builder ]
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Checkout Workflows
         uses: actions/checkout@v4
@@ -32,9 +29,6 @@ jobs:
           path: windows-x86_64/
   build-windows-arm64-rel:
     runs-on: [ windows, builder ]
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Checkout Workflows
         uses: actions/checkout@v4
@@ -55,9 +49,6 @@ jobs:
           path: windows-arm64/
   build-linux-x86_64-rel:
     runs-on: [ linux, builder ]
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Checkout Workflows
         uses: actions/checkout@v4
@@ -78,9 +69,6 @@ jobs:
           path: linux-x86_64/
   build-macos-x86_64-rel:
     runs-on: [ macos, builder, x86_64 ]
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Checkout Workflows
         uses: actions/checkout@v4
@@ -101,9 +89,6 @@ jobs:
           path: macos-x86_64/
   build-macos-arm64-rel:
     runs-on: [ macos, builder, arm64 ]
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Checkout Workflows
         uses: actions/checkout@v4
@@ -127,9 +112,6 @@ jobs:
     needs:
       - build-macos-x86_64-rel
       - build-macos-arm64-rel
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Download x86_64 executable
         uses: actions/download-artifact@v3
