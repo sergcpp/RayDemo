@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = master
-	commit = ddcbf95d3a7b27578920822af98dc7edd68868a4
+	branch = improve_span
+	commit = 6062c631b4c995eb266a1d1be31480ac351f4430
 	method = merge
 	cmdver = 0.4.6
-	parent = fe63c48f62f3d27fc879d17e941ee11e6a819ff5
+	parent = c61a6e72c2876841a7c421e16e54b5b2a0e0e981
