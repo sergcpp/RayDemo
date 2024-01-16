@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = master
-	commit = ec90b34ccbdfb335b433a82bdf159a6513d261b7
+	branch = validate_glslx
+	commit = 1ef25bbb2856459afc5b6788614cda127f2c6050
 	method = merge
 	cmdver = 0.4.6
-	parent = efc106bb6307bb15db025b2c809f3032c83a5135
+	parent = c4325c67987cde41b021d2e4ecdd1df5ab9e9507
