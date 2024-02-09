@@ -20,5 +20,5 @@ runs:
         $WORK_DIR/${{ inputs.bin-dir }}/test_SW
         $WORK_DIR/${{ inputs.bin-dir }}/test_Sys
         cd src/Ray/tests
-        $WORK_DIR/${{ inputs.bin-dir }}/test_Ray --mt ${{ inputs.test-args }}
+        $WORK_DIR/${{ inputs.bin-dir }}/test_Ray -j4 ${{ inputs.test-args }}
       shell: bash
