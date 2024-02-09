@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = coop_khr
-	commit = 8e9543423ea7336c6f25de430649741791f2a47b
+	branch = master
+	commit = 80c49a39aaef9e296abab3a8ea410dcdd3982a20
 	method = merge
 	cmdver = 0.4.6
-	parent = 6d3f661657e5b56dc0c2363109009e6f057e235f
+	parent = 35ac3cbfd46850a6eb40ce4155bf2d13d623c982
