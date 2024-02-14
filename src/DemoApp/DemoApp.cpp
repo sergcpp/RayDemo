@@ -275,6 +275,8 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.regularize_alpha = float(atof(argv[i]));
         } else if (strcmp(argv[i], "--time_limit") == 0 && (++i != argc)) {
             app_params.time_limit = int(strtol(argv[i], nullptr, 10));
+        } else if ((strcmp(argv[i], "--validation_level") == 0 || strcmp(argv[i], "-vl") == 0) && (++i != argc)) {
+            app_params.validation_level = std::atoi(argv[i]);
         }
     }
 

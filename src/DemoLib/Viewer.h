@@ -29,6 +29,11 @@ struct AppParams {
     int camera_index = -1; // -1 means 'use camera set in scene description'
     float regularize_alpha = 0.03f;
     int time_limit = -1;
+#ifndef NDEBUG
+    int validation_level = 2;
+#else
+    int validation_level = 0;
+#endif
 };
 
 class FontStorage;
