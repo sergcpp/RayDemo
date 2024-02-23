@@ -1669,7 +1669,7 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                     if ((new_light.direction[0] != 0.0f || new_light.direction[1] != 0.0f ||
                          new_light.direction[2] != 0.0f) &&
-                        new_light.color[0] != 0.0f && new_light.color[1] != 0.0f && new_light.color[2] != 0.0f) {
+                        (new_light.color[0] != 0.0f || new_light.color[1] != 0.0f || new_light.color[2] != 0.0f)) {
                         new_scene->AddLight(new_light);
                     }
                 }
