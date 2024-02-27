@@ -42,8 +42,8 @@ void Ren::Context::Init(const int w, const int h) {
 
     printf("===========================================\n\n");
 
-    default_vertex_buf_ = buffers_.Add(32 * 1024 * 1024);
-    default_indices_buf_ = buffers_.Add(32 * 1024 * 1024);
+    default_vertex_buf_ = buffers_.Add(1 * 1024 * 1024);
+    default_indices_buf_ = buffers_.Add(1 * 1024 * 1024);
 }
 
 void Ren::Context::Resize(const int w, const int h) {
