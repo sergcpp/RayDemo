@@ -811,6 +811,10 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     const JsString &js_view_transform = js_cam.at("view_transform").as_str();
                     if (js_view_transform.val == "standard") {
                         cam_desc.view_transform = Ray::eViewTransform::Standard;
+                    } else if (js_view_transform.val == "agx") {
+                        cam_desc.view_transform = Ray::eViewTransform::AgX;
+                    } else if (js_view_transform.val == "agx_punchy") {
+                        cam_desc.view_transform = Ray::eViewTransform::AgX_Punchy;
                     } else if (js_view_transform.val == "filmic") {
                         cam_desc.view_transform = Ray::eViewTransform::Filmic_MediumContrast;
                     } else if (js_view_transform.val == "filmic_very_low_contrast") {
