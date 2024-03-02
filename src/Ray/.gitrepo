@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = agx_tonemap
-	commit = 8f595d3b1a641719d841ad2e9e8f667874d51fa7
+	branch = master
+	commit = fe63a5c0fbb205a535a33214c7605df4687eda46
 	method = merge
 	cmdver = 0.4.6
-	parent = 202e21bed2ede2c2c9336de73ab24d35b420a2d3
+	parent = ad230419ad0e3009a7f03eab8e752849f59f642a
