@@ -471,7 +471,7 @@ jobs:
         uses: ./.gitea/actions/test-img
         with:
           bin-dir: "linux-x86_64"
-          test-args: "--device AMD"
+          test-args: "--device AMD --nohwrt"
   test-img-macos-x86_64-cpu:
     runs-on: [ macos, x86_64 ]
     needs:
