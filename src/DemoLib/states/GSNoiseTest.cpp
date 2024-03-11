@@ -25,153 +25,153 @@
 namespace GSNoiseTestInternal {
 using namespace Ray;
 
-Ref::simd_fvec4 permute(const Ref::simd_fvec4 &x) { return mod(((x * 34.0f) + 1.0f) * x, Ref::simd_fvec4{289.0f}); }
+Ref::fvec4 permute(const Ref::fvec4 &x) { return mod(((x * 34.0f) + 1.0f) * x, Ref::fvec4{289.0f}); }
 
-Ref::simd_fvec4 taylor_inv_sqrt(const Ref::simd_fvec4 &r) { return 1.79284291400159f - 0.85373472095314f * r; }
+Ref::fvec4 taylor_inv_sqrt(const Ref::fvec4 &r) { return 1.79284291400159f - 0.85373472095314f * r; }
 
-Ref::simd_fvec4 fade(const Ref::simd_fvec4 &t) { return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f); }
+Ref::fvec4 fade(const Ref::fvec4 &t) { return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f); }
 
-Ref::simd_fvec4 step(const Ref::simd_fvec4 &x, const Ref::simd_fvec4 &edge) {
-    Ref::simd_fvec4 ret = 0.0f;
+Ref::fvec4 step(const Ref::fvec4 &x, const Ref::fvec4 &edge) {
+    Ref::fvec4 ret = 0.0f;
     where(x >= edge, ret) = 1.0f;
     return ret;
 }
 
 // Classic Perlin noise, periodic version
-float PerlinNoise(const Ref::simd_fvec4 &P, const Ref::simd_fvec4 &rep) {
-    const Ref::simd_fvec4 Pi0 = mod(floor(P), rep);   // Integer part modulo rep
-    const Ref::simd_fvec4 Pi1 = mod(Pi0 + 1.0f, rep); // Integer part + 1 mod rep
-    const Ref::simd_fvec4 Pf0 = fract(P);             // Fractional part for interpolation
-    const Ref::simd_fvec4 Pf1 = Pf0 - 1.0f;           // Fractional part - 1.0
-    const Ref::simd_fvec4 ix = {Pi0[0], Pi1[0], Pi0[0], Pi1[0]};
-    const Ref::simd_fvec4 iy = {Pi0[1], Pi0[1], Pi1[1], Pi1[1]};
-    const Ref::simd_fvec4 iz0 = Pi0[2];
-    const Ref::simd_fvec4 iz1 = Pi1[2];
-    const Ref::simd_fvec4 iw0 = Pi0[3];
-    const Ref::simd_fvec4 iw1 = Pi1[3];
+float PerlinNoise(const Ref::fvec4 &P, const Ref::fvec4 &rep) {
+    const Ref::fvec4 Pi0 = mod(floor(P), rep);   // Integer part modulo rep
+    const Ref::fvec4 Pi1 = mod(Pi0 + 1.0f, rep); // Integer part + 1 mod rep
+    const Ref::fvec4 Pf0 = fract(P);             // Fractional part for interpolation
+    const Ref::fvec4 Pf1 = Pf0 - 1.0f;           // Fractional part - 1.0
+    const Ref::fvec4 ix = {Pi0[0], Pi1[0], Pi0[0], Pi1[0]};
+    const Ref::fvec4 iy = {Pi0[1], Pi0[1], Pi1[1], Pi1[1]};
+    const Ref::fvec4 iz0 = Pi0[2];
+    const Ref::fvec4 iz1 = Pi1[2];
+    const Ref::fvec4 iw0 = Pi0[3];
+    const Ref::fvec4 iw1 = Pi1[3];
 
-    const Ref::simd_fvec4 ixy = permute(permute(ix) + iy);
-    const Ref::simd_fvec4 ixy0 = permute(ixy + iz0);
-    const Ref::simd_fvec4 ixy1 = permute(ixy + iz1);
-    const Ref::simd_fvec4 ixy00 = permute(ixy0 + iw0);
-    const Ref::simd_fvec4 ixy01 = permute(ixy0 + iw1);
-    const Ref::simd_fvec4 ixy10 = permute(ixy1 + iw0);
-    const Ref::simd_fvec4 ixy11 = permute(ixy1 + iw1);
+    const Ref::fvec4 ixy = permute(permute(ix) + iy);
+    const Ref::fvec4 ixy0 = permute(ixy + iz0);
+    const Ref::fvec4 ixy1 = permute(ixy + iz1);
+    const Ref::fvec4 ixy00 = permute(ixy0 + iw0);
+    const Ref::fvec4 ixy01 = permute(ixy0 + iw1);
+    const Ref::fvec4 ixy10 = permute(ixy1 + iw0);
+    const Ref::fvec4 ixy11 = permute(ixy1 + iw1);
 
-    Ref::simd_fvec4 gx00 = ixy00 / 7.0f;
-    Ref::simd_fvec4 gy00 = floor(gx00) / 7.0f;
-    Ref::simd_fvec4 gz00 = floor(gy00) / 6.0f;
+    Ref::fvec4 gx00 = ixy00 / 7.0f;
+    Ref::fvec4 gy00 = floor(gx00) / 7.0f;
+    Ref::fvec4 gz00 = floor(gy00) / 6.0f;
     gx00 = fract(gx00) - 0.5f;
     gy00 = fract(gy00) - 0.5f;
     gz00 = fract(gz00) - 0.5f;
-    Ref::simd_fvec4 gw00 = 0.75f - abs(gx00) - abs(gy00) - abs(gz00);
-    Ref::simd_fvec4 sw00 = step(gw00, 0.0f);
+    Ref::fvec4 gw00 = 0.75f - abs(gx00) - abs(gy00) - abs(gz00);
+    Ref::fvec4 sw00 = step(gw00, 0.0f);
     gx00 -= sw00 * (step(0.0f, gx00) - 0.5f);
     gy00 -= sw00 * (step(0.0f, gy00) - 0.5f);
 
-    Ref::simd_fvec4 gx01 = ixy01 / 7.0f;
-    Ref::simd_fvec4 gy01 = floor(gx01) / 7.0f;
-    Ref::simd_fvec4 gz01 = floor(gy01) / 6.0f;
+    Ref::fvec4 gx01 = ixy01 / 7.0f;
+    Ref::fvec4 gy01 = floor(gx01) / 7.0f;
+    Ref::fvec4 gz01 = floor(gy01) / 6.0f;
     gx01 = fract(gx01) - 0.5f;
     gy01 = fract(gy01) - 0.5f;
     gz01 = fract(gz01) - 0.5f;
-    Ref::simd_fvec4 gw01 = 0.75f - abs(gx01) - abs(gy01) - abs(gz01);
-    Ref::simd_fvec4 sw01 = step(gw01, 0.0f);
+    Ref::fvec4 gw01 = 0.75f - abs(gx01) - abs(gy01) - abs(gz01);
+    Ref::fvec4 sw01 = step(gw01, 0.0f);
     gx01 -= sw01 * (step(0.0f, gx01) - 0.5f);
     gy01 -= sw01 * (step(0.0f, gy01) - 0.5f);
 
-    Ref::simd_fvec4 gx10 = ixy10 / 7.0f;
-    Ref::simd_fvec4 gy10 = floor(gx10) / 7.0f;
-    Ref::simd_fvec4 gz10 = floor(gy10) / 6.0f;
+    Ref::fvec4 gx10 = ixy10 / 7.0f;
+    Ref::fvec4 gy10 = floor(gx10) / 7.0f;
+    Ref::fvec4 gz10 = floor(gy10) / 6.0f;
     gx10 = fract(gx10) - 0.5f;
     gy10 = fract(gy10) - 0.5f;
     gz10 = fract(gz10) - 0.5f;
-    Ref::simd_fvec4 gw10 = 0.75f - abs(gx10) - abs(gy10) - abs(gz10);
-    Ref::simd_fvec4 sw10 = step(gw10, 0.0f);
+    Ref::fvec4 gw10 = 0.75f - abs(gx10) - abs(gy10) - abs(gz10);
+    Ref::fvec4 sw10 = step(gw10, 0.0f);
     gx10 -= sw10 * (step(0.0f, gx10) - 0.5f);
     gy10 -= sw10 * (step(0.0f, gy10) - 0.5f);
 
-    Ref::simd_fvec4 gx11 = ixy11 / 7.0f;
-    Ref::simd_fvec4 gy11 = floor(gx11) / 7.0f;
-    Ref::simd_fvec4 gz11 = floor(gy11) / 6.0f;
+    Ref::fvec4 gx11 = ixy11 / 7.0f;
+    Ref::fvec4 gy11 = floor(gx11) / 7.0f;
+    Ref::fvec4 gz11 = floor(gy11) / 6.0f;
     gx11 = fract(gx11) - 0.5f;
     gy11 = fract(gy11) - 0.5f;
     gz11 = fract(gz11) - 0.5f;
-    Ref::simd_fvec4 gw11 = 0.75f - abs(gx11) - abs(gy11) - abs(gz11);
-    Ref::simd_fvec4 sw11 = step(gw11, 0.0f);
+    Ref::fvec4 gw11 = 0.75f - abs(gx11) - abs(gy11) - abs(gz11);
+    Ref::fvec4 sw11 = step(gw11, 0.0f);
     gx11 -= sw11 * (step(0.0f, gx11) - 0.5f);
     gy11 -= sw11 * (step(0.0f, gy11) - 0.5f);
 
-    auto g0000 = Ref::simd_fvec4(gx00[0], gy00[0], gz00[0], gw00[0]);
-    auto g1000 = Ref::simd_fvec4(gx00[1], gy00[1], gz00[1], gw00[1]);
-    auto g0100 = Ref::simd_fvec4(gx00[2], gy00[2], gz00[2], gw00[2]);
-    auto g1100 = Ref::simd_fvec4(gx00[3], gy00[3], gz00[3], gw00[3]);
-    auto g0010 = Ref::simd_fvec4(gx10[0], gy10[0], gz10[0], gw10[0]);
-    auto g1010 = Ref::simd_fvec4(gx10[1], gy10[1], gz10[1], gw10[1]);
-    auto g0110 = Ref::simd_fvec4(gx10[2], gy10[2], gz10[2], gw10[2]);
-    auto g1110 = Ref::simd_fvec4(gx10[3], gy10[3], gz10[3], gw10[3]);
-    auto g0001 = Ref::simd_fvec4(gx01[0], gy01[0], gz01[0], gw01[0]);
-    auto g1001 = Ref::simd_fvec4(gx01[1], gy01[1], gz01[1], gw01[1]);
-    auto g0101 = Ref::simd_fvec4(gx01[2], gy01[2], gz01[2], gw01[2]);
-    auto g1101 = Ref::simd_fvec4(gx01[3], gy01[3], gz01[3], gw01[3]);
-    auto g0011 = Ref::simd_fvec4(gx11[0], gy11[0], gz11[0], gw11[0]);
-    auto g1011 = Ref::simd_fvec4(gx11[1], gy11[1], gz11[1], gw11[1]);
-    auto g0111 = Ref::simd_fvec4(gx11[2], gy11[2], gz11[2], gw11[2]);
-    auto g1111 = Ref::simd_fvec4(gx11[3], gy11[3], gz11[3], gw11[3]);
+    auto g0000 = Ref::fvec4(gx00[0], gy00[0], gz00[0], gw00[0]);
+    auto g1000 = Ref::fvec4(gx00[1], gy00[1], gz00[1], gw00[1]);
+    auto g0100 = Ref::fvec4(gx00[2], gy00[2], gz00[2], gw00[2]);
+    auto g1100 = Ref::fvec4(gx00[3], gy00[3], gz00[3], gw00[3]);
+    auto g0010 = Ref::fvec4(gx10[0], gy10[0], gz10[0], gw10[0]);
+    auto g1010 = Ref::fvec4(gx10[1], gy10[1], gz10[1], gw10[1]);
+    auto g0110 = Ref::fvec4(gx10[2], gy10[2], gz10[2], gw10[2]);
+    auto g1110 = Ref::fvec4(gx10[3], gy10[3], gz10[3], gw10[3]);
+    auto g0001 = Ref::fvec4(gx01[0], gy01[0], gz01[0], gw01[0]);
+    auto g1001 = Ref::fvec4(gx01[1], gy01[1], gz01[1], gw01[1]);
+    auto g0101 = Ref::fvec4(gx01[2], gy01[2], gz01[2], gw01[2]);
+    auto g1101 = Ref::fvec4(gx01[3], gy01[3], gz01[3], gw01[3]);
+    auto g0011 = Ref::fvec4(gx11[0], gy11[0], gz11[0], gw11[0]);
+    auto g1011 = Ref::fvec4(gx11[1], gy11[1], gz11[1], gw11[1]);
+    auto g0111 = Ref::fvec4(gx11[2], gy11[2], gz11[2], gw11[2]);
+    auto g1111 = Ref::fvec4(gx11[3], gy11[3], gz11[3], gw11[3]);
 
-    const Ref::simd_fvec4 norm00 =
-        taylor_inv_sqrt(Ref::simd_fvec4{dot(g0000, g0000), dot(g0100, g0100), dot(g1000, g1000), dot(g1100, g1100)});
+    const Ref::fvec4 norm00 =
+        taylor_inv_sqrt(Ref::fvec4{dot(g0000, g0000), dot(g0100, g0100), dot(g1000, g1000), dot(g1100, g1100)});
     g0000 *= norm00[0];
     g0100 *= norm00[1];
     g1000 *= norm00[2];
     g1100 *= norm00[3];
 
-    const Ref::simd_fvec4 norm01 =
-        taylor_inv_sqrt(Ref::simd_fvec4{dot(g0001, g0001), dot(g0101, g0101), dot(g1001, g1001), dot(g1101, g1101)});
+    const Ref::fvec4 norm01 =
+        taylor_inv_sqrt(Ref::fvec4{dot(g0001, g0001), dot(g0101, g0101), dot(g1001, g1001), dot(g1101, g1101)});
     g0001 *= norm01[0];
     g0101 *= norm01[1];
     g1001 *= norm01[2];
     g1101 *= norm01[3];
 
-    const Ref::simd_fvec4 norm10 =
-        taylor_inv_sqrt(Ref::simd_fvec4{dot(g0010, g0010), dot(g0110, g0110), dot(g1010, g1010), dot(g1110, g1110)});
+    const Ref::fvec4 norm10 =
+        taylor_inv_sqrt(Ref::fvec4{dot(g0010, g0010), dot(g0110, g0110), dot(g1010, g1010), dot(g1110, g1110)});
     g0010 *= norm10[0];
     g0110 *= norm10[1];
     g1010 *= norm10[2];
     g1110 *= norm10[3];
 
-    const Ref::simd_fvec4 norm11 =
-        taylor_inv_sqrt(Ref::simd_fvec4{dot(g0011, g0011), dot(g0111, g0111), dot(g1011, g1011), dot(g1111, g1111)});
+    const Ref::fvec4 norm11 =
+        taylor_inv_sqrt(Ref::fvec4{dot(g0011, g0011), dot(g0111, g0111), dot(g1011, g1011), dot(g1111, g1111)});
     g0011 *= norm11[0];
     g0111 *= norm11[1];
     g1011 *= norm11[2];
     g1111 *= norm11[3];
 
     const float n0000 = dot(g0000, Pf0);
-    const float n1000 = dot(g1000, Ref::simd_fvec4{Pf1[0], Pf0[1], Pf0[2], Pf0[3]});
-    const float n0100 = dot(g0100, Ref::simd_fvec4{Pf0[0], Pf1[1], Pf0[2], Pf0[3]});
-    const float n1100 = dot(g1100, Ref::simd_fvec4{Pf1[0], Pf1[1], Pf0[2], Pf0[3]});
-    const float n0010 = dot(g0010, Ref::simd_fvec4{Pf0[0], Pf0[1], Pf1[2], Pf0[3]});
-    const float n1010 = dot(g1010, Ref::simd_fvec4{Pf1[0], Pf0[1], Pf1[2], Pf0[3]});
-    const float n0110 = dot(g0110, Ref::simd_fvec4{Pf0[0], Pf1[1], Pf1[2], Pf0[3]});
-    const float n1110 = dot(g1110, Ref::simd_fvec4{Pf1[0], Pf1[1], Pf1[2], Pf0[3]});
-    const float n0001 = dot(g0001, Ref::simd_fvec4{Pf0[0], Pf0[1], Pf0[2], Pf1[3]});
-    const float n1001 = dot(g1001, Ref::simd_fvec4{Pf1[0], Pf0[1], Pf0[2], Pf1[3]});
-    const float n0101 = dot(g0101, Ref::simd_fvec4{Pf0[0], Pf1[1], Pf0[2], Pf1[3]});
-    const float n1101 = dot(g1101, Ref::simd_fvec4{Pf1[0], Pf1[1], Pf0[2], Pf1[3]});
-    const float n0011 = dot(g0011, Ref::simd_fvec4{Pf0[0], Pf0[1], Pf1[2], Pf1[3]});
-    const float n1011 = dot(g1011, Ref::simd_fvec4{Pf1[0], Pf0[1], Pf1[2], Pf1[3]});
-    const float n0111 = dot(g0111, Ref::simd_fvec4{Pf0[0], Pf1[1], Pf1[2], Pf1[3]});
+    const float n1000 = dot(g1000, Ref::fvec4{Pf1[0], Pf0[1], Pf0[2], Pf0[3]});
+    const float n0100 = dot(g0100, Ref::fvec4{Pf0[0], Pf1[1], Pf0[2], Pf0[3]});
+    const float n1100 = dot(g1100, Ref::fvec4{Pf1[0], Pf1[1], Pf0[2], Pf0[3]});
+    const float n0010 = dot(g0010, Ref::fvec4{Pf0[0], Pf0[1], Pf1[2], Pf0[3]});
+    const float n1010 = dot(g1010, Ref::fvec4{Pf1[0], Pf0[1], Pf1[2], Pf0[3]});
+    const float n0110 = dot(g0110, Ref::fvec4{Pf0[0], Pf1[1], Pf1[2], Pf0[3]});
+    const float n1110 = dot(g1110, Ref::fvec4{Pf1[0], Pf1[1], Pf1[2], Pf0[3]});
+    const float n0001 = dot(g0001, Ref::fvec4{Pf0[0], Pf0[1], Pf0[2], Pf1[3]});
+    const float n1001 = dot(g1001, Ref::fvec4{Pf1[0], Pf0[1], Pf0[2], Pf1[3]});
+    const float n0101 = dot(g0101, Ref::fvec4{Pf0[0], Pf1[1], Pf0[2], Pf1[3]});
+    const float n1101 = dot(g1101, Ref::fvec4{Pf1[0], Pf1[1], Pf0[2], Pf1[3]});
+    const float n0011 = dot(g0011, Ref::fvec4{Pf0[0], Pf0[1], Pf1[2], Pf1[3]});
+    const float n1011 = dot(g1011, Ref::fvec4{Pf1[0], Pf0[1], Pf1[2], Pf1[3]});
+    const float n0111 = dot(g0111, Ref::fvec4{Pf0[0], Pf1[1], Pf1[2], Pf1[3]});
     const float n1111 = dot(g1111, Pf1);
 
-    const Ref::simd_fvec4 fade_xyzw = fade(Pf0);
-    const Ref::simd_fvec4 n_0w =
-        mix(Ref::simd_fvec4{n0000, n1000, n0100, n1100}, Ref::simd_fvec4{n0001, n1001, n0101, n1101}, fade_xyzw[3]);
-    const Ref::simd_fvec4 n_1w =
-        mix(Ref::simd_fvec4{n0010, n1010, n0110, n1110}, Ref::simd_fvec4{n0011, n1011, n0111, n1111}, fade_xyzw[3]);
-    const Ref::simd_fvec4 n_zw = mix(n_0w, n_1w, fade_xyzw[2]);
-    const Ref::simd_fvec2 n_yzw =
-        mix(Ref::simd_fvec2{n_zw[0], n_zw[1]}, Ref::simd_fvec2{n_zw[2], n_zw[3]}, fade_xyzw[1]);
+    const Ref::fvec4 fade_xyzw = fade(Pf0);
+    const Ref::fvec4 n_0w =
+        mix(Ref::fvec4{n0000, n1000, n0100, n1100}, Ref::fvec4{n0001, n1001, n0101, n1101}, fade_xyzw[3]);
+    const Ref::fvec4 n_1w =
+        mix(Ref::fvec4{n0010, n1010, n0110, n1110}, Ref::fvec4{n0011, n1011, n0111, n1111}, fade_xyzw[3]);
+    const Ref::fvec4 n_zw = mix(n_0w, n_1w, fade_xyzw[2]);
+    const Ref::fvec2 n_yzw =
+        mix(Ref::fvec2{n_zw[0], n_zw[1]}, Ref::fvec2{n_zw[2], n_zw[3]}, fade_xyzw[1]);
     const float n_xyzw = mix(n_yzw[0], n_yzw[1], fade_xyzw[0]);
     return 2.2f * n_xyzw;
 }
@@ -181,9 +181,9 @@ float PerlinNoise(const Ref::simd_fvec4 &P, const Ref::simd_fvec4 &rep) {
 float hash(float n) { return Ref::fract(sinf(n + 1.951f) * 43758.5453f); }
 
 // hash based 3d value noise
-float noise(const Ref::simd_fvec4 &x) {
-    Ref::simd_fvec4 p = floor(x);
-    Ref::simd_fvec4 f = fract(x);
+float noise(const Ref::fvec4 &x) {
+    Ref::fvec4 p = floor(x);
+    Ref::fvec4 f = fract(x);
 
     f = f * f * (3.0f - 2.0f * f);
     float n = p[0] + p[1] * 57.0f + 113.0f * p[2];
@@ -192,15 +192,15 @@ float noise(const Ref::simd_fvec4 &x) {
                f[2]);
 }
 
-float Cells(const Ref::simd_fvec4 &p, float cellCount) {
-    const Ref::simd_fvec4 pCell = p * cellCount;
+float Cells(const Ref::fvec4 &p, float cellCount) {
+    const Ref::fvec4 pCell = p * cellCount;
     float d = 1.0e10f;
     for (int xo = -1; xo <= 1; xo++) {
         for (int yo = -1; yo <= 1; yo++) {
             for (int zo = -1; zo <= 1; zo++) {
-                Ref::simd_fvec4 tp = floor(pCell) + Ref::simd_fvec4(xo, yo, zo, 0);
+                Ref::fvec4 tp = floor(pCell) + Ref::fvec4(xo, yo, zo, 0);
 
-                tp = pCell - tp - noise(mod(tp, Ref::simd_fvec4{cellCount / 1}));
+                tp = pCell - tp - noise(mod(tp, Ref::fvec4{cellCount / 1}));
                 tp.set<3>(0.0f);
 
                 d = fminf(d, dot(tp, tp));
@@ -212,7 +212,7 @@ float Cells(const Ref::simd_fvec4 &p, float cellCount) {
     return d;
 }
 
-float WorleyNoise(const Ref::simd_fvec4 &p, float cellCount) { return Cells(p, cellCount); }
+float WorleyNoise(const Ref::fvec4 &p, float cellCount) { return Cells(p, cellCount); }
 
 } // namespace GSNoiseTestInternal
 
@@ -238,7 +238,7 @@ void GSNoiseTest::Enter() {
                 const float norm_x = float(x) / float(WeatherRes), norm_y = float(y) / float(WeatherRes);
 
                 for (int i = 0; i < 3; ++i) {
-                    auto coord = Ref::simd_fvec4{norm_x, YOffsets[i], norm_y, 1.0f};
+                    auto coord = Ref::fvec4{norm_x, YOffsets[i], norm_y, 1.0f};
 
                     float weight = 1.0f, weight_sum = 0.0f;
                     float fval = 0.0f, frequency = BaseFrequencies[i];
@@ -246,7 +246,7 @@ void GSNoiseTest::Enter() {
                     if (i == 1) {
                         fval += 1.5f * weight *
                                 (0.05f + PerlinNoise(0.125f * frequency *
-                                                         fract(coord + Ref::simd_fvec4{0.5f, 0.0f, 0.0f, 0.0f}),
+                                                         fract(coord + Ref::fvec4{0.5f, 0.0f, 0.0f, 0.0f}),
                                                      0.125f * frequency));
                         weight_sum += weight;
                     }
@@ -300,19 +300,19 @@ void GSNoiseTest::Enter() {
                     const float u = float(x) / float(NoiseRes);
 
                     float weight = 1.0f, weight_sum = 0.0f;
-                    float val = weight * (2.0f * WorleyNoise(Ref::simd_fvec4{u, v, w, 0.0f}, 8.0f) - 1.0f);
+                    float val = weight * (2.0f * WorleyNoise(Ref::fvec4{u, v, w, 0.0f}, 8.0f) - 1.0f);
                     weight_sum += weight;
 
                     weight = 0.5f;
-                    val += weight * (2.0f * WorleyNoise(Ref::simd_fvec4{u, v, w, 0.0f}, 16.0f) - 1.0f);
+                    val += weight * (2.0f * WorleyNoise(Ref::fvec4{u, v, w, 0.0f}, 16.0f) - 1.0f);
                     weight_sum += weight;
 
                     weight = 0.5f;
-                    val += weight * (2.0f * WorleyNoise(Ref::simd_fvec4{u, v, w, 0.0f}, 32.0f) - 1.0f);
+                    val += weight * (2.0f * WorleyNoise(Ref::fvec4{u, v, w, 0.0f}, 32.0f) - 1.0f);
                     weight_sum += weight;
 
                     weight = 0.25f;
-                    val += weight * (2.0f * WorleyNoise(Ref::simd_fvec4{u, v, w, 0.0f}, 64.0f) - 1.0f);
+                    val += weight * (2.0f * WorleyNoise(Ref::fvec4{u, v, w, 0.0f}, 64.0f) - 1.0f);
                     weight_sum += weight;
 
                     val = (val / weight_sum) * 0.5f + 0.5f;
