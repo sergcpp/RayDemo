@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = cornell_box
-	commit = aaaf1544bd66255c17757e3330b4e919a43ef130
+	branch = master
+	commit = 75e28c31bd4faed9aaa2e57224d57a7890304c45
 	method = merge
 	cmdver = 0.4.6
-	parent = 6c12d155908636cd16af0ae9c977dee3660378e2
+	parent = a1a4795ab76bacb461a8de584221a96a9875fd09
