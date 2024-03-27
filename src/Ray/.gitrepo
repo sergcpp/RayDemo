@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = master
-	commit = 1915d00b1b9ebab2ffff7c5d8a550c61e6ec47a8
+	branch = backside_tests
+	commit = fe97957ce0c7ebac6b242ea193c7aa0c75a2e136
 	method = merge
 	cmdver = 0.4.6
-	parent = 9cf2f4aa5c05edd13a3484c53ea266a860971595
+	parent = 2b3837acbf74e3ae8005a5bd74768687f9396c3f
