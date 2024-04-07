@@ -96,15 +96,25 @@ void GSRayTest::UpdateRegionContexts() {
             ray_renderer_->DenoiseImage(pass, region_contexts_[i][j]);
         };
 
+        auto update_cache_job = [this](const int i, const int j) {
+#if !defined(NDEBUG) && defined(_WIN32)
+            unsigned old_value;
+            _controlfp_s(&old_value, _EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
+#endif
+            ray_renderer_->UpdateSpatialCache(*ray_scene_, region_contexts_[i][j]);
+        };
+
         std::vector<Sys::SmallVector<short, 128>> render_task_ids;
 
         render_tasks_ = std::make_unique<Sys::TaskList>();
         render_and_denoise_tasks_ = std::make_unique<Sys::TaskList>();
+        update_cache_tasks_ = std::make_unique<Sys::TaskList>();
 
         for (int i = 0; i < int(region_contexts_.size()); ++i) {
             render_task_ids.emplace_back();
             for (int j = 0; j < int(region_contexts_[i].size()); ++j) {
                 render_tasks_->AddTask(render_job, i, j);
+                update_cache_tasks_->AddTask(update_cache_job, i, j);
                 render_task_ids.back().emplace_back(render_and_denoise_tasks_->AddTask(render_job, i, j));
             }
         }
@@ -176,6 +186,7 @@ void GSRayTest::UpdateRegionContexts() {
         }
 
         render_tasks_->Sort();
+        update_cache_tasks_->Sort();
         render_and_denoise_tasks_->Sort();
         assert(!render_and_denoise_tasks_->HasCycles());
     } else {
@@ -355,7 +366,9 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         cam_desc.focus_distance = focal_distance_;
 
         if (invalidate_preview_) {
-            cam_desc.max_total_depth = std::min(1, total_depth_);
+            if (!app_params.use_spatial_cache) {
+                cam_desc.max_total_depth = std::min(1, total_depth_);
+            }
             last_invalidate_ = true;
         } else {
             cam_desc.max_total_depth = total_depth_;
@@ -385,6 +398,14 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         app_params.denoise_after != -1 && region_contexts_[0][0].iteration >= app_params.denoise_after;
 
     if (Ray::RendererSupportsMultithreading(rt)) {
+        if (app_params.use_spatial_cache) {
+            // Unfortunatedly has to happen in lockstep with rendering
+            threads_->Enqueue(*update_cache_tasks_).wait();
+
+            using namespace std::placeholders;
+            ray_renderer_->ResolveSpatialCache(
+                *ray_scene_, std::bind(&Sys::ThreadPool::ParallelFor<Ray::ParallelForFunction>, threads_, _1, _2, _3));
+        }
         for (int i = 0; i < app_params.iteration_steps; ++i) {
             if (denoise_image && i == app_params.iteration_steps - 1) {
                 threads_->Enqueue(*render_and_denoise_tasks_).wait();
@@ -393,6 +414,14 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             }
         }
     } else {
+        if (app_params.use_spatial_cache) {
+            for (auto &regions_row : region_contexts_) {
+                for (auto &region : regions_row) {
+                    ray_renderer_->UpdateSpatialCache(*ray_scene_, region);
+                }
+            }
+            ray_renderer_->ResolveSpatialCache(*ray_scene_);
+        }
         for (int i = 0; i < app_params.iteration_steps; ++i) {
             for (auto &regions_row : region_contexts_) {
                 for (auto &region : regions_row) {
@@ -434,6 +463,8 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             st.time_secondary_shade_us /= threads_->workers_count();
             st.time_secondary_shadow_us /= threads_->workers_count();
             st.time_denoise_us /= threads_->workers_count();
+            st.time_cache_update_us /= threads_->workers_count();
+            st.time_cache_resolve_us /= threads_->workers_count();
         }
 
         stats_.push_back(st);
@@ -448,9 +479,9 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     for (const auto &st : stats_) {
         const unsigned long long _time_total =
-            st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
-            st.time_primary_shadow_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
-            st.time_secondary_shade_us + st.time_secondary_shadow_us + st.time_denoise_us;
+            st.time_cache_update_us + st.time_cache_resolve_us + st.time_primary_ray_gen_us + st.time_primary_trace_us +
+            st.time_primary_shade_us + st.time_primary_shadow_us + st.time_secondary_sort_us +
+            st.time_secondary_trace_us + st.time_secondary_shade_us + st.time_secondary_shadow_us + st.time_denoise_us;
         time_total = std::max(time_total, _time_total);
     }
 
@@ -628,7 +659,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
 
     if (ui_enabled_ && time_total) {
         const int UiWidth = 196;
-        const int UiHeight = 108;
+        const int UiHeight = 126;
 
         uint8_t stat_line[UiHeight][3];
         int off_x = (UiWidth - 64) - int(stats_.size());
@@ -668,7 +699,19 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                           st.time_primary_shadow_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
                           st.time_secondary_shade_us + st.time_secondary_shadow_us + st.time_denoise_us) /
                     float(time_total));
-            const int l = p8;
+            const int p9 = int(UiHeight *
+                               float(st.time_cache_resolve_us + st.time_primary_ray_gen_us + st.time_primary_trace_us +
+                                     st.time_primary_shade_us + st.time_primary_shadow_us + st.time_secondary_sort_us +
+                                     st.time_secondary_trace_us + st.time_secondary_shade_us +
+                                     st.time_secondary_shadow_us + st.time_denoise_us) /
+                               float(time_total));
+            const int p10 = int(UiHeight *
+                                float(st.time_cache_update_us + st.time_cache_resolve_us + st.time_primary_ray_gen_us +
+                                      st.time_primary_trace_us + st.time_primary_shade_us + st.time_primary_shadow_us +
+                                      st.time_secondary_sort_us + st.time_secondary_trace_us +
+                                      st.time_secondary_shade_us + st.time_secondary_shadow_us + st.time_denoise_us) /
+                                float(time_total));
+            const int l = p10;
 
             for (int i = 0; i < p0; i++) {
                 stat_line[i][0] = 0;
@@ -722,6 +765,18 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                 stat_line[i][0] = 0;
                 stat_line[i][1] = 0;
                 stat_line[i][2] = 255;
+            }
+
+            for (int i = p8; i < p9; i++) {
+                stat_line[i][0] = 0;
+                stat_line[i][1] = 100;
+                stat_line[i][2] = 0;
+            }
+
+            for (int i = p9; i < p10; i++) {
+                stat_line[i][0] = 0;
+                stat_line[i][1] = 100;
+                stat_line[i][2] = 100;
             }
 
             if (l) {
@@ -742,8 +797,10 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             const float v6 = float(UiHeight) * float(st.time_primary_shade_us) / float(time_total);
             const float v7 = float(UiHeight) * float(st.time_primary_trace_us) / float(time_total);
             const float v8 = float(UiHeight) * float(st.time_primary_ray_gen_us) / float(time_total);
+            const float v9 = float(UiHeight) * float(st.time_cache_resolve_us) / float(time_total);
+            const float v10 = float(UiHeight) * float(st.time_cache_update_us) / float(time_total);
 
-            const float sz = float(UiHeight) / 9.5f;
+            const float sz = float(UiHeight) / 11.5f;
             const float k = std::min(float(j) / 16.0f, 1.0f);
 
             const float vv0 = (1.0f - k) * float(v0) + k * sz;
@@ -755,6 +812,8 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             const float vv6 = (1.0f - k) * float(v6) + k * sz;
             const float vv7 = (1.0f - k) * float(v7) + k * sz;
             const float vv8 = (1.0f - k) * float(v8) + k * sz;
+            const float vv9 = (1.0f - k) * float(v9) + k * sz;
+            const float vv10 = (1.0f - k) * float(v10) + k * sz;
 
             const int p0 = int(vv0);
             const int p1 = int(vv0 + vv1);
@@ -765,8 +824,10 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             const int p6 = int(vv0 + vv1 + vv2 + vv3 + vv4 + vv5 + vv6);
             const int p7 = int(vv0 + vv1 + vv2 + vv3 + vv4 + vv5 + vv6 + vv7);
             const int p8 = int(vv0 + vv1 + vv2 + vv3 + vv4 + vv5 + vv6 + vv7 + vv8);
+            const int p9 = int(vv0 + vv1 + vv2 + vv3 + vv4 + vv5 + vv6 + vv7 + vv8 + vv9);
+            const int p10 = int(vv0 + vv1 + vv2 + vv3 + vv4 + vv5 + vv6 + vv7 + vv8 + vv9 + vv10);
 
-            const int l = p8;
+            const int l = p10;
 
             for (int i = 0; i < p0; i++) {
                 stat_line[i][0] = 0;
@@ -820,6 +881,18 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                 stat_line[i][0] = 0;
                 stat_line[i][1] = 0;
                 stat_line[i][2] = 255;
+            }
+
+            for (int i = p8; i < p9; i++) {
+                stat_line[i][0] = 0;
+                stat_line[i][1] = 100;
+                stat_line[i][2] = 0;
+            }
+
+            for (int i = p9; i < p10; i++) {
+                stat_line[i][0] = 0;
+                stat_line[i][1] = 100;
+                stat_line[i][2] = 100;
             }
 
             if (l) {
@@ -941,6 +1014,18 @@ void GSRayTest::Draw(const uint64_t dt_us) {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
             font_->DrawText(ui_renderer_, "Raygen", {xx, 1 - 10 * font_height}, ui_root_);
+            ui_renderer_->PopParams();
+        }
+        {
+            ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
+                                        cur.scissor_test());
+            font_->DrawText(ui_renderer_, "CacheRES", {xx, 1 - 11 * font_height}, ui_root_);
+            ui_renderer_->PopParams();
+        }
+        {
+            ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
+                                        cur.scissor_test());
+            font_->DrawText(ui_renderer_, "CacheUPD", {xx, 1 - 12 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
 

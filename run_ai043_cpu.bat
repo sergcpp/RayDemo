@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/ai043_01.json -w 700 -h 477 --diff_depth 2 --spec_depth 2 --nogpu --denoise --output_exr
+DemoApp.exe -s assets/scenes/ai043_01.json -w 700 -h 477 --diff_depth 2 --spec_depth 2 --use_spatial_cache --nogpu --denoise

@@ -1,1 +1,1 @@
-DemoApp.exe -w 740 -h 900 -s assets/scenes/staircase.json --nogpu --denoise
+DemoApp.exe -w 740 -h 900 -s assets/scenes/staircase.json --nogpu --use_spatial_cache --denoise

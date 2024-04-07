@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/sponza.json -w 960 -h 540 --nogpu --denoise
+DemoApp.exe -s assets/scenes/sponza.json -w 960 -h 540 --use_spatial_cache --nogpu --denoise

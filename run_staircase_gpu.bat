@@ -1,1 +1,1 @@
-DemoApp.exe -w 740 -h 900 -s assets/scenes/staircase.json --denoise
+DemoApp.exe -w 740 -h 900 -s assets/scenes/staircase.json --use_spatial_cache --denoise

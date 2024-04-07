@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/bistro.json -w 960 -h 540 --denoise
+DemoApp.exe -s assets/scenes/bistro.json -w 960 -h 540 --use_spatial_cache --denoise

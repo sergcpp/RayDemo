@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/bistro_night.json -w 960 -h 540 --denoise --nogpu
+DemoApp.exe -s assets/scenes/bistro_night.json -w 960 -h 540 --use_spatial_cache --denoise --nogpu

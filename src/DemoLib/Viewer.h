@@ -34,6 +34,7 @@ struct AppParams {
 #else
     int validation_level = 0;
 #endif
+    bool use_spatial_cache = false;
 };
 
 class FontStorage;

@@ -54,10 +54,10 @@ Viewer::Viewer(const int w, const int h, const char *local_dir, const AppParams 
         if (!_app_params.device_name.empty()) {
             s.preferred_device = _app_params.device_name.c_str();
         }
-
         s.use_hwrt = (gpu_mode == 2);
         s.use_bindless = !nobindless;
         s.use_tex_compression = !nocompression;
+        s.use_spatial_cache = _app_params.use_spatial_cache;
         s.validation_level = _app_params.validation_level;
         if (gpu_mode == 0) {
             ray_renderer.reset(Ray::CreateRenderer(s, log.get(), Ray::RendererCPU));

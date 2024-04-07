@@ -35,6 +35,7 @@ class GSRayTest : public GameState {
 
     Sys::ThreadPool *threads_ = nullptr;
     std::unique_ptr<Sys::TaskList> render_tasks_, render_and_denoise_tasks_;
+    std::unique_ptr<Sys::TaskList> update_cache_tasks_;
 
     int unet_denoise_passes_ = -1;
 
