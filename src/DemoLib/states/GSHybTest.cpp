@@ -196,9 +196,9 @@ void GSHybTest::Draw(uint64_t dt_us) {
 
     { // invoke renderers
         auto gpu_render_job = [this](int i) {
-            gpu_tracers_[i]->RenderScene(gpu_scenes_[i].get(), gpu_region_contexts_[i]);
+            gpu_tracers_[i]->RenderScene(*gpu_scenes_[i], gpu_region_contexts_[i]);
         };
-        auto cpu_render_job = [this](int i) { cpu_tracer_->RenderScene(cpu_scene_.get(), cpu_region_contexts_[i]); };
+        auto cpu_render_job = [this](int i) { cpu_tracer_->RenderScene(*cpu_scene_, cpu_region_contexts_[i]); };
 
         std::vector<std::future<void>> events;
 

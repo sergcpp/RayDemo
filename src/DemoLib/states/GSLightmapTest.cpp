@@ -172,7 +172,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
     const auto rt = ray_renderer_->type();
 
     if (Ray::RendererSupportsMultithreading(rt)) {
-        auto render_job = [this](int i) { ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i]); };
+        auto render_job = [this](int i) { ray_renderer_->RenderScene(*ray_scene_, region_contexts_[i]); };
 
         std::vector<std::future<void>> events;
 
@@ -184,7 +184,7 @@ void GSLightmapTest::Draw(uint64_t dt_us) {
             e.wait();
         }
     } else {
-        ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[0]);
+        ray_renderer_->RenderScene(*ray_scene_, region_contexts_[0]);
     }
 
     Ray::RendererBase::stats_t st = {};

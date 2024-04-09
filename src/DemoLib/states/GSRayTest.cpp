@@ -77,7 +77,7 @@ void GSRayTest::UpdateRegionContexts() {
             unsigned old_value;
             _controlfp_s(&old_value, _EM_INEXACT | _EM_UNDERFLOW | _EM_OVERFLOW, _MCW_EM);
 #endif
-            ray_renderer_->RenderScene(ray_scene_.get(), region_contexts_[i][j]);
+            ray_renderer_->RenderScene(*ray_scene_, region_contexts_[i][j]);
         };
 
         auto denoise_job_nlm = [this](const int i, const int j) {
@@ -396,7 +396,7 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         for (int i = 0; i < app_params.iteration_steps; ++i) {
             for (auto &regions_row : region_contexts_) {
                 for (auto &region : regions_row) {
-                    ray_renderer_->RenderScene(ray_scene_.get(), region);
+                    ray_renderer_->RenderScene(*ray_scene_, region);
                 }
             }
             if (denoise_image && i == app_params.iteration_steps - 1) {
