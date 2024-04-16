@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = radiance_cache
-	commit = c29bf3b86171e9a1f89ff9ee5b3e8b204041997d
+	branch = master
+	commit = f95f9c2a54ce20cd0a984d3595ecfe32c47ffad1
 	method = merge
 	cmdver = 0.4.6
-	parent = fe9a220966be10b240896e77f38a8c7839ae2c43
+	parent = 7c20984c18675b95b71ee3d915c130d9235770f5
