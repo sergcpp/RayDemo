@@ -3,6 +3,7 @@ name: CI
 on:
   schedule:
     - cron: '0 1 * * *'  # Run every day at 1 o'clock
+  push:
 
 jobs:
   build-windows-x86_64-rel:
