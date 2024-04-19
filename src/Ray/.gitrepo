@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = master
-	commit = 93f210652194517c8d9485456a769e5ea78566f9
+	branch = cone_spread
+	commit = 0ada4a8253e4b95378ea8184066a87039043cc0e
 	method = merge
 	cmdver = 0.4.6
-	parent = b335ab30c03de8f2086f7d6ed4415fe38f7b6602
+	parent = 4513cbb86636adbf0744815bc4e32eb4fc198136
