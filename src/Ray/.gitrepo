@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = light_tree_angles
-	commit = 7f8a91c526ab0f04d29ea76e1764fcd020a9a29b
+	branch = master
+	commit = d67ce8318d6fb4eb5d42a96badd4df72297238e7
 	method = merge
 	cmdver = 0.4.6
-	parent = ab0aa46bbe7ebda8e2ebcc88511213d7ff9e4385
+	parent = b21d3326aa4824ae14a3fa4bad10893d92552769
