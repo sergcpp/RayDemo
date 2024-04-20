@@ -239,8 +239,10 @@ int DemoApp::Run(int argc, char *argv[]) {
             app_params.refr_depth = int(strtol(argv[i], nullptr, 10));
         } else if (strcmp(argv[i], "--transp_depth") == 0 && (++i != argc)) {
             app_params.transp_depth = int(strtol(argv[i], nullptr, 10));
-        } else if (strcmp(argv[i], "--total_depth") == 0 && (++i != argc)) {
-            app_params.total_depth = int(strtol(argv[i], nullptr, 10));
+        } else if (strcmp(argv[i], "--min_total_depth") == 0 && (++i != argc)) {
+            app_params.min_total_depth = int(strtol(argv[i], nullptr, 10));
+        } else if (strcmp(argv[i], "--max_total_depth") == 0 && (++i != argc)) {
+            app_params.max_total_depth = int(strtol(argv[i], nullptr, 10));
         } else if ((strcmp(argv[i], "--device") == 0 || strcmp(argv[i], "-d") == 0) && (++i != argc)) {
             app_params.device_name = argv[i];
         } else if (strcmp(argv[i], "--max_tex_res") == 0 && (++i != argc)) {

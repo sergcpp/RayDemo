@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/mustang.json -w 960 -h 600 --refr_depth 12 --total_depth 12 --denoise
+DemoApp.exe -s assets/scenes/mustang.json -w 960 -h 600 --refr_depth 12 --max_total_depth 12 --denoise

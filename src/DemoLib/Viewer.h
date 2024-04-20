@@ -16,7 +16,8 @@ struct AppParams {
     int spec_depth = 4;
     int refr_depth = 8;
     int transp_depth = 8;
-    int total_depth = 8;
+    int min_total_depth = 2;
+    int max_total_depth = 8;
     int max_tex_res = -1;
     int denoise_after = -1;
     int denoise_method = 1; // 0 - NLM, 1 - UNet

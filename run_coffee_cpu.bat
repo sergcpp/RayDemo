@@ -1,1 +1,1 @@
-DemoApp.exe -w 640 -h 800 -s assets/scenes/coffee_maker.json --nogpu --refr_depth 12 --total_depth 12 --denoise
+DemoApp.exe -w 640 -h 800 -s assets/scenes/coffee_maker.json --nogpu --refr_depth 12 --max_total_depth 12 --denoise

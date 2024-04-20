@@ -1,1 +1,1 @@
-DemoApp.exe -s assets/scenes/villa.json -w 960 -h 540 --total_depth 16 --transp_depth 48 --use_spatial_cache --nogpu --denoise
+DemoApp.exe -s assets/scenes/villa.json -w 960 -h 540 --max_total_depth 16 --transp_depth 48 --use_spatial_cache --nogpu --denoise

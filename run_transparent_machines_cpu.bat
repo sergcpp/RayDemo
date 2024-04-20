@@ -1,0 +1,1 @@
+DemoApp.exe -s assets/scenes/transparent_machines.json -w 1000 -h 1000 --spec_depth 64 --refr_depth 64 --max_total_depth 64 --nogpu

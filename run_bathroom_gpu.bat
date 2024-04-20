@@ -1,1 +1,1 @@
-DemoApp.exe -w 632 -h 840 -s assets/scenes/bathroom.json --refr_depth 12 --total_depth 12 --use_spatial_cache --denoise
+DemoApp.exe -w 632 -h 840 -s assets/scenes/bathroom.json --refr_depth 12 --max_total_depth 12 --use_spatial_cache --denoise

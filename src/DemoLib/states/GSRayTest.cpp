@@ -325,7 +325,8 @@ void GSRayTest::Enter() {
     cam_desc.max_spec_depth = viewer_->app_params.spec_depth;
     cam_desc.max_refr_depth = viewer_->app_params.refr_depth;
     cam_desc.max_transp_depth = viewer_->app_params.transp_depth;
-    cam_desc.max_total_depth = total_depth_ = viewer_->app_params.total_depth;
+    cam_desc.min_total_depth = viewer_->app_params.min_total_depth;
+    cam_desc.max_total_depth = total_depth_ = viewer_->app_params.max_total_depth;
 
     if (viewer_->app_params.clamp_direct.initialized()) {
         cam_desc.clamp_direct = viewer_->app_params.clamp_direct.GetValue();
