@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = master
-	commit = d67ce8318d6fb4eb5d42a96badd4df72297238e7
+	branch = transp_machines
+	commit = bc430d4bcd1db2c695cbe00853374b87e3f96e1f
 	method = merge
 	cmdver = 0.4.6
-	parent = b21d3326aa4824ae14a3fa4bad10893d92552769
+	parent = 72b76d6ed8fc7695d294fd22f530372cfc2f4b54
