@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = master
-	commit = 831da29bd584c2e4f9f819bb665ea1ea99453d6f
+	branch = quantized_light_tree
+	commit = 98e5b361cac8aece5295dfafa9651a0b6ee29887
 	method = merge
 	cmdver = 0.4.6
-	parent = cfd6f2c3df7bd2735e9ee9fc7c740267be7145a8
+	parent = 825c808660dd617c2121395aef4c45cabba5b5de
