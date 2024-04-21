@@ -48,6 +48,11 @@ GSRayTest::~GSRayTest() = default;
 void GSRayTest::UpdateRegionContexts() {
     region_contexts_.clear();
 
+    if (viewer_->app_params.threshold != -1 &&
+        ray_renderer_->is_spatial_caching_enabled() != viewer_->app_params.use_spatial_cache) {
+        std::exit(0);
+    }
+
     const auto rt = ray_renderer_->type();
     int w, h;
     std::tie(w, h) = ray_renderer_->size();
