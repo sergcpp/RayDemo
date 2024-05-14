@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = detailed_sky
-	commit = eab0f0a61e5ef37e05ced4da393484eb944de0b2
+	branch = master
+	commit = 4d401362b8c992fea4f9bff1feff20517c72008c
 	method = merge
 	cmdver = 0.4.6
-	parent = f5b47c8ff141816a2a3b5372efda750b05f5dd1c
+	parent = 5e9bbc3c13c596a0a1ac6d5321bd6d1b68513a11
