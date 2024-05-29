@@ -57,14 +57,6 @@ void GSRayTest::UpdateRegionContexts() {
     int w, h;
     std::tie(w, h) = ray_renderer_->size();
 
-    Ray::unet_filter_properties_t unet_props;
-    if (viewer_->app_params.denoise_method == 1) {
-        ray_renderer_->InitUNetFilter(true, unet_props);
-        unet_denoise_passes_ = unet_props.pass_count;
-    } else {
-        unet_denoise_passes_ = -1;
-    }
-
     if (Ray::RendererSupportsMultithreading(rt)) {
         const int TileSize = 64;
 
@@ -153,7 +145,7 @@ void GSRayTest::UpdateRegionContexts() {
         }
 
         if (viewer_->app_params.denoise_method == 1) {
-            for (int pass = 1; pass < unet_props.pass_count; ++pass) {
+            for (int pass = 1; pass < unet_props_.pass_count; ++pass) {
                 for (int y = 0, i = 0; y < h; y += TileSize, ++i) {
                     denoise_task_ids[pass].emplace_back();
                     for (int x = 0, j = 0; x < w; x += TileSize, ++j) {
@@ -175,7 +167,7 @@ void GSRayTest::UpdateRegionContexts() {
                         }
 
                         // Account for aliasing dependency (wait for all tasks which use this memory region)
-                        for (int ndx : unet_props.alias_dependencies[pass]) {
+                        for (int ndx : unet_props_.alias_dependencies[pass]) {
                             if (ndx == -1) {
                                 break;
                             }
@@ -350,6 +342,12 @@ void GSRayTest::Enter() {
     memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
     memcpy(&view_up_[0], &cam_desc.up[0], 3 * sizeof(float));
 
+    if (viewer_->app_params.denoise_method == 1) {
+        ray_renderer_->InitUNetFilter(true, unet_props_);
+    } else {
+        unet_props_ = {-1};
+    }
+
     UpdateRegionContexts();
     test_start_time_ = Sys::GetTimeMs();
 }
@@ -435,8 +433,8 @@ void GSRayTest::Draw(const uint64_t dt_us) {
                 }
             }
             if (denoise_image && i == app_params.iteration_steps - 1) {
-                if (unet_denoise_passes_ != -1) {
-                    for (int pass = 0; pass < unet_denoise_passes_; ++pass) {
+                if (unet_props_.pass_count != -1) {
+                    for (int pass = 0; pass < unet_props_.pass_count; ++pass) {
                         for (const auto &regions_row : region_contexts_) {
                             for (const auto &region : regions_row) {
                                 ray_renderer_->DenoiseImage(pass, region);
@@ -1174,6 +1172,11 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
                 viewer_->app_params.denoise_after = -1;
             } else {
                 viewer_->app_params.denoise_after = 1;
+                if (viewer_->app_params.denoise_method == 1) {
+                    ray_renderer_->InitUNetFilter(true, unet_props_);
+                } else {
+                    unet_props_ = {-1};
+                }
             }
             UpdateRegionContexts();
         }

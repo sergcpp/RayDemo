@@ -37,7 +37,7 @@ class GSRayTest : public GameState {
     std::unique_ptr<Sys::TaskList> render_tasks_, render_and_denoise_tasks_;
     std::unique_ptr<Sys::TaskList> update_cache_tasks_;
 
-    int unet_denoise_passes_ = -1;
+    Ray::unet_filter_properties_t unet_props_;
 
     bool animate_ = false;
     bool view_grabbed_ = false;
