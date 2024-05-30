@@ -40,8 +40,6 @@
 
 #include <turbojpeg.h>
 
-#define _abs(x) ((x) > 0.0f ? (x) : -(x))
-
 #define DUMP_BIN_FILES 1
 
 namespace {
@@ -1809,14 +1807,14 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 
                 bool found = false;
                 for (const uint32_t i : indices_at(v[i1])) {
-                    if (_abs(attrs[i * 8 + 0] - v[i1][0]) < 0.0000001f &&
-                        _abs(attrs[i * 8 + 1] - v[i1][1]) < 0.0000001f &&
-                        _abs(attrs[i * 8 + 2] - v[i1][2]) < 0.0000001f &&
-                        _abs(attrs[i * 8 + 3] - vn[i3 * 3]) < 0.0000001f &&
-                        _abs(attrs[i * 8 + 4] - vn[i3 * 3 + 1]) < 0.0000001f &&
-                        _abs(attrs[i * 8 + 5] - vn[i3 * 3 + 2]) < 0.0000001f &&
-                        (i2 == -1 || (_abs(attrs[i * 8 + 6] - vt[i2 * 2]) < 0.0000001f &&
-                                      _abs(attrs[i * 8 + 7] - vt[i2 * 2 + 1]) < 0.0000001f))) {
+                    if (fabsf(attrs[i * 8 + 0] - v[i1][0]) < 0.0000001f &&
+                        fabsf(attrs[i * 8 + 1] - v[i1][1]) < 0.0000001f &&
+                        fabsf(attrs[i * 8 + 2] - v[i1][2]) < 0.0000001f &&
+                        fabsf(attrs[i * 8 + 3] - vn[i3 * 3]) < 0.0000001f &&
+                        fabsf(attrs[i * 8 + 4] - vn[i3 * 3 + 1]) < 0.0000001f &&
+                        fabsf(attrs[i * 8 + 5] - vn[i3 * 3 + 2]) < 0.0000001f &&
+                        (i2 == -1 || (fabsf(attrs[i * 8 + 6] - vt[i2 * 2]) < 0.0000001f &&
+                                      fabsf(attrs[i * 8 + 7] - vt[i2 * 2 + 1]) < 0.0000001f))) {
                         indices.push_back(i);
                         found = true;
                         break;
@@ -2162,7 +2160,7 @@ void WriteTGA(const Ray::color_rgba_t *data, int pitch, const int w, const int h
 
     header[12] = w & 0xFF;
     header[13] = (w >> 8) & 0xFF;
-    header[14] = (h)&0xFF;
+    header[14] = (h) & 0xFF;
     header[15] = (h >> 8) & 0xFF;
     header[16] = bpp * 8;
     if (flip_vertical) {
