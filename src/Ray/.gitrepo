@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = quadtree_res
-	commit = e165a5192a07b321827c158332ca493c3e778d8c
+	branch = master
+	commit = 27c9f872f7227176016ea06ff2ff10404660fcde
 	method = merge
 	cmdver = 0.4.6
-	parent = c24ae58e5995b6cbada2ca508cfc69a70455e7d7
+	parent = 3edbf96a8aef75b4abea5ede42e8f320b7f68549
