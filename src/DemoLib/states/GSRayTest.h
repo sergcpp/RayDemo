@@ -50,7 +50,6 @@ class GSRayTest : public GameState {
     Ren::Vec3f sun_dir_ = {0, 1, 0};
 
     bool invalidate_preview_ = true, last_invalidate_ = false;
-    int invalidate_timeout_ = 0;
 
     float forward_speed_ = 0, side_speed_ = 0;
 

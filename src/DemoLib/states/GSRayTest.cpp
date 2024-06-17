@@ -360,6 +360,10 @@ void GSRayTest::Draw(const uint64_t dt_us) {
     const uint64_t t1 = Sys::GetTimeMs();
     const auto &app_params = viewer_->app_params;
 
+    if (forward_speed_ != 0 || side_speed_ != 0 || animate_) {
+        invalidate_preview_ = true;
+    }
+
     if (app_params.ref_name.empty()) { // make sure camera doesn't change during reference tests
         Ray::camera_desc_t cam_desc;
         ray_scene_->GetCamera(current_cam_, cam_desc);
@@ -1048,15 +1052,6 @@ void GSRayTest::Update(const uint64_t dt_us) {
     view_origin_ += view_dir_ * forward_speed_;
     view_origin_ += side * side_speed_;
 
-    invalidate_timeout_ -= int(dt_us / 1000);
-
-    if (forward_speed_ != 0 || side_speed_ != 0 || animate_) {
-        invalidate_preview_ = true;
-        invalidate_timeout_ = 100;
-    } else if (invalidate_timeout_ > 0) {
-        invalidate_preview_ = true;
-    }
-
     //////////////////////////////////////////////////////////////////////////
 
     if (animate_) {
@@ -1119,14 +1114,12 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
             // LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
 
             invalidate_preview_ = true;
-            invalidate_timeout_ = 100;
         }
         break;
     case InputManager::RAW_INPUT_MOUSE_WHEEL:
         focal_distance_ += 0.1f * evt.move.dy;
         ray_renderer_->log()->Info("focal distance = %f", focal_distance_);
         invalidate_preview_ = true;
-        invalidate_timeout_ = 100;
         break;
     case InputManager::RAW_INPUT_KEY_DOWN: {
         if (evt.key == InputManager::RAW_INPUT_BUTTON_UP || evt.raw_key == 'w') {
