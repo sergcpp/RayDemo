@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = cache_iteration
-	commit = f26f6f90f30fe30507f036a45986fcd0109c4bd7
+	branch = master
+	commit = 3eb44b1178b53cc6bf50f90f96cf8b2e5a219d8f
 	method = merge
 	cmdver = 0.4.6
-	parent = fee492525ef0792539570275211e7132de2dae5f
+	parent = 5806d453ce565992dd003ad90f427eae64dbc251
