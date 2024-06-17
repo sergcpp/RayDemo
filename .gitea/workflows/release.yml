@@ -1,8 +1,9 @@
 name: CI
 
 on:
-  schedule:
-    - cron: '5 0 * * *'  # Run every day at 0 o'clock
+  pull_request:
+    branches:
+      - 'releases/**'
 
 jobs:
   build-windows-x86_64-rel:

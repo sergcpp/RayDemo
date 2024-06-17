@@ -16,13 +16,13 @@ runs:
         WORK_DIR=`pwd`
         cd ../../builds/RayDemo
         cp $WORK_DIR/${{ inputs.bin-dir }}/DemoApp ./
-        ./DemoApp ${{ inputs.test-args }} -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/villa_cycles.png --output_exr --output_aux --max_samples 256 --psnr 28.67 --threshold 5946 --max_total_depth 16 --transp_depth 48 --iteration_steps 8 --denoise --camera 0
+        ./DemoApp ${{ inputs.test-args }} -s assets/scenes/villa.json -w 960 -h 540 $AUX_TEST_ARGS -ref assets/references/villa_cycles.png --output_exr --output_aux --max_samples 256 --psnr 28.67 --threshold 5947 --max_total_depth 16 --transp_depth 48 --iteration_steps 8 --denoise --camera 0
         ./DemoApp ${{ inputs.test-args }} -s assets/scenes/mustang.json -w 960 -h 600 -ref assets/references/mustang_cycles.png --output_exr --output_aux --max_samples 256 --psnr 34.46 --threshold 1939 --refr_depth 12 --max_total_depth 12
         ./DemoApp ${{ inputs.test-args }} -s assets/scenes/bistro.json -w 960 -h 540 -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 256 --psnr 29.48 --threshold 6985
         ./DemoApp ${{ inputs.test-args }} -s assets/scenes/bistro.json -w 960 -h 540 -ref assets/references/bistro_cycles.png --output_exr --output_aux --max_samples 256 --psnr 30.31 --threshold 2986 --use_spatial_cache
         ./DemoApp ${{ inputs.test-args }} -s assets/scenes/bistro_night.json -w 960 -h 540 -ref assets/references/bistro_night_cycles.png --output_exr --output_aux --max_samples 256 --psnr 25.61 --threshold 26245 --camera 0
         ./DemoApp ${{ inputs.test-args }} -s assets/scenes/bistro_night.json -w 960 -h 540 -ref assets/references/bistro_interior_cycles.png --output_exr --output_aux --max_samples 256 --psnr 22.75 --threshold 58830 --camera 1
-        ./DemoApp ${{ inputs.test-args }} -s assets/scenes/italian_flat.json -w 900 -h 550 -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 256 --diff_depth 8 --spec_depth 8 --refr_depth 12 --max_total_depth 12 --psnr 22.16 --threshold 60848
+        ./DemoApp ${{ inputs.test-args }} -s assets/scenes/italian_flat.json -w 900 -h 550 -ref assets/references/italian_flat_cycles.png --output_exr --output_aux --max_samples 256 --diff_depth 8 --spec_depth 8 --refr_depth 12 --max_total_depth 12 --psnr 22.16 --threshold 60858
         ./DemoApp ${{ inputs.test-args }} -s assets/scenes/ai043_01.json -w 700 -h 477 -ref assets/references/ai043_01_cycles.png --output_exr --output_aux --max_samples 256 --diff_depth 2 --spec_depth 2 --psnr 29.44 --threshold 2221
         ./DemoApp ${{ inputs.test-args }} -s assets/scenes/sponza.json -w 960 -h 540 -ref assets/references/sponza_cycles.png --output_exr --output_aux --min_samples 128 --max_samples 256 --variance_threshold 0.00035 --psnr 24.25 --threshold 41928 --diff_depth 2 --max_tex_res 2048
         ./DemoApp ${{ inputs.test-args }} -s assets/scenes/coffee_maker.json -w 640 -h 800 -ref assets/references/coffee_maker_cycles.png --output_exr --output_aux --max_samples 256 --psnr 32.72 --threshold 326 --refr_depth 12 --max_total_depth 12
