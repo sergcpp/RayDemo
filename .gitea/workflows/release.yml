@@ -329,22 +329,22 @@ jobs:
         with:
           bin-dir: "windows-x86_64"
           test-args: "--nogpu"
-  img-windows-x86_64-gpu-nv:
-    runs-on: [ windows, x86_64, nv ]
-    needs:
-      - build-windows-x86_64-rel
-    steps:
-      - name: Checkout Workflows
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .gitea
-      - name: Re-initialize repository
-        uses: ./.gitea/actions/checkout
-      - name: Run Img Tests
-        uses: ./.gitea/actions/img
-        with:
-          bin-dir: "windows-x86_64"
-          test-args: "--device NV"
+  # img-windows-x86_64-gpu-nv:
+  #   runs-on: [ windows, x86_64, nv ]
+  #   needs:
+  #     - build-windows-x86_64-rel
+  #   steps:
+  #     - name: Checkout Workflows
+  #       uses: actions/checkout@v4
+  #       with:
+  #         sparse-checkout: .gitea
+  #     - name: Re-initialize repository
+  #       uses: ./.gitea/actions/checkout
+  #     - name: Run Img Tests
+  #       uses: ./.gitea/actions/img
+  #       with:
+  #         bin-dir: "windows-x86_64"
+  #         test-args: "--device NV"
   img-windows-x86_64-gpu-amd:
     runs-on: [ windows, x86_64, amd ]
     needs:

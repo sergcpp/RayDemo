@@ -92,7 +92,7 @@ template <int bands_count, typename T> void SH_Project(T &&fn, int sample_count,
         double coeff[coeff_count];
 
         if (bands_count == 2) {
-            Ren::Vec3d vec = {std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta)};
+            auto vec = Ren::Vec3d{std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta)};
             SH_EvaluateL1(vec, coeff);
         } else {
             for (int l = 0; l < bands_count; l++) {
@@ -162,7 +162,7 @@ template <typename T> void SH_ProjectDiffuseL1(T &&fn, int sample_count, double 
         double theta = 2.0 * std::acos(std::sqrt(1.0 - x));
         double phi = 2.0 * Pi * y;
 
-        Ren::Vec3d vec = {std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta)};
+        auto vec = Ren::Vec3d{std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta)};
 
         double coeff[4];
         SH_EvaluateDiffuseL1(vec, coeff);
