@@ -75,6 +75,10 @@ sw_inline void _swProcessLine(SWprogram *p, SWframebuffer *f,
         sw_swap(fs_in1, fs_in2, SWfloat *);
     }
 
+    if (p0[0] == p1[0]) {
+        return;
+    }
+
     SWint dx = p1[0] - p0[0], dy = p1[1] - p0[1];
     SWint derror2 = sw_abs(dy) * 2;
     SWint error2 = 0;
