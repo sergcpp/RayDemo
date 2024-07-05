@@ -10,7 +10,8 @@ enum eGameState {
     GS_LM_TEST,
     GS_VNDF_TEST,
     GS_FILTER_TEST,
-    GS_NOISE_TEST
+    GS_NOISE_TEST,
+    GS_FIB_TEST
 };
 
 class GameBase;

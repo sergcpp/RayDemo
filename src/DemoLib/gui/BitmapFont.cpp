@@ -21,10 +21,11 @@ const int MAP_DATA_OFFSET = 276;
 
 size_t _strnlen(const char *str, size_t maxlen) {
     size_t i;
-    for (i = 0; i < maxlen && str[i]; i++);
+    for (i = 0; i < maxlen && str[i]; i++)
+        ;
     return i;
 }
-}
+} // namespace BitmapFontConstants
 
 std::vector<float> Gui::BitmapFont::std_positions, Gui::BitmapFont::std_uvs;
 std::vector<uint16_t> Gui::BitmapFont::std_indices;
@@ -40,9 +41,7 @@ Gui::BitmapFont::BitmapFont(const char *name, Ren::Context *ctx) {
     }
 }
 
-void Gui::BitmapFont::set_sharp(bool b) {
-    tex_->ChangeFilter(b ? Ren::NoFilter : Ren::Bilinear, Ren::ClampToEdge);
-}
+void Gui::BitmapFont::set_sharp(bool b) { tex_->ChangeFilter(b ? Ren::NoFilter : Ren::Bilinear, Ren::ClampToEdge); }
 
 bool Gui::BitmapFont::Load(const char *fname, Ren::Context &ctx) {
     using namespace BitmapFontConstants;
@@ -77,7 +76,7 @@ bool Gui::BitmapFont::Load(const char *fname, Ren::Context &ctx) {
     base_ = dat[19];
 
     // Check filesize
-    if (file_size != ((MAP_DATA_OFFSET)+((img_x * img_y) * (bpp / 8)))) {
+    if (file_size != ((MAP_DATA_OFFSET) + ((img_x * img_y) * (bpp / 8)))) {
         return false;
     }
 
@@ -224,11 +223,10 @@ float Gui::BitmapFont::GetTriangles(const char *text, std::vector<float> &_posit
         cur_x_ += int(width_[char_code] * scale_);
     }
     return cur_x_ * m[0];
-
 }
 
 float Gui::BitmapFont::GetWidth(const char *text, const BaseElement *parent) {
-    return GetTriangles(text, std_positions, std_uvs, std_indices, { 0, 0 }, parent);
+    return GetTriangles(text, std_positions, std_uvs, std_indices, Ren::Vec2f{0, 0}, parent);
 }
 
 float Gui::BitmapFont::height(const BaseElement *parent) const {

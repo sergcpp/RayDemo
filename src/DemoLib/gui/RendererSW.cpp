@@ -81,7 +81,7 @@ void Gui::Renderer::BeginDraw() {
     Ren::Program *p = ui_program_.get();
 
     swUseProgram(p->prog_id());
-    const Ren::Vec3f white = { 1, 1, 1 };
+    const auto white = Ren::Vec3f{1, 1, 1};
     swSetUniform(U_COL, SW_VEC3, Ren::ValuePtr(white));
 
     swBindBuffer(SW_ARRAY_BUFFER, 0);
@@ -92,7 +92,7 @@ void Gui::Renderer::BeginDraw() {
     swDisable(SW_DEPTH_TEST);
     swEnable(SW_BLEND);
 
-    Ren::Vec2i scissor_test[2] = { { 0, 0 }, { ctx_.w(), ctx_.h() } };
+    Ren::Vec2i scissor_test[2] = {Ren::Vec2i{0, 0}, Ren::Vec2i{ctx_.w(), ctx_.h()}};
     this->EmplaceParams(Ren::Vec3f(1, 1, 1), 0.0f, BL_ALPHA, scissor_test);
 }
 

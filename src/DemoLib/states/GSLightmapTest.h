@@ -36,11 +36,12 @@ class GSLightmapTest : public GameState {
     bool animate_ = false;
     bool view_grabbed_ = false;
     bool view_targeted_ = false;
-    Ren::Vec3f view_origin_ = {0, 20, 3}, view_dir_ = {-1, 0, 0}, view_target_ = {0, 0, 0};
+    Ren::Vec3f view_origin_ = Ren::Vec3f{0, 20, 3}, view_dir_ = Ren::Vec3f{-1, 0, 0},
+               view_target_ = Ren::Vec3f{0, 0, 0};
 
     float max_fwd_speed_, focal_distance_ = 100.0f;
 
-    Ren::Vec3f sun_dir_ = {0, 1, 0};
+    Ren::Vec3f sun_dir_ = Ren::Vec3f{0, 1, 0};
 
     bool invalidate_preview_ = true;
 

@@ -191,7 +191,7 @@ Ren::Vec3f canonical_to_dir(const Ren::Vec2f p) {
     const float sin_phi = std::sin(phi);
     const float cos_phi = std::cos(phi);
 
-    return {sin_theta * cos_phi, cos_theta, -sin_theta * sin_phi};
+    return Ren::Vec3f{sin_theta * cos_phi, cos_theta, -sin_theta * sin_phi};
 }
 
 Ren::Vec2f dir_to_canonical(const Ren::Vec3f &d) {

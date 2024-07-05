@@ -57,7 +57,7 @@ Ren::Vec3f SampleGGX_NDF(const float rgh, const float r1, const float r2) {
     const float sinPhi = std::sin(phi);
     const float cosPhi = std::cos(phi);
 
-    return {sinTheta * cosPhi, sinTheta * sinPhi, cosTheta};
+    return Ren::Vec3f{sinTheta * cosPhi, sinTheta * sinPhi, cosTheta};
 }
 
 Ren::Vec3f SampleGGX_VNDF(const Ren::Vec3f &Ve, float alpha_x, float alpha_y, float U1, float U2) {

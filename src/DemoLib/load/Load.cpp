@@ -584,7 +584,7 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             const auto py = float(js_pos.at(1).as_num().val);
             const auto pz = float(js_pos.at(2).as_num().val);
 
-            transform = Ren::Translate(transform, {px, py, pz});
+            transform = Ren::Translate(transform, Ren::Vec3f{px, py, pz});
         }
 
         int rotation_order[] = {2, 0, 1};
@@ -635,7 +635,7 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             const auto sy = float(js_scale.at(1).as_num().val);
             const auto sz = float(js_scale.at(2).as_num().val);
 
-            transform = Ren::Scale(transform, {sx, sy, sz});
+            transform = Ren::Scale(transform, Ren::Vec3f{sx, sy, sz});
         }
 
         return transform;
@@ -662,7 +662,7 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 Ray::camera_desc_t cam_desc;
 
                 bool view_targeted = false;
-                Ren::Vec3f view_origin, view_dir = {0, 0, -1}, view_up, view_target;
+                Ren::Vec3f view_origin, view_dir = Ren::Vec3f{0, 0, -1}, view_up, view_target;
 
                 if (js_cam.Has("view_origin")) {
                     const JsArray &js_view_origin = js_cam.at("view_origin").as_arr();
@@ -694,12 +694,12 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     transform = Ren::Rotate(transform, float(rx), Ren::Vec3f{1.0f, 0.0f, 0.0f});
                     transform = Ren::Rotate(transform, float(ry), Ren::Vec3f{0.0f, 1.0f, 0.0f});
 
-                    Ren::Vec4f view_vec = {0.0f, -1.0f, 0.0f, 0.0f};
+                    auto view_vec = Ren::Vec4f{0.0f, -1.0f, 0.0f, 0.0f};
                     view_vec = transform * view_vec;
 
                     memcpy(&view_dir[0], ValuePtr(view_vec), 3 * sizeof(float));
 
-                    Ren::Vec4f view_up_vec = {0.0f, 0.0f, -1.0f, 0.0f};
+                    auto view_up_vec = Ren::Vec4f{0.0f, 0.0f, -1.0f, 0.0f};
                     view_up_vec = transform * view_up_vec;
 
                     memcpy(&view_up[0], ValuePtr(view_up_vec), 3 * sizeof(float));

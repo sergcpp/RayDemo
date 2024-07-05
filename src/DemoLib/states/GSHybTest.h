@@ -19,7 +19,7 @@ namespace Gui {
 class BaseElement;
 class BitmapFont;
 class Renderer;
-}
+} // namespace Gui
 
 class GSHybTest : public GameState {
     Viewer *viewer_ = nullptr;
@@ -40,11 +40,10 @@ class GSHybTest : public GameState {
     bool animate_ = false;
     bool view_grabbed_ = false;
     bool view_targeted_ = false;
-    Ren::Vec3f view_origin_ = { 0, 20, 3 },
-               view_dir_ = { -1, 0, 0 },
-               view_target_ = { 0, 0, 0 };
+    Ren::Vec3f view_origin_ = Ren::Vec3f{0, 20, 3}, view_dir_ = Ren::Vec3f{-1, 0, 0},
+               view_target_ = Ren::Vec3f{0, 0, 0};
 
-    Ren::Vec3f sun_dir_ = { 0, 1, 0 };
+    Ren::Vec3f sun_dir_ = Ren::Vec3f{0, 1, 0};
 
     bool invalidate_preview_ = true;
 
@@ -67,7 +66,8 @@ class GSHybTest : public GameState {
 
     void UpdateRegionContexts();
     void UpdateEnvironment(const Ren::Vec3f &sun_dir);
-public:
+
+  public:
     explicit GSHybTest(Viewer *viewer);
 
     void Enter() override;

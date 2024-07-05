@@ -61,7 +61,7 @@ void GameBase::Resize(const int w, const int h) {
 
     ren_ctx->Resize(width, height);
 
-    ui_root->set_zone({ width, height });
+    ui_root->set_zone(Ren::Vec2i{ width, height });
     ui_root->Resize(nullptr);
 }
 

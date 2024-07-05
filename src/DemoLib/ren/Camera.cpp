@@ -3,8 +3,8 @@
 #include <cstring>
 
 Ren::Plane::Plane(const Ren::Vec3f &v0, const Ren::Vec3f &v1, const Ren::Vec3f &v2) : n(Uninitialize) {
-    const Ren::Vec3f e1 = {v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]},
-                     e2 = {v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]};
+    const auto e1 = Ren::Vec3f{v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]},
+               e2 = Ren::Vec3f{v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]};
 
     n = Ren::Normalize(Ren::Cross(e1, e2));
     d = -(v0[0] * n[0] + v0[1] * n[1] + v0[2] * n[2]);
@@ -41,12 +41,12 @@ void Ren::Camera::Perspective(float angle, float aspect, float nearr, float farr
     aspect_ = aspect;
     near_ = nearr;
     far_ = farr;
-    PerspectiveProjection(projection_matrix_, angle, aspect, nearr, farr);
+    projection_matrix_ = PerspectiveProjection(angle, aspect, nearr, farr, false);
 }
 
 void Ren::Camera::Orthographic(float left, float right, float top, float down, float nearr, float farr) {
     is_orthographic_ = true;
-    OrthographicProjection(projection_matrix_, left, right, top, down, nearr, farr);
+    projection_matrix_ = OrthographicProjection(left, right, top, down, nearr, farr, false);
 }
 
 void Ren::Camera::Move(const Vec3f &v, float delta_time) {
@@ -195,10 +195,10 @@ void Ren::Camera::ExtractSubFrustums(int resx, int resy, int resz, Frustum *sub_
             float ybot = -1.0f + y * grid_size_cs[1], ytop = -1.0f + (y + 1) * grid_size_cs[1];
 
             for (int x = 0; x < resx; x++) {
-                Ren::Vec4f p0 = {-1.0f + x * grid_size_cs[0], ybot, 0.0f, 1.0f},
-                           p1 = {-1.0f + x * grid_size_cs[0], ytop, 0.0f, 1.0f},
-                           p2 = {-1.0f + (x + 1) * grid_size_cs[0], ytop, 0.0f, 1.0f},
-                           p3 = {-1.0f + (x + 1) * grid_size_cs[0], ybot, 0.0f, 1.0f};
+                auto p0 = Ren::Vec4f{-1.0f + x * grid_size_cs[0], ybot, 0.0f, 1.0f},
+                     p1 = Ren::Vec4f{-1.0f + x * grid_size_cs[0], ytop, 0.0f, 1.0f},
+                     p2 = Ren::Vec4f{-1.0f + (x + 1) * grid_size_cs[0], ytop, 0.0f, 1.0f},
+                     p3 = Ren::Vec4f{-1.0f + (x + 1) * grid_size_cs[0], ybot, 0.0f, 1.0f};
 
                 p0 = world_from_clip * p0;
                 p1 = world_from_clip * p1;

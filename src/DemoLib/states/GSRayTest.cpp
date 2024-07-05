@@ -955,17 +955,17 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         stats5 += std::to_string(cur_time_stat_ms_);
         stats5 += " ms";
 
-        font_->DrawText(ui_renderer_, stats1.c_str(), {-1, 1 - 1 * font_height}, ui_root_);
-        font_->DrawText(ui_renderer_, stats2.c_str(), {-1, 1 - 2 * font_height}, ui_root_);
-        font_->DrawText(ui_renderer_, stats3.c_str(), {-1, 1 - 3 * font_height}, ui_root_);
-        font_->DrawText(ui_renderer_, stats4.c_str(), {-1, 1 - 4 * font_height}, ui_root_);
-        font_->DrawText(ui_renderer_, stats5.c_str(), {-1, 1 - 5 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats1.c_str(), Ren::Vec2f{-1, 1 - 1 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats2.c_str(), Ren::Vec2f{-1, 1 - 2 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats3.c_str(), Ren::Vec2f{-1, 1 - 3 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats4.c_str(), Ren::Vec2f{-1, 1 - 4 * font_height}, ui_root_);
+        font_->DrawText(ui_renderer_, stats5.c_str(), Ren::Vec2f{-1, 1 - 5 * font_height}, ui_root_);
 
         std::string stats6 = std::to_string(time_total / 1000);
         stats6 += " ms";
 
         font_->DrawText(ui_renderer_, stats6.c_str(),
-                        {-1 + 2 * 135.0f / float(w), 1 - 2 * 4.0f / float(h) - font_height}, ui_root_);
+                        Ren::Vec2f{-1 + 2 * 135.0f / float(w), 1 - 2 * 4.0f / float(h) - font_height}, ui_root_);
 
         //
         const float xx = -1.0f + 2.0f * (180.0f + 152.0f) / float(ui_root_->size_px()[0]);
@@ -973,67 +973,67 @@ void GSRayTest::Draw(const uint64_t dt_us) {
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "Denoise", {xx, 1 - 2 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "Denoise", Ren::Vec2f{xx, 1 - 2 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "SecShadow", {xx, 1 - 3 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "SecShadow", Ren::Vec2f{xx, 1 - 3 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 0.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "SecShade", {xx, 1 - 4 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "SecShade", Ren::Vec2f{xx, 1 - 4 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{0.0f, 1.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "SecTrace", {xx, 1 - 5 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "SecTrace", Ren::Vec2f{xx, 1 - 5 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{0.0f, 0.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "SecSort", {xx, 1 - 6 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "SecSort", Ren::Vec2f{xx, 1 - 6 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "1stShadow", {xx, 1 - 7 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "1stShadow", Ren::Vec2f{xx, 1 - 7 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{0.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "1stShade", {xx, 1 - 8 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "1stShade", Ren::Vec2f{xx, 1 - 8 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 0.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "1stTrace", {xx, 1 - 9 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "1stTrace", Ren::Vec2f{xx, 1 - 9 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 0.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "Raygen", {xx, 1 - 10 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "Raygen", Ren::Vec2f{xx, 1 - 10 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "CacheRES", {xx, 1 - 11 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "CacheRES", Ren::Vec2f{xx, 1 - 11 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
         {
             ui_renderer_->EmplaceParams(Gui::Vec3f{1.0f, 1.0f, 1.0f}, 0.0f, Gui::eBlendMode::BL_ALPHA,
                                         cur.scissor_test());
-            font_->DrawText(ui_renderer_, "CacheUPD", {xx, 1 - 12 * font_height}, ui_root_);
+            font_->DrawText(ui_renderer_, "CacheUPD", Ren::Vec2f{xx, 1 - 12 * font_height}, ui_root_);
             ui_renderer_->PopParams();
         }
 
@@ -1046,7 +1046,7 @@ void GSRayTest::Update(const uint64_t dt_us) {
 
     const float Pi = 3.14159265358979323846f;
 
-    view_up_ = {0, 1, 0};
+    view_up_ = Vec3f{0, 1, 0};
     Vec3f side = Normalize(Cross(view_dir_, view_up_));
 
     view_origin_ += view_dir_ * forward_speed_;
@@ -1091,7 +1091,7 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
         break;
     case InputManager::RAW_INPUT_P1_MOVE:
         if (view_grabbed_) {
-            view_up_ = {0, 1, 0};
+            view_up_ = Vec3f{0, 1, 0};
             Vec3f side = Normalize(Cross(view_dir_, view_up_));
             view_up_ = Cross(side, view_dir_);
 
@@ -1133,7 +1133,7 @@ void GSRayTest::HandleInput(const InputManager::Event &evt) {
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_SPACE) {
             // animate_ = !animate_;
         } else if (evt.raw_key == 'e' || evt.raw_key == 'q') {
-            Vec3f up = {1, 0, 0};
+            Vec3f up = Vec3f{1, 0, 0};
             Vec3f side = Normalize(Cross(sun_dir_, up));
             up = Cross(side, sun_dir_);
 

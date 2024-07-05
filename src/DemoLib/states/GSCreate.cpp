@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "../Viewer.h"
+#include "GSFibTest.h"
 #include "GSFilterTest.h"
 #include "GSHDRTest.h"
 #include "GSHybTest.h"
@@ -30,6 +31,8 @@ std::shared_ptr<GameState> GSCreate(eGameState state, Viewer *game) {
         return std::make_shared<GSFilterTest>(game);
     case GS_NOISE_TEST:
         return std::make_shared<GSNoiseTest>(game);
+    case GS_FIB_TEST:
+        return std::make_shared<GSFibTest>(game);
     default:
         throw std::invalid_argument("Unknown game state!");
     }
