@@ -244,6 +244,25 @@ void GSRayTest::Enter() {
 #if 0
     {
         int w = 0, h = 0, channels = 0;
+        uint8_t *img_data = stbi_load("curl.png", &w, &h, &channels, 0);
+
+        std::ofstream out_file("src/Ray/internal/precomputed/__curl_tex.inl", std::ios::binary);
+
+        out_file << "extern const int CURL_TEX_RES = " << w << ";\n";
+
+        out_file << "extern const uint8_t __curl_tex[" << w * h * channels << "] = {\n    ";
+        for (int i = 0; i < w * h * channels; ++i) {
+            out_file << int(img_data[i]) << ", ";
+        }
+        out_file << "\n};\n";
+
+        stbi_image_free(img_data);
+    }
+#endif
+
+#if 0
+    {
+        int w = 0, h = 0, channels = 0;
         uint8_t *img_data = stbi_load("moon.png", &w, &h, &channels, 0);
 
         std::ofstream out_file("src/Ray/internal/precomputed/__moon_tex.inl", std::ios::binary);
