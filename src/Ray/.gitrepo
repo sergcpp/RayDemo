@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = master
-	commit = 46ec5a3d682d868d0a86683102a0b78f5b3733dc
+	branch = clouds_curl
+	commit = 76188181702368a5b91f79aaa197e4a28ca1c10e
 	method = merge
 	cmdver = 0.4.6
-	parent = 7da0576463bcdd969a5756ab300c3c86716ea117
+	parent = a9aa80cb778da3447e97b9cbae631b47829e1d28
