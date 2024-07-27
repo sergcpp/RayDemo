@@ -939,9 +939,9 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 env_desc.back_map_rotation = float(js_back_map_rot.val) * Ren::Pi<float>() / 180.0f;
             }
 
-            if (js_env.Has("multiple_importance")) {
-                const JsLiteral &js_mult_imp = js_env.at("multiple_importance").as_lit();
-                env_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
+            if (js_env.Has("importance_sample")) {
+                const JsLiteral &js_imp_sample = js_env.at("importance_sample").as_lit();
+                env_desc.importance_sample = (js_imp_sample.val == JsLiteralType::True);
             }
 
             new_scene->SetEnvironment(env_desc);
@@ -1166,9 +1166,9 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     mat_desc.emission_strength = float(js_emission_strength.val);
                 }
 
-                if (js_mat_obj.Has("multiple_importance")) {
-                    const JsLiteral &js_mult_imp = js_mat_obj.at("multiple_importance").as_lit();
-                    mat_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
+                if (js_mat_obj.Has("importance_sample")) {
+                    const JsLiteral &js_imp_sample = js_mat_obj.at("importance_sample").as_lit();
+                    mat_desc.importance_sample = (js_imp_sample.val == JsLiteralType::True);
                 }
 
                 if (js_mat_obj.Has("alpha")) {
@@ -1215,9 +1215,9 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     node_desc.strength = float(js_strength.val);
                 }
 
-                if (js_mat_obj.Has("multiple_importance")) {
-                    const JsLiteral &js_mult_imp = js_mat_obj.at("multiple_importance").as_lit();
-                    node_desc.multiple_importance = (js_mult_imp.val == JsLiteralType::True);
+                if (js_mat_obj.Has("importance_sample")) {
+                    const JsLiteral &js_imp_sample = js_mat_obj.at("importance_sample").as_lit();
+                    node_desc.importance_sample = (js_imp_sample.val == JsLiteralType::True);
                 }
 
                 if (js_mat_obj.Has("fresnel")) {
