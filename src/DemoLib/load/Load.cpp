@@ -1392,6 +1392,19 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
+                    if (js_light_obj.Has("diffuse_visibility")) {
+                        new_light.diffuse_visibility =
+                            js_light_obj.at("diffuse_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("specular_visibility")) {
+                        new_light.specular_visibility =
+                            js_light_obj.at("specular_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("refraction_visibility")) {
+                        new_light.refraction_visibility =
+                            js_light_obj.at("refraction_visibility").as_lit().val == JsLiteralType::True;
+                    }
+
                     float mul;
                     if (new_light.radius > 0.0f) {
                         mul = power / (4.0f * Ren::Pi<float>() * new_light.radius * new_light.radius);
@@ -1456,6 +1469,19 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
+                    if (js_light_obj.Has("diffuse_visibility")) {
+                        new_light.diffuse_visibility =
+                            js_light_obj.at("diffuse_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("specular_visibility")) {
+                        new_light.specular_visibility =
+                            js_light_obj.at("specular_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("refraction_visibility")) {
+                        new_light.refraction_visibility =
+                            js_light_obj.at("refraction_visibility").as_lit().val == JsLiteralType::True;
+                    }
+
                     float mul = power / (4.0f * Ren::Pi<float>() * new_light.radius * new_light.radius);
                     mul /= Ren::Pi<float>(); // ???
 
@@ -1498,6 +1524,19 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     if (js_light_obj.Has("cast_shadow")) {
                         const JsLiteral &js_cast_shadow = js_light_obj.at("cast_shadow").as_lit();
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
+                    }
+
+                    if (js_light_obj.Has("diffuse_visibility")) {
+                        new_light.diffuse_visibility =
+                            js_light_obj.at("diffuse_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("specular_visibility")) {
+                        new_light.specular_visibility =
+                            js_light_obj.at("specular_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("refraction_visibility")) {
+                        new_light.refraction_visibility =
+                            js_light_obj.at("refraction_visibility").as_lit().val == JsLiteralType::True;
                     }
 
                     if (!new_light.sky_portal) {
@@ -1552,6 +1591,19 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
                     }
 
+                    if (js_light_obj.Has("diffuse_visibility")) {
+                        new_light.diffuse_visibility =
+                            js_light_obj.at("diffuse_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("specular_visibility")) {
+                        new_light.specular_visibility =
+                            js_light_obj.at("specular_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("refraction_visibility")) {
+                        new_light.refraction_visibility =
+                            js_light_obj.at("refraction_visibility").as_lit().val == JsLiteralType::True;
+                    }
+
                     if (!new_light.sky_portal) {
                         float power = 1.0f;
                         if (js_light_obj.Has("power")) {
@@ -1601,6 +1653,19 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     if (js_light_obj.Has("cast_shadow")) {
                         const JsLiteral &js_cast_shadow = js_light_obj.at("cast_shadow").as_lit();
                         new_light.cast_shadow = (js_cast_shadow.val == JsLiteralType::True);
+                    }
+
+                    if (js_light_obj.Has("diffuse_visibility")) {
+                        new_light.diffuse_visibility =
+                            js_light_obj.at("diffuse_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("specular_visibility")) {
+                        new_light.specular_visibility =
+                            js_light_obj.at("specular_visibility").as_lit().val == JsLiteralType::True;
+                    }
+                    if (js_light_obj.Has("refraction_visibility")) {
+                        new_light.refraction_visibility =
+                            js_light_obj.at("refraction_visibility").as_lit().val == JsLiteralType::True;
                     }
 
                     if (!new_light.sky_portal) {
