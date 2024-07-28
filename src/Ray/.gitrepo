@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = master
-	commit = 247f0920b054700e96accd61f78eab94526ba034
+	branch = ray_flags_lights
+	commit = d6ad998a60c401083957d4b6dde8aef0f9543a04
 	method = merge
 	cmdver = 0.4.6
-	parent = f0dbf7368ab719b270bc266f94d45aff44cabb36
+	parent = beee10be0497527adf7b61d3a861b1d96e385698
