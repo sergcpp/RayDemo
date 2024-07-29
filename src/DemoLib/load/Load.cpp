@@ -256,12 +256,18 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
     std::vector<Ray::CameraHandle> cameras;
     std::map<std::string, Ray::TextureHandle> textures;
-    std::map<std::string, Ray::MaterialHandle> materials;
+    std::map<std::string, std::pair<Ray::MaterialHandle, bool>> materials;
     std::map<std::string, Ray::MeshHandle> meshes;
 
     stbi_set_flip_vertically_on_load(1);
 
-    // auto jpg_decompressor = std::unique_ptr<void, int (*)(tjhandle)>(tjInitDecompress(), &tjDestroy);
+    Ray::MaterialHandle dummy_black_mat;
+    { // add dummy black material
+        Ray::shading_node_desc_t mat;
+        mat.type = Ray::eShadingNode::Diffuse;
+        mat.base_color[0] = mat.base_color[1] = mat.base_color[2] = 0.0f;
+        dummy_black_mat = new_scene->AddMaterial(mat);
+    }
 
     thread_local std::unique_ptr<void, int (*)(tjhandle)> jpg_decompressor(nullptr, &tjDestroy);
 
@@ -644,6 +650,7 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     try {
         struct {
             bool use_fast_bvh_build = false;
+            bool force_single_sided_emissive = false;
         } global_settings;
 
         if (js_scene.Has("settings")) {
@@ -651,6 +658,10 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             if (js_settings.Has("use_fast_bvh_build")) {
                 const JsLiteral use_fast = js_settings.at("use_fast_bvh_build").as_lit();
                 global_settings.use_fast_bvh_build = (use_fast.val == JsLiteralType::True);
+            }
+            if (js_settings.Has("force_single_sided_emissive")) {
+                const JsLiteral force_single_sided = js_settings.at("force_single_sided_emissive").as_lit();
+                global_settings.force_single_sided_emissive = (force_single_sided.val == JsLiteralType::True);
             }
         }
         if (js_scene.Has("cameras")) {
@@ -1182,7 +1193,10 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         get_texture(js_alpha_tex.val, false /* srgb */, false /* normalmap */, false /* mips */);
                 }
 
-                materials[js_mat_name] = new_scene->AddMaterial(mat_desc);
+                const bool is_emissive = (mat_desc.emission_strength > 0.0f) &&
+                                         (mat_desc.emission_color[0] > 0.0f || mat_desc.emission_color[1] > 0.0f ||
+                                          mat_desc.emission_color[2] > 0.0f);
+                materials[js_mat_name] = std::make_pair(new_scene->AddMaterial(mat_desc), is_emissive);
             } else {
                 Ray::shading_node_desc_t node_desc;
 
@@ -1246,9 +1260,9 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         auto it = materials.find(m.as_str().val);
                         if (it != materials.end()) {
                             if (node_desc.mix_materials[0] == Ray::InvalidMaterialHandle) {
-                                node_desc.mix_materials[0] = it->second;
+                                node_desc.mix_materials[0] = it->second.first;
                             } else {
-                                node_desc.mix_materials[1] = it->second;
+                                node_desc.mix_materials[1] = it->second.first;
                             }
                         }
                     }
@@ -1258,13 +1272,14 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     throw std::runtime_error("unknown material type");
                 }
 
-                materials[js_mat_name] = new_scene->AddMaterial(node_desc);
+                materials[js_mat_name] =
+                    std::make_pair(new_scene->AddMaterial(node_desc), node_desc.type == Ray::eShadingNode::Emissive);
             }
         }
 
         std::vector<std::future<Ray::MeshHandle>> mesh_load_events;
 
-        auto load_mesh_job = [&global_settings, &materials, &new_scene,
+        auto load_mesh_job = [&global_settings, &materials, &dummy_black_mat, &new_scene,
                               r](const char *mesh_name, const JsObject &js_mesh_obj) -> Ray::MeshHandle {
             std::vector<float> attrs;
             std::vector<unsigned> indices, groups;
@@ -1305,13 +1320,17 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             for (size_t i = 0; i < groups.size(); i += 2) {
                 if (js_materials.at(i / 2).type() == JsType::String) {
                     const JsString &js_mat_name = js_materials.at(i / 2).as_str();
-                    const Ray::MaterialHandle mat_handle = materials.at(js_mat_name.val);
-                    mat_groups.emplace_back(mat_handle, mat_handle, groups[i], groups[i + 1]);
+                    const auto mat_handle = materials.at(js_mat_name.val);
+                    if (global_settings.force_single_sided_emissive && mat_handle.second) {
+                        mat_groups.emplace_back(mat_handle.first, dummy_black_mat, groups[i], groups[i + 1]);
+                    } else {
+                        mat_groups.emplace_back(mat_handle.first, mat_handle.first, groups[i], groups[i + 1]);
+                    }
                 } else if (js_materials.at(i / 2).type() == JsType::Array) {
                     const JsString &js_mat_name_front = js_materials.at(i / 2).as_arr().at(0).as_str();
                     const JsString &js_mat_name_back = js_materials.at(i / 2).as_arr().at(1).as_str();
-                    const Ray::MaterialHandle mat_handle_front = materials.at(js_mat_name_front.val);
-                    const Ray::MaterialHandle mat_handle_back = materials.at(js_mat_name_back.val);
+                    const Ray::MaterialHandle mat_handle_front = materials.at(js_mat_name_front.val).first;
+                    const Ray::MaterialHandle mat_handle_back = materials.at(js_mat_name_back.val).first;
                     mat_groups.emplace_back(mat_handle_front, mat_handle_back, groups[i], groups[i + 1]);
                 }
             }
