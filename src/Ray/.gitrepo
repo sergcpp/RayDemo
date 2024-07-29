@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = Ray
-	branch = doublesided_lights
-	commit = 40baa9e32bbf996db765442abf69ff4f7d7c2e7b
+	branch = master
+	commit = 7a41bd562bdb945fbb69a11ff31c1e607965a36a
 	method = merge
 	cmdver = 0.4.6
-	parent = 90b09bb1b480ea72b6d0c7eb090e4e50c612df53
+	parent = 53a08d5e7b1ccc4032452481fdaa3605b63a154e
