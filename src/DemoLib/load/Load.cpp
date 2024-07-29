@@ -1511,6 +1511,11 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                         new_light.height = float(js_height.val);
                     }
 
+                    if (js_light_obj.Has("doublesided")) {
+                        const JsLiteral &js_doublesided = js_light_obj.at("doublesided").as_lit();
+                        new_light.doublesided = (js_doublesided.val == JsLiteralType::True);
+                    }
+
                     if (js_light_obj.Has("visible")) {
                         const JsLiteral &js_visible = js_light_obj.at("visible").as_lit();
                         new_light.visible = (js_visible.val == JsLiteralType::True);
@@ -1574,6 +1579,11 @@ std::unique_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                     if (js_light_obj.Has("size_y")) {
                         const JsNumber &js_size_y = js_light_obj.at("size_y").as_num();
                         new_light.size_y = float(js_size_y.val);
+                    }
+
+                    if (js_light_obj.Has("doublesided")) {
+                        const JsLiteral &js_doublesided = js_light_obj.at("doublesided").as_lit();
+                        new_light.doublesided = (js_doublesided.val == JsLiteralType::True);
                     }
 
                     if (js_light_obj.Has("visible")) {
