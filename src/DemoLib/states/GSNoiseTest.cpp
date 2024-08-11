@@ -198,7 +198,7 @@ float Cells(const Ref::fvec4 &p, float cellCount) {
     for (int xo = -1; xo <= 1; xo++) {
         for (int yo = -1; yo <= 1; yo++) {
             for (int zo = -1; zo <= 1; zo++) {
-                Ref::fvec4 tp = floor(pCell) + Ref::fvec4(xo, yo, zo, 0);
+                Ref::fvec4 tp = floor(pCell) + Ref::fvec4(float(xo), float(yo), float(zo), 0);
 
                 tp = pCell - tp - noise(mod(tp, Ref::fvec4{cellCount / 1}));
                 tp.set<3>(0.0f);
