@@ -39,7 +39,7 @@ Ren::Vec3f spherical_fibonacci(const float sample_index, const float sample_coun
 Ren::Vec3f quat_rotate(const Ren::Vec3f v, const Ren::Quatf q) {
     const auto b = Ren::Vec3f{q.x, q.y, q.z};
     const float b2 = Dot(b, b);
-    return (v * (q.w * q.w - b2) + b * (Dot(v, b) * 2.0) + Cross(b, v) * (q.w * 2.0));
+    return (v * (q.w * q.w - b2) + b * (Dot(v, b) * 2.0f) + Cross(b, v) * (q.w * 2.0f));
 }
 
 const int PROBE_FIXED_RAYS_COUNT = 32;
@@ -220,7 +220,7 @@ void GSFibTest::Draw(uint64_t dt_us) {
 
     static int percent = -1;
 
-    const int percent_done = 100 * frame_index / (PerDimCount * PerDimCount * PerDimCount);
+    const int percent_done = 100 * int(frame_index) / (PerDimCount * PerDimCount * PerDimCount);
     if (percent_done != percent) {
         viewer_->log->Info("%i%% done", percent_done);
         percent = percent_done;
