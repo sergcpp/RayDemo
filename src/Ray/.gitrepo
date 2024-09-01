@@ -6,7 +6,7 @@
 [subrepo]
 	remote = Ray
 	branch = fixes_30_08
-	commit = 3aabc465c418cb335b2bf5bb04ccd7814499ed04
+	commit = 924b51ffeba63ea6ea17018a49af9e5d8f5186b0
 	method = merge
 	cmdver = 0.4.6
-	parent = c2defa60bf05d8f92cf99f16d0b1e9822cdae06f
+	parent = def2adfb195f6f063e276d2f305c90cb62b4b358
